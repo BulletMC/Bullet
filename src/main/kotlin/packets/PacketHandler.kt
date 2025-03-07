@@ -35,6 +35,7 @@ import kotlinx.serialization.json.Json
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
+import net.kyori.adventure.text.minimessage.MiniMessage
 import packets.handshake.HandshakePacket
 import packets.status.out.ServerStatusResponsePacket
 import java.util.UUID
@@ -203,7 +204,7 @@ class PacketHandler(
             .append(Component.text().content("<").color(NamedTextColor.GRAY))
             .append(Component.text().content(client.player.username).color(TextColor.color(0x55FFFF)))
             .append(Component.text().content("> ").color(NamedTextColor.GRAY))
-            .append(Component.text().content(formattedMessage).color(TextColor.color(0xFFFFFF)))
+            .append(MiniMessage.miniMessage().deserialize(formattedMessage))
             .build()
 
         Bullet.broadcast(textComponent)
