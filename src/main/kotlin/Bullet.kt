@@ -2,9 +2,11 @@ package com.aznos
 
 import com.aznos.commands.CommandManager
 import com.aznos.entity.player.Player
+import com.aznos.world.data.TimeOfDay
 import com.google.gson.JsonParser
 import dev.dewy.nbt.api.registry.TagTypeRegistry
 import dev.dewy.nbt.tags.collection.CompoundTag
+import kotlinx.coroutines.*
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.text.minimessage.MiniMessage
@@ -17,6 +19,7 @@ import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.util.Base64
 import java.util.concurrent.Executors
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * This is where the core of the bullet server logic will be housed
@@ -35,6 +38,8 @@ object Bullet : AutoCloseable {
     private val pool = Executors.newCachedThreadPool()
     private var server: ServerSocket? = null
     val players = mutableListOf<Player>()
+
+    var timeOfDay: Long = TimeOfDay.SUNRISE.time
 
     var dimensionCodec: CompoundTag? = null
 
@@ -62,6 +67,7 @@ object Bullet : AutoCloseable {
         dimensionCodec = CompoundTag().fromJson(parsed, 0, TagTypeRegistry())
 
         CommandManager.registerCommands()
+        scheduleTimeUpdate()
 
         logger.info("Bullet server started at $host:$port")
 
@@ -71,6 +77,28 @@ object Bullet : AutoCloseable {
             pool.submit {
                 client?.let {
                     ClientSession(it).handle()
+                }
+            }
+        }
+    }
+
+    /**
+     * Schedules a coroutine to update the time of day every second
+     */
+    @OptIn(DelicateCoroutinesApi::class)
+    private fun scheduleTimeUpdate() {
+        GlobalScope.launch {
+            var worldAge = 0L
+            coroutineScope {
+                while(isActive) {
+                    delay(1.seconds)
+
+                    timeOfDay = (timeOfDay + 20) % 24000
+                    worldAge += 20
+
+                    for(player in players) {
+                        player.setTimeOfDay(worldAge, timeOfDay)
+                    }
                 }
             }
         }

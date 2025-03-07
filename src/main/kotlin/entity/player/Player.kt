@@ -7,6 +7,7 @@ import com.aznos.entity.player.data.GameMode
 import com.aznos.entity.player.data.Location
 import com.aznos.packets.Packet
 import com.aznos.packets.play.out.ServerChatMessagePacket
+import com.aznos.packets.play.out.ServerTimeUpdatePacket
 import net.kyori.adventure.text.TextComponent
 import java.util.UUID
 import kotlin.properties.Delegates
@@ -50,5 +51,9 @@ class Player(
      */
     fun sendMessage(message: TextComponent) {
         sendPacket(ServerChatMessagePacket(message, ChatPosition.CHAT, null))
+    }
+
+    fun setTimeOfDay(worldAge: Long, time: Long) {
+        sendPacket(ServerTimeUpdatePacket(worldAge, time))
     }
 }
