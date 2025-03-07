@@ -206,7 +206,7 @@ class PacketHandler(
             .append(Component.text().content(formattedMessage).color(TextColor.color(0xFFFFFF)))
             .build()
 
-        client.player.sendMessage(textComponent)
+        Bullet.broadcast(textComponent)
     }
 
     /**

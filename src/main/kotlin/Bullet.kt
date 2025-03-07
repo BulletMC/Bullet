@@ -115,6 +115,17 @@ object Bullet : AutoCloseable {
     }
 
     /**
+     * Broadcasts a message to all players on the server
+     *
+     * @param message The message to be sent to all players
+     */
+    fun broadcast(message: TextComponent) {
+        for(player in players) {
+            player.sendMessage(message)
+        }
+    }
+
+    /**
      * Returns if the server instance is either closed or it is not bound
      *
      * @return True if the server is closed
