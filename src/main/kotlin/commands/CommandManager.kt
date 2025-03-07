@@ -131,61 +131,82 @@ object CommandManager {
      * @return A pair of the parser and properties
      */
     private fun getParserAndProperties(node: ArgumentCommandNode<*, *>): Pair<String?, Any?> {
-        return when (node.type) {
-            is StringArgumentType -> {
-                val wordType = StringArgumentType.word()
-                val greedyType = StringArgumentType.greedyString()
-
-                when(node.type) {
-                    wordType -> "brigadier:string" to StringTypes.SINGLE.id
-                    greedyType -> "brigadier:string" to StringTypes.GREEDY.id
-                    else -> "brigadier:string" to StringTypes.QUOTABLE.id
-                }
-            }
-            is IntegerArgumentType -> {
-                val (min, max) = handleNumberArgumentType(
-                    node.type as IntegerArgumentType,
-                    "min",
-                    "max",
-                    Int.MIN_VALUE,
-                    Int.MAX_VALUE
-                )
-
-                var propFlags = 0
-                if(min != Int.MIN_VALUE) propFlags = propFlags or 0x01
-                if(max != Int.MAX_VALUE) propFlags = propFlags or 0x02
-
-                "brigadier:integer" to IntegerProperties(
-                    propFlags.toByte(),
-                    if(propFlags and 0x01 != 0) min.toInt() else null,
-                    if(propFlags and 0x02 != 0) max.toInt() else null
-                )
-            }
-            is DoubleArgumentType -> {
-                val (min, max) = handleNumberArgumentType(
-                    node.type as DoubleArgumentType,
-                    "min",
-                    "max",
-                    -Double.MAX_VALUE,
-                    Double.MAX_VALUE
-                )
-
-                var propFlags = 0
-                if(min != -Double.MAX_VALUE) propFlags = propFlags or 0x01
-                if(max != Double.MAX_VALUE) propFlags = propFlags or 0x02
-
-                "brigadier:double" to DoubleProperties(
-                    propFlags.toByte(),
-                    if(propFlags and 0x01 != 0) min.toDouble() else null,
-                    if(propFlags and 0x02 != 0) max.toDouble() else null
-                )
-            }
-            is BoolArgumentType -> {
-                "brigadier:bool" to null
-            }
-            else ->
-                "brigadier:string" to StringTypes.GREEDY.id
+        return when(val type = node.type) {
+            is StringArgumentType -> getStringProperties(type)
+            is IntegerArgumentType -> getIntegerProperties(type)
+            is DoubleArgumentType -> getDoubleProperties(type)
+            is BoolArgumentType -> "brigadier:bool" to null
+            else -> "brigadier:string" to StringTypes.GREEDY.id
         }
+    }
+
+    /**
+     * Gets the string properties for an argument command node
+     *
+     * @param type The string argument type
+     * @return A pair of the parser and properties
+     */
+    private fun getStringProperties(type: StringArgumentType): Pair<String?, Any?> {
+        val wordType = StringArgumentType.word()
+        val greedyType = StringArgumentType.greedyString()
+
+        return when(type) {
+            wordType -> "brigadier:string" to StringTypes.SINGLE.id
+            greedyType -> "brigadier:string" to StringTypes.GREEDY.id
+            else -> "brigadier:string" to StringTypes.QUOTABLE.id
+        }
+    }
+
+    /**
+     * Gets the integer properties for an argument command node
+     *
+     * @param type The integer argument type
+     * @return A pair of the parser and properties
+     */
+    private fun getIntegerProperties(type: IntegerArgumentType): Pair<String?, Any?> {
+        val (min, max) = handleNumberArgumentType(
+            type,
+            "min",
+            "max",
+            Int.MIN_VALUE,
+            Int.MAX_VALUE
+        )
+
+        var propFlags = 0
+        if(min != Int.MIN_VALUE) propFlags = propFlags or 0x01
+        if(max != Int.MAX_VALUE) propFlags = propFlags or 0x02
+
+        return "brigadier:integer" to IntegerProperties(
+            propFlags.toByte(),
+            if(propFlags and 0x01 != 0) min.toInt() else null,
+            if(propFlags and 0x02 != 0) max.toInt() else null
+        )
+    }
+
+    /**
+     * Gets the double properties for an argument command node
+     *
+     * @param type The double argument type
+     * @return A pair of the parser and properties
+     */
+    private fun getDoubleProperties(type: DoubleArgumentType): Pair<String?, Any?> {
+        val (min, max) = handleNumberArgumentType(
+            type,
+            "min",
+            "max",
+            -Double.MAX_VALUE,
+            Double.MAX_VALUE
+        )
+
+        var propFlags = 0
+        if(min != -Double.MAX_VALUE) propFlags = propFlags or 0x01
+        if(max != Double.MAX_VALUE) propFlags = propFlags or 0x02
+
+        return "brigadier:double" to DoubleProperties(
+            propFlags.toByte(),
+            if(propFlags and 0x01 != 0) min.toDouble() else null,
+            if(propFlags and 0x02 != 0) max.toDouble() else null
+        )
     }
 
     /**

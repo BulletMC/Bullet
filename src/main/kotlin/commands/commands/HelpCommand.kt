@@ -26,7 +26,9 @@ class HelpCommand {
                     return@executes CommandCodes.SUCCESS.id
                 }
                 .then(
-                    RequiredArgumentBuilder.argument<Player, Int>("page", IntegerArgumentType.integer(1)).executes { context ->
+                    RequiredArgumentBuilder.argument<Player, Int>(
+                        "page", IntegerArgumentType.integer(1)
+                    ).executes { context ->
                         val page = IntegerArgumentType.getInteger(context, "page")
                         sendHelpPage(context.source, page)
 
@@ -107,7 +109,12 @@ class HelpCommand {
                         builder.append(Component.text(" - <", NamedTextColor.DARK_AQUA))
                             .append(Component.text(child.name, NamedTextColor.AQUA))
                             .append(Component.text("> ", NamedTextColor.DARK_AQUA))
-                            .append(Component.text(('-' + child.type::class.simpleName.toString()), NamedTextColor.GRAY))
+                            .append(Component.text(
+                                (
+                                    "- " + child.type::class.simpleName.toString()
+                                ),
+                                NamedTextColor.GRAY)
+                            )
                             .append(Component.newline())
                     }
                     is LiteralCommandNode<*> -> {
