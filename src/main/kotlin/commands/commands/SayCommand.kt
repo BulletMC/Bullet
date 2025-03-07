@@ -22,25 +22,22 @@ class SayCommand {
                         .executes{ context ->
                             val message = StringArgumentType.getString(context, "message")
                             if(message.isEmpty()) {
-                                context.source.sendMessage(Component.text("Message cannot be empty").color(NamedTextColor.RED))
+                                context.source.sendMessage(
+                                    Component.text("Message cannot be empty").color(NamedTextColor.RED)
+                                )
+
                                 return@executes CommandCodes.ILLEGAL_ARGUMENT.id
                             }
 
                             if(message.length > 255) {
-                                context.source.sendMessage(Component.text("Message is too long").color(NamedTextColor.RED))
+                                context.source.sendMessage(
+                                    Component.text("Message is too long").color(NamedTextColor.RED)
+                                )
+
                                 return@executes  CommandCodes.ILLEGAL_ARGUMENT.id
                             }
 
-                            val translatedMessage: Component = MiniMessage.miniMessage().deserialize(message)
-                            for(player in Bullet.players) {
-                                if(translatedMessage is TextComponent) {
-                                    player.sendMessage(translatedMessage)
-                                } else {
-                                    player.sendMessage(Component.text(message))
-                                }
-                            }
-
-
+                            Bullet.broadcast(message)
                             CommandCodes.SUCCESS.id
                         }
                 )

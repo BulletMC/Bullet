@@ -5,6 +5,9 @@ import com.aznos.entity.player.Player
 import com.google.gson.JsonParser
 import dev.dewy.nbt.api.registry.TagTypeRegistry
 import dev.dewy.nbt.tags.collection.CompoundTag
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.TextComponent
+import net.kyori.adventure.text.minimessage.MiniMessage
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import java.io.IOException
@@ -95,6 +98,19 @@ object Bullet : AutoCloseable {
             logger.error("Failed to read favicon resource at: $resourcePath")
         } catch(e: IllegalArgumentException) {
             logger.error("Failed to encode favicon resource to base64")
+        }
+    }
+
+    /**
+     * Broadcasts a message to all players on the server
+     *
+     * @param message The message to be sent to all players, this supports mini message format
+     */
+    fun broadcast(message: String) {
+        val translatedMessage: TextComponent = MiniMessage.miniMessage().deserialize(message) as TextComponent
+
+        for(player in players) {
+            player.sendMessage(translatedMessage)
         }
     }
 
