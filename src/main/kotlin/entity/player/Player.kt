@@ -1,5 +1,6 @@
 package com.aznos.entity.player
 
+import com.aznos.Bullet
 import com.aznos.ClientSession
 import com.aznos.entity.Entity
 import com.aznos.entity.player.data.ChatPosition
@@ -53,7 +54,7 @@ class Player(
         sendPacket(ServerChatMessagePacket(message, ChatPosition.CHAT, null))
     }
 
-    fun setTimeOfDay(worldAge: Long, time: Long) {
-        sendPacket(ServerTimeUpdatePacket(worldAge, time))
+    fun setTimeOfDay(time: Long) {
+        sendPacket(ServerTimeUpdatePacket(Bullet.worldAge, time))
     }
 }

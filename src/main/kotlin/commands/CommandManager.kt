@@ -1,6 +1,7 @@
 package com.aznos.commands
 
 import com.aznos.commands.commands.SayCommand
+import com.aznos.commands.commands.SetTimeCommand
 import com.aznos.commands.data.DoubleProperties
 import com.aznos.commands.data.IntegerProperties
 import com.aznos.commands.data.StringTypes
@@ -32,6 +33,7 @@ object CommandManager {
      */
     fun registerCommands() {
         SayCommand().register(dispatcher)
+        SetTimeCommand().register(dispatcher)
     }
 
     /**

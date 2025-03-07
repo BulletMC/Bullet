@@ -7,7 +7,6 @@ import com.google.gson.JsonParser
 import dev.dewy.nbt.api.registry.TagTypeRegistry
 import dev.dewy.nbt.tags.collection.CompoundTag
 import kotlinx.coroutines.*
-import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.apache.logging.log4j.LogManager
@@ -39,6 +38,7 @@ object Bullet : AutoCloseable {
     private var server: ServerSocket? = null
     val players = mutableListOf<Player>()
 
+    var worldAge = 0L
     var timeOfDay: Long = TimeOfDay.SUNRISE.time
 
     var dimensionCodec: CompoundTag? = null
@@ -88,7 +88,6 @@ object Bullet : AutoCloseable {
     @OptIn(DelicateCoroutinesApi::class)
     private fun scheduleTimeUpdate() {
         GlobalScope.launch {
-            var worldAge = 0L
             coroutineScope {
                 while(isActive) {
                     delay(1.seconds)
@@ -97,7 +96,7 @@ object Bullet : AutoCloseable {
                     worldAge += 20
 
                     for(player in players) {
-                        player.setTimeOfDay(worldAge, timeOfDay)
+                        player.setTimeOfDay(timeOfDay)
                     }
                 }
             }
