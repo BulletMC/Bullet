@@ -1,5 +1,6 @@
 package com.aznos.commands
 
+import com.aznos.commands.commands.SayCommand
 import com.aznos.commands.data.DoubleProperties
 import com.aznos.commands.data.IntegerProperties
 import com.aznos.commands.data.StringTypes
@@ -30,19 +31,7 @@ object CommandManager {
      * Registers the default BulletMC commands with the command dispatcher
      */
     fun registerCommands() {
-        dispatcher.register(
-            LiteralArgumentBuilder.literal<Player>("say")
-                .then(
-                    RequiredArgumentBuilder.argument<Player, String>("message", StringArgumentType.greedyString())
-                        .executes{ context ->
-                            val message = StringArgumentType.getString(context, "message")
-                            context.source.clientSession.sendMessage(
-                                Component.text(message)
-                            )
-                            1
-                        }
-                )
-        )
+        SayCommand().register(dispatcher)
     }
 
     /**
@@ -140,7 +129,7 @@ object CommandManager {
     private fun getParserAndProperties(node: ArgumentCommandNode<*, *>): Pair<String?, Any?> {
         return when(node.type) {
             is StringArgumentType ->
-                "brigadier:string" to StringTypes.GREEDY
+                "brigadier:string" to StringTypes.GREEDY.id
             is IntegerArgumentType -> {
                 val (min, max) = handleNumberArgumentType(
                     node.type as IntegerArgumentType,
@@ -183,7 +172,7 @@ object CommandManager {
                 "brigadier:bool" to null
             }
             else ->
-                "brigadier:string" to 2
+                "brigadier:string" to StringTypes.GREEDY.id
         }
     }
 
