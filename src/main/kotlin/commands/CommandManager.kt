@@ -1,5 +1,7 @@
 package com.aznos.commands
 
+import com.aznos.Bullet
+import com.aznos.commands.commands.HelpCommand
 import com.aznos.commands.commands.SayCommand
 import com.aznos.commands.commands.SetTimeCommand
 import com.aznos.commands.data.DoubleProperties
@@ -12,13 +14,10 @@ import com.mojang.brigadier.arguments.BoolArgumentType
 import com.mojang.brigadier.arguments.DoubleArgumentType
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
-import com.mojang.brigadier.builder.LiteralArgumentBuilder
-import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import com.mojang.brigadier.tree.ArgumentCommandNode
 import com.mojang.brigadier.tree.CommandNode
 import com.mojang.brigadier.tree.LiteralCommandNode
 import com.mojang.brigadier.tree.RootCommandNode
-import net.kyori.adventure.text.Component
 
 /**
  * Manages the registration and execution of commands.
@@ -34,6 +33,7 @@ object CommandManager {
     fun registerCommands() {
         SayCommand().register(dispatcher)
         SetTimeCommand().register(dispatcher)
+        HelpCommand().register(dispatcher)
     }
 
     /**
@@ -50,12 +50,14 @@ object CommandManager {
 
         traverseCommandNodes(dispatcher.root, visited, ordering)
 
-        val indexMap = ordering.withIndex().associate {
-            it.value to it.index
+        if(ordering.size > 34) {
+            Bullet.logger.warn("Too many command nodes detected (${ordering.size}), trimming to 34")
+            ordering.retainAll(ordering.take(34))
         }
 
+        val indexMap = ordering.withIndex().associate { it.value to it.index }
         val graphNodes = ordering.map { node ->
-            val typeBits = when(node) {
+            val typeBits = when (node) {
                 is RootCommandNode<*> -> 0
                 is LiteralCommandNode<*> -> 1
                 is ArgumentCommandNode<*, *> -> 2
@@ -76,7 +78,7 @@ object CommandManager {
                 else -> null
             }
 
-            val(parser, propertiesValue) = if (node is ArgumentCommandNode<*, *>) {
+            val (parser, propertiesValue) = if (node is ArgumentCommandNode<*, *>) {
                 getParserAndProperties(node)
             } else {
                 null to null
@@ -110,8 +112,8 @@ object CommandManager {
         visited: MutableSet<CommandNode<*>>,
         ordering: MutableList<CommandNode<*>>
     ) {
-        if(visited.contains(node)) return
-        visited.add(node)
+        if(!visited.add(node)) return
+        if(ordering.size >= 34) return
 
         for(child in node.children) {
             traverseCommandNodes(child, visited, ordering)
@@ -129,15 +131,23 @@ object CommandManager {
      * @return A pair of the parser and properties
      */
     private fun getParserAndProperties(node: ArgumentCommandNode<*, *>): Pair<String?, Any?> {
-        return when(node.type) {
-            is StringArgumentType ->
-                "brigadier:string" to StringTypes.GREEDY.id
+        return when (node.type) {
+            is StringArgumentType -> {
+                val wordType = StringArgumentType.word()
+                val greedyType = StringArgumentType.greedyString()
+
+                when(node.type) {
+                    wordType -> "brigadier:string" to StringTypes.SINGLE.id
+                    greedyType -> "brigadier:string" to StringTypes.GREEDY.id
+                    else -> "brigadier:string" to StringTypes.QUOTABLE.id
+                }
+            }
             is IntegerArgumentType -> {
                 val (min, max) = handleNumberArgumentType(
                     node.type as IntegerArgumentType,
                     "min",
                     "max",
-                    -Int.MAX_VALUE,
+                    Int.MIN_VALUE,
                     Int.MAX_VALUE
                 )
 
