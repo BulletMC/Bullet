@@ -177,15 +177,15 @@ class PacketHandler(
             if(result != CommandCodes.SUCCESS.id) {
                 when(result) {
                     CommandCodes.UNKNOWN.id ->
-                        client.sendMessage(Component.text("Unknown command")
+                        commandSource.sendMessage(Component.text("Unknown command")
                             .color(NamedTextColor.RED))
 
                     CommandCodes.ILLEGAL_ARGUMENT.id ->
-                        client.sendMessage(Component.text("Invalid command syntax, try typing /help")
+                        commandSource.sendMessage(Component.text("Invalid command syntax, try typing /help")
                             .color(NamedTextColor.RED))
 
                     CommandCodes.INVALID_PERMISSIONS.id ->
-                        client.sendMessage(Component.text("You don't have permission to use this command")
+                        commandSource.sendMessage(Component.text("You don't have permission to use this command")
                             .color(NamedTextColor.RED))
                 }
             }
@@ -206,7 +206,7 @@ class PacketHandler(
             .append(Component.text().content(formattedMessage).color(TextColor.color(0xFFFFFF)))
             .build()
 
-        client.sendMessage(textComponent)
+        client.player.sendMessage(textComponent)
     }
 
     /**
