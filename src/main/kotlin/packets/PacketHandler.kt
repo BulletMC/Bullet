@@ -361,7 +361,7 @@ class PacketHandler(
         player.username = username
         player.uuid = uuid
         player.location = Location(8.5, 2.0, 8.5, 0f, 0f)
-        player.gameMode = GameMode.CREATIVE
+        player.setGameMode(GameMode.CREATIVE)
         player.onGround = false
 
         client.player = player

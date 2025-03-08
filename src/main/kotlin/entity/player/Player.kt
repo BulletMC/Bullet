@@ -7,6 +7,7 @@ import com.aznos.entity.player.data.ChatPosition
 import com.aznos.entity.player.data.GameMode
 import com.aznos.entity.player.data.Location
 import com.aznos.packets.Packet
+import com.aznos.packets.play.out.ServerChangeGameStatePacket
 import com.aznos.packets.play.out.ServerChatMessagePacket
 import com.aznos.packets.play.out.ServerTimeUpdatePacket
 import net.kyori.adventure.text.TextComponent
@@ -24,7 +25,8 @@ class Player(
     lateinit var username: String
     lateinit var uuid: UUID
     lateinit var location: Location
-    lateinit var gameMode: GameMode
+    var gameMode: GameMode = GameMode.SURVIVAL
+        private set
     var onGround by Delegates.notNull<Boolean>()
 
     /**
@@ -56,5 +58,10 @@ class Player(
 
     fun setTimeOfDay(time: Long) {
         sendPacket(ServerTimeUpdatePacket(Bullet.worldAge, time))
+    }
+
+    fun setGameMode(mode: GameMode) {
+        gameMode = mode
+        sendPacket(ServerChangeGameStatePacket(3, mode.id.toFloat()))
     }
 }
