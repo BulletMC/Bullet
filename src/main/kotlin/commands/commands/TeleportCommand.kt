@@ -5,6 +5,7 @@ import com.aznos.commands.CommandCodes
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.Location
 import com.aznos.packets.play.`in`.movement.ClientPlayerPositionAndRotation
+import com.aznos.packets.play.out.ServerEntityTeleportPacket
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
@@ -44,6 +45,12 @@ class TeleportCommand {
                 "Teleported to ${coords.x}, ${coords.y}, ${coords.z}")
                 .color(NamedTextColor.GRAY)
             )
+
+            sender.sendPacket(ServerEntityTeleportPacket(
+                sender.entityID,
+                Location(coords.x, coords.y, coords.z, coords.yaw, coords.pitch),
+                sender.onGround
+            ))
         } else {
             val targetPlayer = Bullet.players.find { it.username.equals(arg, ignoreCase = true) }
             if(targetPlayer != null) {
@@ -52,6 +59,12 @@ class TeleportCommand {
                     "Teleported to ${targetPlayer.username}")
                     .color(NamedTextColor.GRAY)
                 )
+
+                sender.sendPacket(ServerEntityTeleportPacket(
+                    sender.entityID,
+                    targetPlayer.location,
+                    sender.onGround
+                ))
             } else {
                 sender.sendMessage(Component.text("Player not found: $arg").color(NamedTextColor.RED))
                 return CommandCodes.ILLEGAL_ARGUMENT.id
@@ -75,6 +88,12 @@ class TeleportCommand {
                 "Teleported ${targetPlayer.username} to coordinates: ${coords.x}, ${coords.y}, ${coords.z}")
                 .color(NamedTextColor.GREEN)
             )
+
+            targetPlayer.sendPacket(ServerEntityTeleportPacket(
+                targetPlayer.entityID,
+                Location(coords.x, coords.y, coords.z, coords.yaw, coords.pitch),
+                targetPlayer.onGround
+            ))
         } else {
             val destinationPlayer = Bullet.players.find { it.username.equals(destArg, ignoreCase = true) }
             if(destinationPlayer != null) {
@@ -83,6 +102,12 @@ class TeleportCommand {
                     "Teleported ${targetPlayer.username} to ${destinationPlayer.username}")
                     .color(NamedTextColor.GREEN)
                 )
+
+                targetPlayer.sendPacket(ServerEntityTeleportPacket(
+                    targetPlayer.entityID,
+                    destinationPlayer.location,
+                    targetPlayer.onGround
+                ))
             } else {
                 sender.sendMessage(Component.text("Destination not found: $destArg").color(NamedTextColor.RED))
                 return CommandCodes.ILLEGAL_ARGUMENT.id
