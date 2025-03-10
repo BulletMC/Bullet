@@ -164,9 +164,14 @@ object Bullet : AutoCloseable {
     }
 
     /**
-     * Closes the connection to the server
+     * Shuts down the server
      */
     override fun close() {
+        for(player in players) {
+            player.disconnect("Server is shutting down")
+        }
+
         server?.close()
+        pool.shutdown()
     }
 }

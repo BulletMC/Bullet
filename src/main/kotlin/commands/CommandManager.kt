@@ -1,11 +1,7 @@
 package com.aznos.commands
 
 import com.aznos.Bullet
-import com.aznos.commands.commands.GameModeCommand
-import com.aznos.commands.commands.HelpCommand
-import com.aznos.commands.commands.SayCommand
-import com.aznos.commands.commands.SetTimeCommand
-import com.aznos.commands.commands.TeleportCommand
+import com.aznos.commands.commands.*
 import com.aznos.commands.data.DoubleProperties
 import com.aznos.commands.data.IntegerProperties
 import com.aznos.commands.data.StringTypes
@@ -38,6 +34,7 @@ object CommandManager {
         HelpCommand().register(dispatcher)
         GameModeCommand().register(dispatcher)
         TeleportCommand().register(dispatcher)
+        StopCommand().register(dispatcher)
     }
 
     /**
