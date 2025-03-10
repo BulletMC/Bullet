@@ -100,6 +100,8 @@ class ClientSession(
                         .getConstructor(ByteArray::class.java)
                         .newInstance(data)
                     handler.handle(packet)
+
+                    println("Packet ID: $id, Data: ${data.joinToString(", ") { it.toString() }}")
                 } else {
                     Bullet.logger.warn("Unhandled packet with raw packet ID: 0x$id (Hex: 0x${id.toString(16)})")
                 }

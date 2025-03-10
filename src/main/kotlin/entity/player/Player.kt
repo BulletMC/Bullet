@@ -25,7 +25,7 @@ class Player(
     lateinit var username: String
     lateinit var uuid: UUID
     lateinit var location: Location
-    var gameMode: GameMode = GameMode.SURVIVAL
+    var gameMode: GameMode = GameMode.CREATIVE
         private set
     var onGround by Delegates.notNull<Boolean>()
 

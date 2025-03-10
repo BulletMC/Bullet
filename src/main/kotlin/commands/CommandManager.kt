@@ -1,6 +1,7 @@
 package com.aznos.commands
 
 import com.aznos.Bullet
+import com.aznos.commands.commands.GameModeCommand
 import com.aznos.commands.commands.HelpCommand
 import com.aznos.commands.commands.SayCommand
 import com.aznos.commands.commands.SetTimeCommand
@@ -34,6 +35,7 @@ object CommandManager {
         SayCommand().register(dispatcher)
         SetTimeCommand().register(dispatcher)
         HelpCommand().register(dispatcher)
+        GameModeCommand().register(dispatcher)
     }
 
     /**
