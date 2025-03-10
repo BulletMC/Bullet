@@ -1,9 +1,11 @@
 package com.aznos.packets.play.out
 
+import com.aznos.commands.data.DoubleProperties
 import com.aznos.datatypes.StringType.writeString
 import com.aznos.datatypes.VarInt.writeVarInt
 import com.aznos.packets.Packet
 import com.aznos.commands.data.GraphCommandNode
+import com.aznos.commands.data.IntegerProperties
 import java.io.IOException
 
 /**
@@ -40,10 +42,40 @@ class ServerDeclareCommandsPacket(
                 wrapper.writeString(node.name)
             }
 
-            if(node.parser != null) {
+            if (node.parser != null) {
                 wrapper.writeString(node.parser)
-                if(node.properties is Int) {
-                    wrapper.writeVarInt(node.properties)
+                when (val props = node.properties) {
+                    is Int -> {
+                        // For brigadier:string, the property is a simple VarInt (0, 1, or 2)
+                        wrapper.writeVarInt(props)
+                    }
+                    is IntegerProperties -> {
+                        // Write the flags byte
+                        wrapper.writeByte(props.flags.toInt())
+                        // Write minimum if the flag 0x01 is set
+                        if (props.flags.toInt() and 0x01 != 0) {
+                            wrapper.writeVarInt(props.min!!)
+                        }
+                        // Write maximum if the flag 0x02 is set
+                        if (props.flags.toInt() and 0x02 != 0) {
+                            wrapper.writeVarInt(props.max!!)
+                        }
+                    }
+                    is DoubleProperties -> {
+                        // Write the flags byte
+                        wrapper.writeByte(props.flags.toInt())
+                        // Write minimum if the flag 0x01 is set
+                        if (props.flags.toInt() and 0x01 != 0) {
+                            wrapper.writeDouble(props.min!!)
+                        }
+                        // Write maximum if the flag 0x02 is set
+                        if (props.flags.toInt() and 0x02 != 0) {
+                            wrapper.writeDouble(props.max!!)
+                        }
+                    }
+                    else -> {
+                        // Handle other property types or do nothing if there are no properties
+                    }
                 }
             }
 

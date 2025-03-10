@@ -35,6 +35,7 @@ import kotlinx.serialization.json.Json
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
+import net.kyori.adventure.text.minimessage.MiniMessage
 import packets.handshake.HandshakePacket
 import packets.status.out.ServerStatusResponsePacket
 import java.util.UUID
@@ -177,15 +178,15 @@ class PacketHandler(
             if(result != CommandCodes.SUCCESS.id) {
                 when(result) {
                     CommandCodes.UNKNOWN.id ->
-                        client.sendMessage(Component.text("Unknown command")
+                        commandSource.sendMessage(Component.text("Unknown command")
                             .color(NamedTextColor.RED))
 
                     CommandCodes.ILLEGAL_ARGUMENT.id ->
-                        client.sendMessage(Component.text("Invalid command syntax, try typing /help")
+                        commandSource.sendMessage(Component.text("Invalid command syntax, try typing /help")
                             .color(NamedTextColor.RED))
 
                     CommandCodes.INVALID_PERMISSIONS.id ->
-                        client.sendMessage(Component.text("You don't have permission to use this command")
+                        commandSource.sendMessage(Component.text("You don't have permission to use this command")
                             .color(NamedTextColor.RED))
                 }
             }
@@ -203,10 +204,10 @@ class PacketHandler(
             .append(Component.text().content("<").color(NamedTextColor.GRAY))
             .append(Component.text().content(client.player.username).color(TextColor.color(0x55FFFF)))
             .append(Component.text().content("> ").color(NamedTextColor.GRAY))
-            .append(Component.text().content(formattedMessage).color(TextColor.color(0xFFFFFF)))
+            .append(MiniMessage.miniMessage().deserialize(formattedMessage))
             .build()
 
-        client.sendMessage(textComponent)
+        Bullet.broadcast(textComponent)
     }
 
     /**
@@ -360,7 +361,6 @@ class PacketHandler(
         player.username = username
         player.uuid = uuid
         player.location = Location(8.5, 2.0, 8.5, 0f, 0f)
-        player.gameMode = GameMode.CREATIVE
         player.onGround = false
 
         client.player = player

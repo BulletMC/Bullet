@@ -133,15 +133,6 @@ class ClientSession(
     }
 
     /**
-     * Sends a chat message to the client
-     *
-     * @param message The message to be sent to the client
-     */
-    fun sendMessage(message: TextComponent) {
-        sendPacket(ServerChatMessagePacket(message, ChatPosition.CHAT, null))
-    }
-
-    /**
      * Disconnects the client that is in the play state with the server play disconnect packet
      *
      * @param message The message to be sent to the client
