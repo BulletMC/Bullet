@@ -1,6 +1,5 @@
 package com.aznos.packets
 
-import com.aznos.packets.play.out.ServerChunkPacket
 import com.aznos.Bullet
 import com.aznos.ClientSession
 import com.aznos.GameState
@@ -14,19 +13,16 @@ import com.aznos.packets.login.`in`.ClientLoginStartPacket
 import com.aznos.packets.login.out.ServerLoginSuccessPacket
 import com.aznos.packets.play.`in`.ClientChatMessagePacket
 import com.aznos.packets.play.`in`.ClientKeepAlivePacket
-import com.aznos.packets.play.out.ServerJoinGamePacket
-import com.aznos.packets.play.out.ServerPlayerPositionAndLookPacket
 import com.aznos.packets.status.`in`.ClientStatusPingPacket
 import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
-import com.aznos.entity.player.data.GameMode
 import com.aznos.entity.player.data.Location
 import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
 import com.aznos.packets.play.`in`.movement.ClientPlayerPositionAndRotation
 import com.aznos.packets.play.`in`.movement.ClientPlayerPositionPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerRotation
-import com.aznos.packets.play.out.ServerDeclareCommandsPacket
-import com.aznos.packets.play.out.ServerSpawnPlayerPacket
+import com.aznos.packets.play.out.*
+import com.aznos.packets.play.out.movement.ServerEntityHeadLook
 import com.aznos.packets.play.out.movement.ServerEntityMovementPacket
 import com.aznos.packets.play.out.movement.ServerEntityPositionAndRotationPacket
 import com.aznos.packets.play.out.movement.ServerEntityPositionPacket
@@ -82,6 +78,13 @@ class PacketHandler(
                     player.location.pitch,
                     player.onGround
                 ))
+
+                otherPlayer.clientSession.sendPacket(
+                    ServerEntityHeadLook(
+                    player.entityID,
+                    player.location.yaw
+                )
+                )
             }
         }
     }
@@ -118,6 +121,13 @@ class PacketHandler(
                         player.location.pitch,
                         player.onGround
                     )
+                )
+
+                otherPlayer.clientSession.sendPacket(
+                    ServerEntityHeadLook(
+                    player.entityID,
+                    player.location.yaw
+                )
                 )
             }
         }
