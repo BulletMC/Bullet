@@ -38,7 +38,7 @@ class TeleportCommand {
     }
 
     private fun executeTeleport(sender: Player, arg: String): Int {
-        val coords = parseCoordinates(arg)
+        val coords = parseCoordinates(arg, sender.location)
         if(coords != null) {
             sender.location = coords
             sender.sendMessage(Component.text(
@@ -81,7 +81,7 @@ class TeleportCommand {
             return CommandCodes.ILLEGAL_ARGUMENT.id
         }
 
-        val coords = parseCoordinates(destArg)
+        val coords = parseCoordinates(destArg, targetPlayer.location)
         if(coords != null) {
             targetPlayer.location = coords
             sender.sendMessage(Component.text(
@@ -123,15 +123,15 @@ class TeleportCommand {
      * @param input The input string containing coordinates
      * @return A Location object or null if the input is invalid
      */
-    private fun parseCoordinates(input: String): Location? {
+    private fun parseCoordinates(input: String, currentLocation: Location): Location? {
         val parts = input.trim().split("\\s+".toRegex())
         return try {
             if (parts.size >= 3) {
                 val x = parts[0].toDouble()
                 val y = parts[1].toDouble()
                 val z = parts[2].toDouble()
-                val yaw = if (parts.size >= 4) parts[3].toFloat() else 0f
-                val pitch = if (parts.size >= 5) parts[4].toFloat() else 0f
+                val yaw = if (parts.size >= 4) parts[3].toFloat() else currentLocation.yaw
+                val pitch = if (parts.size >= 5) parts[4].toFloat() else currentLocation.pitch
                 Location(x, y, z, yaw, pitch)
             } else null
         } catch (e: NumberFormatException) {
