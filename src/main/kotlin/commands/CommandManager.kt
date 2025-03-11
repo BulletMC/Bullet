@@ -64,18 +64,18 @@ object CommandManager {
         }
 
         val graphNodes = ordering.map { node ->
-            val typeBits = when(node) {
-                is RootCommandNode<*> -> 0
-                is LiteralCommandNode<*> -> 1
-                is ArgumentCommandNode<*, *> -> 2
-                else -> 0
+            val nodeType = when(node) {
+                is RootCommandNode<*> -> GraphCommandNode.FlagTypes.NodeType.ROOT
+                is LiteralCommandNode<*> -> GraphCommandNode.FlagTypes.NodeType.LITERAL
+                is ArgumentCommandNode<*, *> -> GraphCommandNode.FlagTypes.NodeType.ARGUMENT
+                else -> GraphCommandNode.FlagTypes.NodeType.NONE
             }
+            val flagsList = mutableSetOf<GraphCommandNode.FlagEntry>()
+            flagsList += GraphCommandNode.FlagTypes.NODE_TYPE.build(nodeType)
 
-            var flagsInt = typeBits
-            if(node.command != null) flagsInt = flagsInt or 0x04
-            if(node.redirect != null) flagsInt = flagsInt or 0x08
+            if(node.command != null) flagsList += GraphCommandNode.FlagTypes.EXECUTABLE.build()
+            if(node.redirect != null) flagsList += GraphCommandNode.FlagTypes.REDIRECT.build()
 
-            val flags: Byte = flagsInt.toByte()
             val childrenIndices: List<Int> = node.children.mapNotNull { child -> indexMap[child] }
             val redirectIndex = node.redirect?.let { indexMap[it] }
 
@@ -92,7 +92,7 @@ object CommandManager {
             }
 
             GraphCommandNode(
-                flags = flags,
+                flags = GraphCommandNode.Flags(flagsList),
                 children = childrenIndices,
                 redirect = redirectIndex,
                 name = name,

@@ -29,14 +29,16 @@ class ServerDeclareCommandsPacket(
         return writeData {
             writeVarInt(nodes.size)
             for(node in nodes) {
-                writeByte(node.flags.toInt())
+                val nodeFlagsInt = node.flags.buildFlagsByte().toInt()
+
+                writeByte(nodeFlagsInt)
                 writeVarInt(node.children.size)
 
                 for(child in node.children) {
                     writeVarInt(child)
                 }
 
-                if(node.flags.toInt() and 0x08 != 0) {
+                if(node.flags.flags.any { it.type is GraphCommandNode.FlagTypes.RedirectFlag }) {
                     if(node.redirect == null) {
                         throw IOException("Redirect flag set but no redirect node index provided")
                     }
@@ -54,7 +56,7 @@ class ServerDeclareCommandsPacket(
                     }
                 }
 
-                if(node.flags.toInt() and 0x10 != 0) {
+                if(node.flags.flags.any { it.type is GraphCommandNode.FlagTypes.SuggestionsTypeFlag }) {
                     if(node.suggestionsType == null) {
                         throw IOException("Suggestions flag set but no suggestions type provided")
                     }
