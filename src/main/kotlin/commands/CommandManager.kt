@@ -35,6 +35,7 @@ object CommandManager {
         GameModeCommand().register(dispatcher)
         TeleportCommand().register(dispatcher)
         StopCommand().register(dispatcher)
+        PerformanceCommand().register(dispatcher)
     }
 
     /**
