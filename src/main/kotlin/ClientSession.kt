@@ -94,6 +94,8 @@ class ClientSession(
                 val data = ByteArray(dataLength)
                 input.readFully(data)
 
+                Bullet.logger.info("\nHandled packet with raw packet ID: 0x$id (Hex: 0x${id.toString(16)})")
+
                 val packetClass = PacketRegistry.getPacket(state, id)
                 if (packetClass != null) {
                     val packet: Packet = packetClass

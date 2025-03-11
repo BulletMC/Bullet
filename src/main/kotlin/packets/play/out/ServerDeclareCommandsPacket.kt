@@ -42,39 +42,31 @@ class ServerDeclareCommandsPacket(
                 wrapper.writeString(node.name)
             }
 
-            if (node.parser != null) {
+            if(node.parser != null) {
                 wrapper.writeString(node.parser)
-                when (val props = node.properties) {
+                when(val props = node.properties) {
                     is Int -> {
-                        // For brigadier:string, the property is a simple VarInt (0, 1, or 2)
                         wrapper.writeVarInt(props)
                     }
                     is IntegerProperties -> {
-                        // Write the flags byte
                         wrapper.writeByte(props.flags.toInt())
-                        // Write minimum if the flag 0x01 is set
-                        if (props.flags.toInt() and 0x01 != 0) {
+                        if(props.flags.toInt() and 0x01 != 0) {
                             wrapper.writeVarInt(props.min!!)
                         }
-                        // Write maximum if the flag 0x02 is set
-                        if (props.flags.toInt() and 0x02 != 0) {
+
+                        if(props.flags.toInt() and 0x02 != 0) {
                             wrapper.writeVarInt(props.max!!)
                         }
                     }
                     is DoubleProperties -> {
-                        // Write the flags byte
                         wrapper.writeByte(props.flags.toInt())
-                        // Write minimum if the flag 0x01 is set
-                        if (props.flags.toInt() and 0x01 != 0) {
+                        if(props.flags.toInt() and 0x01 != 0) {
                             wrapper.writeDouble(props.min!!)
                         }
-                        // Write maximum if the flag 0x02 is set
-                        if (props.flags.toInt() and 0x02 != 0) {
+
+                        if(props.flags.toInt() and 0x02 != 0) {
                             wrapper.writeDouble(props.max!!)
                         }
-                    }
-                    else -> {
-                        // Handle other property types or do nothing if there are no properties
                     }
                 }
             }

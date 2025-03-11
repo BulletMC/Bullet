@@ -2,6 +2,7 @@ package com.aznos.commands.commands
 
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
+import com.aznos.commands.commands.suggestions.GameModeSuggestions
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.GameMode
 import com.mojang.brigadier.CommandDispatcher
@@ -17,6 +18,7 @@ class GameModeCommand {
             LiteralArgumentBuilder.literal<Player>("gamemode")
                 .then(
                     RequiredArgumentBuilder.argument<Player, String>("mode", StringArgumentType.word())
+                        .suggests(GameModeSuggestions())
                         .executes { context ->
                             val input = StringArgumentType.getString(context, "mode")
                             val mode = parseGameMode(input)

@@ -51,7 +51,21 @@ class PacketHandler(
      */
     @PacketReceiver
     fun onTabComplete(packet: ClientTabCompletePacket) {
+        Bullet.logger.info("Tab complete request: ${packet.text}")
 
+        val input = packet.text
+        val transactionID = packet.transactionID
+        val cursorPos = input.length
+
+        val source = client.player
+        val parseResult = CommandManager.dispatcher.parse(input, source)
+        val suggestions = CommandManager.dispatcher.getCompletionSuggestions(parseResult)
+
+        suggestions.thenAccept { suggestionList ->
+            val matches = suggestionList.list.map { it.text }
+            val tabCompletePacket = ServerTabCompletePacket(transactionID, cursorPos, matches)
+            client.sendPacket(tabCompletePacket)
+        }
     }
 
     /**
@@ -304,6 +318,7 @@ class PacketHandler(
         sendSpawnPlayerPackets(player)
 
         val (nodes, rootIndex) = buildCommandGraphFromDispatcher(CommandManager.dispatcher)
+        Bullet.logger.info("Sending command graph with ${nodes.size} nodes")
         client.sendPacket(ServerDeclareCommandsPacket(nodes, rootIndex))
     }
 
@@ -355,6 +370,8 @@ class PacketHandler(
      * @param packet The packet to handle
      */
     fun handle(packet: Packet) {
+        Bullet.logger.info("Received packet: ${packet.javaClass.simpleName}")
+
         for(method in javaClass.methods) {
             if(method.isAnnotationPresent(PacketReceiver::class.java)) {
                 val params: Array<Class<*>> = method.parameterTypes

@@ -85,6 +85,14 @@ object CommandManager {
                 null to null
             }
 
+            val suggestionType = if(node is ArgumentCommandNode<*, *> && node.customSuggestions != null) {
+                "minecraft:ask_server"
+            } else null
+
+            if(suggestionType != null) {
+                flagsInt = flagsInt or 0x10
+            }
+
             GraphCommandNode(
                 flags = flags,
                 children = childrenIndices,
@@ -92,7 +100,7 @@ object CommandManager {
                 name = name,
                 parser = parser,
                 properties = propertiesValue,
-                suggestionsType = null
+                suggestionsType = suggestionType
             )
         }
 
