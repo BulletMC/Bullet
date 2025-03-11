@@ -38,6 +38,7 @@ class PerformanceCommand {
         val threadCount = threadMXBean.threadCount
         val peakThreadCount = threadMXBean.peakThreadCount
         val playerCount = Bullet.players.size
+        val uptime = formatUptime(Bullet.worldAge)
 
         return Component.text()
             .append(Component.text("⚡ Server Performance ⚡", NamedTextColor.GOLD, TextDecoration.BOLD))
@@ -56,10 +57,28 @@ class PerformanceCommand {
                 .append(Component.text("$threadCount", NamedTextColor.GREEN))
                 .append(Component.text(" (Peak: $peakThreadCount)", NamedTextColor.GRAY))
             )
+            .append(Component.text("\n→ Server Uptime: ", NamedTextColor.YELLOW)
+                .append(Component.text(uptime, NamedTextColor.GREEN))
+            )
             .append(Component.text("\n→ Online Players: ", NamedTextColor.YELLOW)
                 .append(Component.text("$playerCount", NamedTextColor.GREEN))
             )
             .append(Component.text("\n━━━━━━━━━━━━━━━━━━━", NamedTextColor.DARK_GRAY, TextDecoration.STRIKETHROUGH))
-            .build() as TextComponent
+            .build()
+    }
+
+    private fun formatUptime(ticks: Long): String {
+        val totalSeconds = ticks / 20
+        val days = totalSeconds / 86400
+        val hours = totalSeconds / 3600
+        val minutes = (totalSeconds % 3600) / 60
+        val seconds = totalSeconds % 60
+
+        return buildString {
+            if (days > 0) append("$days days ")
+            if (hours > 0) append("$hours hours ")
+            if (minutes > 0) append("$minutes minutes ")
+            append("$seconds seconds")
+        }.trim()
     }
 }
