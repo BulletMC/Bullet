@@ -1,6 +1,7 @@
 package com.aznos.packets.play.out
 
 import com.aznos.Bullet
+import com.aznos.datatypes.StringType.writeString
 import com.aznos.datatypes.VarInt.writeVarInt
 import com.aznos.packets.Packet
 
@@ -14,16 +15,18 @@ import com.aznos.packets.Packet
 class ServerTabCompletePacket(
     transactionID: Int,
     start: Int,
+    length: Int,
     matches: List<String>
-) : Packet(0x0F) {
+) : Packet(0x11) {
     init {
         wrapper.writeVarInt(transactionID)
         wrapper.writeVarInt(start)
+        wrapper.writeVarInt(length)
 
         wrapper.writeVarInt(matches.size)
         for(match in matches) {
             Bullet.logger.info("Match: $match")
-            wrapper.writeUTF(match)
+            wrapper.writeString(match)
             wrapper.writeBoolean(false)
         }
     }

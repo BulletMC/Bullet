@@ -28,6 +28,7 @@ import com.aznos.packets.play.out.movement.ServerEntityMovementPacket
 import com.aznos.packets.play.out.movement.ServerEntityPositionAndRotationPacket
 import com.aznos.packets.play.out.movement.ServerEntityPositionPacket
 import com.aznos.packets.play.out.movement.ServerEntityRotationPacket
+import jdk.internal.org.jline.utils.Colors.s
 import kotlinx.serialization.json.Json
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -63,7 +64,7 @@ class PacketHandler(
 
         suggestions.thenAccept { suggestionList ->
             val matches = suggestionList.list.map { it.text }
-            val tabCompletePacket = ServerTabCompletePacket(transactionID, cursorPos, matches)
+            val tabCompletePacket = ServerTabCompletePacket(transactionID, cursorPos, input.length, matches)
             client.sendPacket(tabCompletePacket)
         }
     }
