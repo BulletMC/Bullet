@@ -34,11 +34,11 @@ import com.aznos.packets.play.out.movement.ServerEntityPositionAndRotationPacket
 import com.aznos.packets.play.out.movement.ServerEntityPositionPacket
 import com.aznos.packets.play.out.movement.ServerEntityRotationPacket
 import com.aznos.world.data.BlockStatus
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
-import net.kyori.adventure.text.BlockNBTComponent.Pos
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
@@ -72,9 +72,9 @@ class PacketHandler(
                 }
             }
         } else if(client.player.gameMode == GameMode.SURVIVAL) {
-            when (packet.status) {
+            when(packet.status) {
                 BlockStatus.STARTED_DIGGING.id -> {
-                    val breakTime = 2250
+                    val breakTime = getStoneBreakTime()
                     startBlockBreak(packet.location, breakTime.toInt())
                 }
 
@@ -490,6 +490,7 @@ class PacketHandler(
         }
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     private fun startBlockBreak(location: Position, breakTime: Int) {
         if(breakingBlocks.containsKey(location)) return
 
@@ -497,15 +498,19 @@ class PacketHandler(
             val stepTime = breakTime.toLong() / 9
 
             for(stage in 0..9) {
-                for(player in Bullet.players) {
-                    player.sendPacket(ServerBlockBreakAnimationPacket(player.entityID, location, stage))
+                for(otherPlayer in Bullet.players) {
+                    if(otherPlayer != client.player) {
+                        otherPlayer.sendPacket(ServerBlockBreakAnimationPacket(client.player.entityID, location, stage))
+                    }
                 }
 
                 delay(stepTime)
             }
 
-            for(player in Bullet.players) {
-                player.sendPacket(ServerBlockChangePacket(location, 0))
+            for(otherPlayer in Bullet.players) {
+                if(otherPlayer != client.player) {
+                    otherPlayer.sendPacket(ServerBlockChangePacket(location, 0))
+                }
             }
 
             breakingBlocks.remove(location)
@@ -518,8 +523,14 @@ class PacketHandler(
         breakingBlocks[location]?.cancel()
         breakingBlocks.remove(location)
 
-        for(player in Bullet.players) {
-            player.sendPacket(ServerBlockBreakAnimationPacket(player.entityID, location, -1))
+        for(otherPlayer in Bullet.players) {
+            if(otherPlayer != client.player) {
+                otherPlayer.sendPacket(ServerBlockBreakAnimationPacket(otherPlayer.entityID, location, -1))
+            }
         }
+    }
+
+    private fun getStoneBreakTime(): Long {
+        return ((1.5 * 30) * 140).toLong()
     }
 }
