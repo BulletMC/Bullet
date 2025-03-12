@@ -31,11 +31,10 @@ class ClientBlockPlacementPacket(data: ByteArray) : Packet(data) {
         hand = input.readVarInt()
 
         val blockPosition = input.readLong()
-        location = Position(
-            (blockPosition shr 38).toInt(),
-            (blockPosition and 0xFFF).toInt(),
-            ((blockPosition shl 26) shr 38).toInt()
-        )
+        val x = (blockPosition shr 38).toInt()
+        val y = (blockPosition and 0xFFF).toInt()
+        val z = (blockPosition shl 26 shr 38).toInt()
+        location = Position(x, y, z)
 
         face = input.readVarInt()
         cursorPositionX = input.readFloat()

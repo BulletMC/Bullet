@@ -51,7 +51,11 @@ class PacketHandler(
      */
     @PacketReceiver
     fun onBlockPlacement(packet: ClientBlockPlacementPacket) {
-        Bullet.logger.info("Block placed at ${packet.location}")
+        Bullet.logger.info("Block placed at: ${packet.location.x}, ${packet.location.y}, ${packet.location.z}")
+
+        for(player in Bullet.players) {
+            player.clientSession.sendPacket(ServerBlockChangePacket(packet.location, 1))
+        }
     }
 
     /**
