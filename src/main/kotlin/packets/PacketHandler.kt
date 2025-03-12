@@ -54,10 +54,34 @@ class PacketHandler(
     @PacketReceiver
     fun onPlayerDig(packet: ClientDiggingPacket) {
         if(client.player.gameMode == GameMode.CREATIVE && packet.status == 0) {
-            //Break block
+            for(otherPlayer in Bullet.players) {
+                if(otherPlayer != client.player) {
+                    otherPlayer.sendPacket(ServerBlockChangePacket(
+                        Position(
+                            packet.location.x,
+                            packet.location.y,
+                            packet.location.z
+                        ),
+                        0
+                    ))
+                }
+            }
         } else if(client.player.gameMode == GameMode.SURVIVAL) {
             when(packet.status) {
-                //todo
+                2 -> {
+                    for(otherPlayer in Bullet.players) {
+                        if(otherPlayer != client.player) {
+                            otherPlayer.sendPacket(ServerBlockChangePacket(
+                                Position(
+                                    packet.location.x,
+                                    packet.location.y,
+                                    packet.location.z
+                                ),
+                                0
+                            ))
+                        }
+                    }
+                }
             }
         }
     }
