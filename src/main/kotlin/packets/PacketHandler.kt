@@ -17,6 +17,7 @@ import com.aznos.packets.status.`in`.ClientStatusPingPacket
 import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
 import com.aznos.entity.player.data.Location
+import com.aznos.packets.play.`in`.ClientBlockPlacementPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
 import com.aznos.packets.play.`in`.movement.ClientPlayerPositionAndRotation
 import com.aznos.packets.play.`in`.movement.ClientPlayerPositionPacket
@@ -45,6 +46,14 @@ import java.util.UUID
 class PacketHandler(
     private val client: ClientSession
 ) {
+    /**
+     * Called when a client places a block
+     */
+    @PacketReceiver
+    fun onBlockPlacement(packet: ClientBlockPlacementPacket) {
+        Bullet.logger.info("Block placed at ${packet.location}")
+    }
+
     /**
      * Every 20 ticks the client will send an empty movement packet telling the server if the
      * client is on the ground or not
