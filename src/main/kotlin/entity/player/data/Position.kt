@@ -5,6 +5,6 @@ package com.aznos.entity.player.data
  */
 data class Position(
     val x: Int,
-    val y: Int,
+    var y: Int,
     val z: Int,
 )

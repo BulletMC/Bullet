@@ -2,6 +2,7 @@ package com.aznos.packets
 
 import com.aznos.GameState
 import com.aznos.packets.login.`in`.ClientLoginStartPacket
+import com.aznos.packets.play.`in`.ClientAnimationPacket
 import com.aznos.packets.play.`in`.ClientBlockPlacementPacket
 import com.aznos.packets.play.`in`.ClientChatMessagePacket
 import com.aznos.packets.play.`in`.ClientKeepAlivePacket
@@ -52,6 +53,7 @@ object PacketRegistry {
             this[0x13] = ClientPlayerPositionAndRotation::class.java
             this[0x14] = ClientPlayerRotation::class.java
             this[0x15] = ClientPlayerMovement::class.java
+            this[0x2C] = ClientAnimationPacket::class.java
             this[0x2E] = ClientBlockPlacementPacket::class.java
         }
 

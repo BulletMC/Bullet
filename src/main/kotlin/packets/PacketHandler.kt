@@ -17,6 +17,8 @@ import com.aznos.packets.status.`in`.ClientStatusPingPacket
 import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
 import com.aznos.entity.player.data.Location
+import com.aznos.entity.player.data.Position
+import com.aznos.packets.play.`in`.ClientAnimationPacket
 import com.aznos.packets.play.`in`.ClientBlockPlacementPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
 import com.aznos.packets.play.`in`.movement.ClientPlayerPositionAndRotation
@@ -46,15 +48,25 @@ import java.util.UUID
 class PacketHandler(
     private val client: ClientSession
 ) {
+    @PacketReceiver
+    fun onArmSwing(packet: ClientAnimationPacket) {
+        for(otherPlayer in Bullet.players) {
+            if(otherPlayer != client.player) {
+                otherPlayer.sendPacket(ServerAnimationPacket(client.player.entityID, 0))
+            }
+        }
+    }
+
     /**
      * Called when a client places a block
      */
     @PacketReceiver
     fun onBlockPlacement(packet: ClientBlockPlacementPacket) {
-        Bullet.logger.info("Block placed at: ${packet.location.x}, ${packet.location.y}, ${packet.location.z}")
-
         for(player in Bullet.players) {
-            player.clientSession.sendPacket(ServerBlockChangePacket(packet.location, 1))
+            player.sendPacket(ServerBlockChangePacket(
+                packet.location,
+                1
+            ))
         }
     }
 
