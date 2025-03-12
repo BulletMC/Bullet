@@ -1,12 +1,14 @@
 package com.aznos.packets
 
 import com.aznos.Bullet
+import com.aznos.Bullet.breakingBlocks
 import com.aznos.ClientSession
 import com.aznos.GameState
 import com.aznos.commands.CommandCodes
 import com.aznos.commands.CommandManager
 import com.aznos.commands.CommandManager.buildCommandGraphFromDispatcher
 import com.aznos.entity.player.Player
+import com.aznos.entity.player.data.GameMode
 import com.aznos.events.*
 import com.aznos.packets.data.ServerStatusResponse
 import com.aznos.packets.login.`in`.ClientLoginStartPacket
@@ -17,6 +19,10 @@ import com.aznos.packets.status.`in`.ClientStatusPingPacket
 import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
 import com.aznos.entity.player.data.Location
+import com.aznos.entity.player.data.Position
+import com.aznos.packets.play.`in`.ClientAnimationPacket
+import com.aznos.packets.play.`in`.ClientBlockPlacementPacket
+import com.aznos.packets.play.`in`.ClientDiggingPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
 import com.aznos.packets.play.`in`.movement.ClientPlayerPositionAndRotation
 import com.aznos.packets.play.`in`.movement.ClientPlayerPositionPacket
@@ -27,6 +33,11 @@ import com.aznos.packets.play.out.movement.ServerEntityMovementPacket
 import com.aznos.packets.play.out.movement.ServerEntityPositionAndRotationPacket
 import com.aznos.packets.play.out.movement.ServerEntityPositionPacket
 import com.aznos.packets.play.out.movement.ServerEntityRotationPacket
+import com.aznos.world.data.BlockStatus
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -45,6 +56,74 @@ import java.util.UUID
 class PacketHandler(
     private val client: ClientSession
 ) {
+    @PacketReceiver
+    fun onPlayerDig(packet: ClientDiggingPacket) {
+        if(client.player.gameMode == GameMode.CREATIVE && packet.status == BlockStatus.STARTED_DIGGING.id) {
+            for(otherPlayer in Bullet.players) {
+                if(otherPlayer != client.player) {
+                    otherPlayer.sendPacket(ServerBlockChangePacket(
+                        Position(
+                            packet.location.x,
+                            packet.location.y,
+                            packet.location.z
+                        ),
+                        0
+                    ))
+                }
+            }
+        } else if(client.player.gameMode == GameMode.SURVIVAL) {
+            when(packet.status) {
+                BlockStatus.STARTED_DIGGING.id -> {
+                    val breakTime = getStoneBreakTime()
+                    startBlockBreak(packet.location, breakTime.toInt())
+                }
+
+                BlockStatus.CANCELLED_DIGGING.id, BlockStatus.FINISHED_DIGGING.id -> {
+                    stopBlockBreak(packet.location)
+                }
+            }
+        }
+    }
+
+    @PacketReceiver
+    fun onArmSwing(packet: ClientAnimationPacket) {
+        for(otherPlayer in Bullet.players) {
+            if(otherPlayer != client.player) {
+                otherPlayer.sendPacket(ServerAnimationPacket(client.player.entityID, 0))
+            }
+        }
+    }
+
+    /**
+     * Called when a client places a block
+     */
+    @PacketReceiver
+    fun onBlockPlacement(packet: ClientBlockPlacementPacket) {
+        val blockLocation = packet.location
+
+        when(packet.face) {
+            0 -> blockLocation.y -= 1
+            1 -> blockLocation.y += 1
+            2 -> blockLocation.z -= 1
+            3 -> blockLocation.z += 1
+            4 -> blockLocation.x -= 1
+            5 -> blockLocation.x += 1
+        }
+
+        for(otherPlayer in Bullet.players) {
+            if(otherPlayer != client.player) {
+                otherPlayer.sendPacket(ServerBlockChangePacket(
+                    Position(
+                        blockLocation.x,
+                        blockLocation.y,
+                        blockLocation.z
+                    ),
+                    2 //TODO: Check what block the player is holding, and update this
+                ))
+            }
+        }
+    }
+
     /**
      * Every 20 ticks the client will send an empty movement packet telling the server if the
      * client is on the ground or not
@@ -409,5 +488,49 @@ class PacketHandler(
                 )
             }
         }
+    }
+
+    @OptIn(DelicateCoroutinesApi::class)
+    private fun startBlockBreak(location: Position, breakTime: Int) {
+        if(breakingBlocks.containsKey(location)) return
+
+        val job = GlobalScope.launch {
+            val stepTime = breakTime.toLong() / 9
+
+            for(stage in 0..9) {
+                for(otherPlayer in Bullet.players) {
+                    if(otherPlayer != client.player) {
+                        otherPlayer.sendPacket(ServerBlockBreakAnimationPacket(client.player.entityID, location, stage))
+                    }
+                }
+
+                delay(stepTime)
+            }
+
+            for(otherPlayer in Bullet.players) {
+                if(otherPlayer != client.player) {
+                    otherPlayer.sendPacket(ServerBlockChangePacket(location, 0))
+                }
+            }
+
+            breakingBlocks.remove(location)
+        }
+
+        breakingBlocks[location] = job
+    }
+
+    private fun stopBlockBreak(location: Position) {
+        breakingBlocks[location]?.cancel()
+        breakingBlocks.remove(location)
+
+        for(otherPlayer in Bullet.players) {
+            if(otherPlayer != client.player) {
+                otherPlayer.sendPacket(ServerBlockBreakAnimationPacket(otherPlayer.entityID, location, -1))
+            }
+        }
+    }
+
+    private fun getStoneBreakTime(): Long {
+        return ((1.5 * 30) * 140).toLong()
     }
 }

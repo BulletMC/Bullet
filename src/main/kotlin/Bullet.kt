@@ -2,6 +2,7 @@ package com.aznos
 
 import com.aznos.commands.CommandManager
 import com.aznos.entity.player.Player
+import com.aznos.entity.player.data.Position
 import com.aznos.world.data.TimeOfDay
 import com.google.gson.JsonParser
 import dev.dewy.nbt.api.registry.TagTypeRegistry
@@ -38,6 +39,8 @@ object Bullet : AutoCloseable {
     private val pool = Executors.newCachedThreadPool()
     private var server: ServerSocket? = null
     val players = mutableListOf<Player>()
+
+    val breakingBlocks = mutableMapOf<Position, Job>()
 
     var worldAge = 0L
     var timeOfDay: Long = TimeOfDay.SUNRISE.time
