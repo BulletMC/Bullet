@@ -31,6 +31,7 @@ import com.aznos.packets.play.out.movement.ServerEntityPositionAndRotationPacket
 import com.aznos.packets.play.out.movement.ServerEntityPositionPacket
 import com.aznos.packets.play.out.movement.ServerEntityRotationPacket
 import kotlinx.serialization.json.Json
+import net.kyori.adventure.text.BlockNBTComponent.Pos
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
@@ -62,11 +63,28 @@ class PacketHandler(
      */
     @PacketReceiver
     fun onBlockPlacement(packet: ClientBlockPlacementPacket) {
-        for(player in Bullet.players) {
-            player.sendPacket(ServerBlockChangePacket(
-                packet.location,
-                1
-            ))
+        val blockLocation = packet.location
+
+        when(packet.face) {
+            0 -> blockLocation.y -= 1
+            1 -> blockLocation.y += 1
+            2 -> blockLocation.z -= 1
+            3 -> blockLocation.z += 1
+            4 -> blockLocation.x -= 1
+            5 -> blockLocation.x += 1
+        }
+
+        for(otherPlayer in Bullet.players) {
+            if(otherPlayer != client.player) {
+                otherPlayer.sendPacket(ServerBlockChangePacket(
+                    Position(
+                        blockLocation.x,
+                        blockLocation.y,
+                        blockLocation.z
+                    ),
+                    2
+                ))
+            }
         }
     }
 
