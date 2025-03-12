@@ -5,18 +5,9 @@ import com.aznos.entity.player.data.Position
 import com.aznos.packets.Packet
 
 /**
- * Sent to the server when a player starts/stops digging a block.
+ * Sent to the server when a player starts/stops digging a block
  *
- * Status can be one of seven values
- * 0: Started digging
- * 1: Cancelled digging
- * 2: Finished digging
- * 3: Drop item stack
- * 4: Drop item
- * 5: Shoot arrow/finish eating
- * 6: Swap item in hand
- *
- * @property status The action the player is taking (see above)
+ * @property status The action the player is taking
  * @property location The block position
  * @property face The face being hit
  */

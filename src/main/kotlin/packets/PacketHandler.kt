@@ -1,6 +1,7 @@
 package com.aznos.packets
 
 import com.aznos.Bullet
+import com.aznos.Bullet.breakingBlocks
 import com.aznos.ClientSession
 import com.aznos.GameState
 import com.aznos.commands.CommandCodes
@@ -32,6 +33,10 @@ import com.aznos.packets.play.out.movement.ServerEntityMovementPacket
 import com.aznos.packets.play.out.movement.ServerEntityPositionAndRotationPacket
 import com.aznos.packets.play.out.movement.ServerEntityPositionPacket
 import com.aznos.packets.play.out.movement.ServerEntityRotationPacket
+import com.aznos.world.data.BlockStatus
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import net.kyori.adventure.text.BlockNBTComponent.Pos
 import net.kyori.adventure.text.Component
@@ -53,7 +58,7 @@ class PacketHandler(
 ) {
     @PacketReceiver
     fun onPlayerDig(packet: ClientDiggingPacket) {
-        if(client.player.gameMode == GameMode.CREATIVE && packet.status == 0) {
+        if(client.player.gameMode == GameMode.CREATIVE && packet.status == BlockStatus.STARTED_DIGGING.id) {
             for(otherPlayer in Bullet.players) {
                 if(otherPlayer != client.player) {
                     otherPlayer.sendPacket(ServerBlockChangePacket(
@@ -67,20 +72,14 @@ class PacketHandler(
                 }
             }
         } else if(client.player.gameMode == GameMode.SURVIVAL) {
-            when(packet.status) {
-                2 -> {
-                    for(otherPlayer in Bullet.players) {
-                        if(otherPlayer != client.player) {
-                            otherPlayer.sendPacket(ServerBlockChangePacket(
-                                Position(
-                                    packet.location.x,
-                                    packet.location.y,
-                                    packet.location.z
-                                ),
-                                0
-                            ))
-                        }
-                    }
+            when (packet.status) {
+                BlockStatus.STARTED_DIGGING.id -> {
+                    val breakTime = 2250
+                    startBlockBreak(packet.location, breakTime.toInt())
+                }
+
+                BlockStatus.CANCELLED_DIGGING.id, BlockStatus.FINISHED_DIGGING.id -> {
+                    stopBlockBreak(packet.location)
                 }
             }
         }
@@ -488,6 +487,39 @@ class PacketHandler(
                     )
                 )
             }
+        }
+    }
+
+    private fun startBlockBreak(location: Position, breakTime: Int) {
+        if(breakingBlocks.containsKey(location)) return
+
+        val job = GlobalScope.launch {
+            val stepTime = breakTime.toLong() / 9
+
+            for(stage in 0..9) {
+                for(player in Bullet.players) {
+                    player.sendPacket(ServerBlockBreakAnimationPacket(player.entityID, location, stage))
+                }
+
+                delay(stepTime)
+            }
+
+            for(player in Bullet.players) {
+                player.sendPacket(ServerBlockChangePacket(location, 0))
+            }
+
+            breakingBlocks.remove(location)
+        }
+
+        breakingBlocks[location] = job
+    }
+
+    private fun stopBlockBreak(location: Position) {
+        breakingBlocks[location]?.cancel()
+        breakingBlocks.remove(location)
+
+        for(player in Bullet.players) {
+            player.sendPacket(ServerBlockBreakAnimationPacket(player.entityID, location, -1))
         }
     }
 }

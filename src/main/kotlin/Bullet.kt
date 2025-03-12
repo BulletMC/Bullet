@@ -40,6 +40,8 @@ object Bullet : AutoCloseable {
     private var server: ServerSocket? = null
     val players = mutableListOf<Player>()
 
+    val breakingBlocks = mutableMapOf<Position, Job>()
+
     var worldAge = 0L
     var timeOfDay: Long = TimeOfDay.SUNRISE.time
 
