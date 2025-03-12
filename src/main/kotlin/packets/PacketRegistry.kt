@@ -5,6 +5,7 @@ import com.aznos.packets.login.`in`.ClientLoginStartPacket
 import com.aznos.packets.play.`in`.ClientAnimationPacket
 import com.aznos.packets.play.`in`.ClientBlockPlacementPacket
 import com.aznos.packets.play.`in`.ClientChatMessagePacket
+import com.aznos.packets.play.`in`.ClientDiggingPacket
 import com.aznos.packets.play.`in`.ClientKeepAlivePacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
 import com.aznos.packets.play.`in`.movement.ClientPlayerPositionAndRotation
@@ -53,6 +54,7 @@ object PacketRegistry {
             this[0x13] = ClientPlayerPositionAndRotation::class.java
             this[0x14] = ClientPlayerRotation::class.java
             this[0x15] = ClientPlayerMovement::class.java
+            this[0x1B] = ClientDiggingPacket::class.java
             this[0x2C] = ClientAnimationPacket::class.java
             this[0x2E] = ClientBlockPlacementPacket::class.java
         }

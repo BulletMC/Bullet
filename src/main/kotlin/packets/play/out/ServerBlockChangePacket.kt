@@ -8,8 +8,8 @@ import com.aznos.packets.Packet
  * Packet sent by the server to update the client about a block change or when a block is placed
  */
 class ServerBlockChangePacket(
-    private val location: Position,
-    private val blockID: Int
+    location: Position,
+    blockID: Int
 ) : Packet(0x0B) {
     init {
         val blockPosition: Long = ((location.x and 0x3FFFFFF).toLong() shl 38) or

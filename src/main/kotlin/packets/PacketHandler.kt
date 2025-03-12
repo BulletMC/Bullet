@@ -7,6 +7,7 @@ import com.aznos.commands.CommandCodes
 import com.aznos.commands.CommandManager
 import com.aznos.commands.CommandManager.buildCommandGraphFromDispatcher
 import com.aznos.entity.player.Player
+import com.aznos.entity.player.data.GameMode
 import com.aznos.events.*
 import com.aznos.packets.data.ServerStatusResponse
 import com.aznos.packets.login.`in`.ClientLoginStartPacket
@@ -20,6 +21,7 @@ import com.aznos.entity.player.data.Location
 import com.aznos.entity.player.data.Position
 import com.aznos.packets.play.`in`.ClientAnimationPacket
 import com.aznos.packets.play.`in`.ClientBlockPlacementPacket
+import com.aznos.packets.play.`in`.ClientDiggingPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
 import com.aznos.packets.play.`in`.movement.ClientPlayerPositionAndRotation
 import com.aznos.packets.play.`in`.movement.ClientPlayerPositionPacket
@@ -49,6 +51,17 @@ import java.util.UUID
 class PacketHandler(
     private val client: ClientSession
 ) {
+    @PacketReceiver
+    fun onPlayerDig(packet: ClientDiggingPacket) {
+        if(client.player.gameMode == GameMode.CREATIVE && packet.status == 0) {
+            //Break block
+        } else if(client.player.gameMode == GameMode.SURVIVAL) {
+            when(packet.status) {
+                //todo
+            }
+        }
+    }
+
     @PacketReceiver
     fun onArmSwing(packet: ClientAnimationPacket) {
         for(otherPlayer in Bullet.players) {
@@ -82,7 +95,7 @@ class PacketHandler(
                         blockLocation.y,
                         blockLocation.z
                     ),
-                    2
+                    2 //TODO: Check what block the player is holding, and update this
                 ))
             }
         }
