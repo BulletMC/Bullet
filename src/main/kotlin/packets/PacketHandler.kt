@@ -2,6 +2,7 @@ package com.aznos.packets
 
 import com.aznos.Bullet
 import com.aznos.Bullet.breakingBlocks
+import com.aznos.Bullet.players
 import com.aznos.Bullet.sprinting
 import com.aznos.ClientSession
 import com.aznos.GameState
@@ -20,6 +21,7 @@ import com.aznos.packets.status.`in`.ClientStatusPingPacket
 import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
 import com.aznos.entity.player.data.Location
+import com.aznos.entity.player.data.MetadataEntry
 import com.aznos.entity.player.data.Position
 import com.aznos.packets.play.`in`.ClientAnimationPacket
 import com.aznos.packets.play.`in`.ClientBlockPlacementPacket
@@ -65,9 +67,20 @@ class PacketHandler(
     @PacketReceiver
     fun onPlayerAction(packet: ClientEntityActionPacket) {
         when(packet.actionID) {
+            0 -> { //Start sneaking
+                client.player.isSneaking = true
+                updateEntityMetadata(client.player, 6, 5)
+            }
+
+            1 -> { //Stop sneaking
+                client.player.isSneaking = false
+                updateEntityMetadata(client.player, 6, 0)
+            }
+
             3 -> { //Start sprinting
                 sprinting.add(client.player.entityID)
             }
+
             4 -> { //Stop sprinting
                 sprinting.remove(client.player.entityID)
             }
@@ -557,5 +570,18 @@ class PacketHandler(
 
     private fun getStoneBreakTime(): Long {
         return ((1.5 * 30) * 140).toLong()
+    }
+
+    private fun updateEntityMetadata(player: Player, index: Int, value: Int) {
+        val packet = ServerEntityMetadataPacket(
+            player.entityID,
+            listOf(MetadataEntry(index.toByte(), 18, value))
+        )
+
+        for(otherPlayer in Bullet.players) {
+            if(otherPlayer != player) {
+                otherPlayer.sendPacket(packet)
+            }
+        }
     }
 }
