@@ -2,11 +2,13 @@ package com.aznos.packets
 
 import com.aznos.Bullet
 import com.aznos.Bullet.breakingBlocks
+import com.aznos.Bullet.sprinting
 import com.aznos.ClientSession
 import com.aznos.GameState
 import com.aznos.commands.CommandCodes
 import com.aznos.commands.CommandManager
 import com.aznos.commands.CommandManager.buildCommandGraphFromDispatcher
+import com.aznos.datatypes.MetadataType
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.GameMode
 import com.aznos.events.*
@@ -23,6 +25,7 @@ import com.aznos.entity.player.data.Position
 import com.aznos.packets.play.`in`.ClientAnimationPacket
 import com.aznos.packets.play.`in`.ClientBlockPlacementPacket
 import com.aznos.packets.play.`in`.ClientDiggingPacket
+import com.aznos.packets.play.`in`.movement.ClientEntityActionPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
 import com.aznos.packets.play.`in`.movement.ClientPlayerPositionAndRotation
 import com.aznos.packets.play.`in`.movement.ClientPlayerPositionPacket
@@ -56,30 +59,80 @@ import java.util.UUID
 class PacketHandler(
     private val client: ClientSession
 ) {
+    /**
+     * Called when a client performs an action, such as jumping, sneaking, or sprinting
+     */
+    @PacketReceiver
+    fun onPlayerAction(packet: ClientEntityActionPacket) {
+        when(packet.actionID) {
+            0 -> { //Start sneaking
+                val event = PlayerSneakEvent(client.player, true)
+                EventManager.fire(event)
+                if(event.isCancelled) return
+
+                client.player.isSneaking = true
+                updateEntityMetadata(client.player, 6, 5)
+            }
+
+            1 -> { //Stop sneaking
+                val event = PlayerSneakEvent(client.player, false)
+                EventManager.fire(event)
+                if(event.isCancelled) return
+
+                client.player.isSneaking = false
+                updateEntityMetadata(client.player, 6, 0)
+            }
+
+            3 -> { //Start sprinting
+                val event = PlayerSprintEvent(client.player, true)
+                EventManager.fire(event)
+                if(event.isCancelled) return
+
+                sprinting.add(client.player.entityID)
+            }
+
+            4 -> { //Stop sprinting
+                val event = PlayerSprintEvent(client.player, false)
+                EventManager.fire(event)
+                if(event.isCancelled) return
+
+                sprinting.remove(client.player.entityID)
+            }
+        }
+    }
+
+    /**
+     * Called when a client starts digging a block
+     */
     @PacketReceiver
     fun onPlayerDig(packet: ClientDiggingPacket) {
-        if(client.player.gameMode == GameMode.CREATIVE && packet.status == BlockStatus.STARTED_DIGGING.id) {
+        val event = BlockBreakEvent(
+            client.player,
+            packet.status,
+            Position(packet.location.x, packet.location.y, packet.location.z),
+            packet.face
+        )
+        EventManager.fire(event)
+        if(event.isCancelled) return
+
+        if(client.player.gameMode == GameMode.CREATIVE && event.status == BlockStatus.STARTED_DIGGING.id) {
             for(otherPlayer in Bullet.players) {
                 if(otherPlayer != client.player) {
                     otherPlayer.sendPacket(ServerBlockChangePacket(
-                        Position(
-                            packet.location.x,
-                            packet.location.y,
-                            packet.location.z
-                        ),
+                        event.location,
                         0
                     ))
                 }
             }
         } else if(client.player.gameMode == GameMode.SURVIVAL) {
-            when(packet.status) {
+            when(event.status) {
                 BlockStatus.STARTED_DIGGING.id -> {
                     val breakTime = getStoneBreakTime()
-                    startBlockBreak(packet.location, breakTime.toInt())
+                    startBlockBreak(event.location, breakTime.toInt())
                 }
 
                 BlockStatus.CANCELLED_DIGGING.id, BlockStatus.FINISHED_DIGGING.id -> {
-                    stopBlockBreak(packet.location)
+                    stopBlockBreak(event.location)
                 }
             }
         }
@@ -99,24 +152,35 @@ class PacketHandler(
      */
     @PacketReceiver
     fun onBlockPlacement(packet: ClientBlockPlacementPacket) {
-        val blockLocation = packet.location
+        val event = BlockPlaceEvent(
+            client.player,
+            packet.hand,
+            Position(packet.location.x, packet.location.y, packet.location.z),
+            packet.face,
+            packet.cursorPositionX,
+            packet.cursorPositionY,
+            packet.cursorPositionZ,
+            packet.insideBlock
+        )
+        EventManager.fire(event)
+        if(event.isCancelled) return
 
-        when(packet.face) {
-            0 -> blockLocation.y -= 1
-            1 -> blockLocation.y += 1
-            2 -> blockLocation.z -= 1
-            3 -> blockLocation.z += 1
-            4 -> blockLocation.x -= 1
-            5 -> blockLocation.x += 1
+        when(event.face) {
+            0 -> event.location.y -= 1
+            1 -> event.location.y += 1
+            2 -> event.location.z -= 1
+            3 -> event.location.z += 1
+            4 -> event.location.x -= 1
+            5 -> event.location.x += 1
         }
 
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {
                 otherPlayer.sendPacket(ServerBlockChangePacket(
                     Position(
-                        blockLocation.x,
-                        blockLocation.y,
-                        blockLocation.z
+                        event.location.x,
+                        event.location.y,
+                        event.location.z
                     ),
                     2 //TODO: Check what block the player is holding, and update this
                 ))
@@ -285,7 +349,7 @@ class PacketHandler(
 
         val formattedMessage = message.replace('&', '§')
 
-        val event = PlayerChatEvent(client.player.username, formattedMessage)
+        val event = PlayerChatEvent(client.player, formattedMessage)
         EventManager.fire(event)
         if(event.isCancelled) return
 
@@ -304,7 +368,7 @@ class PacketHandler(
      */
     @PacketReceiver
     fun onKeepAlive(packet: ClientKeepAlivePacket) {
-        val event = PlayerHeartbeatEvent(client.player.username)
+        val event = PlayerHeartbeatEvent(client.player)
         EventManager.fire(event)
         if(event.isCancelled) return
 
@@ -362,14 +426,18 @@ class PacketHandler(
 
         client.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
 
-        val joinEvent = PlayerJoinEvent(client.player.username)
+        val joinEvent = PlayerJoinEvent(client.player)
         EventManager.fire(joinEvent)
         if(joinEvent.isCancelled) return
 
         Bullet.players.add(player)
         client.sendPlayerSpawnPacket()
         client.scheduleKeepAlive()
+
         client.sendPacket(ServerChunkPacket(0, 0))
+        client.sendPacket(ServerChunkPacket(0, 16))
+        client.sendPacket(ServerChunkPacket(16, 0))
+        client.sendPacket(ServerChunkPacket(16, 16))
 
         sendSpawnPlayerPackets(player)
 
@@ -532,5 +600,18 @@ class PacketHandler(
 
     private fun getStoneBreakTime(): Long {
         return ((1.5 * 30) * 140).toLong()
+    }
+
+    private fun updateEntityMetadata(player: Player, index: Int, value: Int) {
+        val packet = ServerEntityMetadataPacket(
+            player.entityID,
+            listOf(MetadataType.MetadataEntry(index.toByte(), 18, value))
+        )
+
+        for(otherPlayer in Bullet.players) {
+            if(otherPlayer != player) {
+                otherPlayer.sendPacket(packet)
+            }
+        }
     }
 }

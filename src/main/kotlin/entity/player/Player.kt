@@ -28,6 +28,7 @@ class Player(
     var gameMode: GameMode = GameMode.CREATIVE
         private set
     var onGround by Delegates.notNull<Boolean>()
+    var isSneaking: Boolean = false
 
     /**
      * Sends a packet to the players client session

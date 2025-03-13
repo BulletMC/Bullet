@@ -3,6 +3,8 @@ package com.aznos
 import com.aznos.commands.CommandManager
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.Position
+import com.aznos.packets.play.out.ServerParticlePacket
+import com.aznos.world.data.Particles
 import com.aznos.world.data.TimeOfDay
 import com.google.gson.JsonParser
 import dev.dewy.nbt.api.registry.TagTypeRegistry
@@ -19,7 +21,7 @@ import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.util.Base64
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicLong
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -41,6 +43,7 @@ object Bullet : AutoCloseable {
     val players = mutableListOf<Player>()
 
     val breakingBlocks = mutableMapOf<Position, Job>()
+    val sprinting = mutableSetOf<Int>()
 
     var worldAge = 0L
     var timeOfDay: Long = TimeOfDay.SUNRISE.time
@@ -71,7 +74,9 @@ object Bullet : AutoCloseable {
         dimensionCodec = CompoundTag().fromJson(parsed, 0, TagTypeRegistry())
 
         CommandManager.registerCommands()
+
         scheduleTimeUpdate()
+        scheduleSprintingParticles()
 
         logger.info("Bullet server started at $host:$port")
 
@@ -107,12 +112,47 @@ object Bullet : AutoCloseable {
         }
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
+    private fun scheduleSprintingParticles() {
+        GlobalScope.launch {
+            coroutineScope {
+                while(isActive) {
+                    for(entityID in sprinting) {
+                        val player = players.find { it.entityID == entityID } ?: continue
+
+                        val x = player.location.x
+                        val y = player.location.y + 0.1f
+                        val z = player.location.z
+
+                        for(otherPlayer in players) {
+                            if(otherPlayer != player) {
+                                otherPlayer.clientSession.sendPacket(ServerParticlePacket(
+                                    Particles.Block(1),
+                                    false,
+                                    Position(x, y, z),
+                                    0.001f,
+                                    0.0005f,
+                                    0.001f,
+                                    0.0f,
+                                    5
+                                ))
+                            }
+                        }
+                    }
+
+                    delay(200.milliseconds)
+                }
+            }
+        }
+    }
+
     /**
      * Sets the favicon for the server from a PNG located at the specified resource path and encodes it to base64
      * This must be called before the server is started
      *
      * @param resourcePath The path to the PNG file resource
      */
+    @Suppress("unused")
     fun setFaviconFromPNG(resourcePath: String) {
         try {
             val stream = javaClass.getResourceAsStream(resourcePath)
