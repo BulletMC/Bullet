@@ -1,5 +1,7 @@
 package com.aznos.commands.data
 
+import com.aznos.packets.newPacket.ResourceLocation
+import java.util.*
 import kotlin.experimental.and
 import kotlin.experimental.or
 
@@ -27,7 +29,7 @@ data class GraphCommandNode(
     val name: String? = null,
     val parser: String? = null,
     val properties: Any? = null,
-    val suggestionsType: String? = null
+    val suggestionsType: Optional<ResourceLocation> = Optional.empty()
 ) {
 
     data class Flags(val flags: MutableSet<FlagEntry>) {
