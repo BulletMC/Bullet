@@ -15,16 +15,16 @@ class PlayerPreJoinEvent : Event()
 /**
  * Called when a player joins the server
  *
- * @param username The username of the player that joined
+ * @param player The player that just joined
  */
-data class PlayerJoinEvent(val username: String) : Event()
+data class PlayerJoinEvent(val player: Player) : Event()
 
 /**
  * Called when a player leaves the server
  *
- * @param username The username of the player that left
+ * @param username The player that left
  */
-data class PlayerQuitEvent(val username: String) : Event()
+data class PlayerQuitEvent(val player: Player) : Event()
 
 /**
  * Called whenever there is a handshake between the client and server
@@ -37,9 +37,9 @@ data class HandshakeEvent(val state: GameState, val protocol: Int) : Event()
 /**
  * Called once a heartbeat has been completed, cancelling this event will result in the client being kicked
  *
- * @param username The username of the player
+ * @param player The player that sent the heartbeat packet
  */
-data class PlayerHeartbeatEvent(val username: String) : Event()
+data class PlayerHeartbeatEvent(val player: Player) : Event()
 
 /**
  * Called when a player sends a chat message
@@ -47,7 +47,7 @@ data class PlayerHeartbeatEvent(val username: String) : Event()
  * @param username The username of the player that sent the message
  * @param message The message that was sent
  */
-data class PlayerChatEvent(val username: String, val message: String) : Event()
+data class PlayerChatEvent(val username: Player, val message: String) : Event()
 
 /**
  * Called when a player sprints
@@ -55,15 +55,15 @@ data class PlayerChatEvent(val username: String, val message: String) : Event()
  * @param username The username of the player that is sprinting
  * @param isSprinting True if they're now sprinting, false if they stopped
  */
-data class PlayerSprintEvent(val username: String, val isSprinting: Boolean) : Event()
+data class PlayerSprintEvent(val username: Player, val isSprinting: Boolean) : Event()
 
 /**
  * Called when a player sneaks
  *
- * @param username The username of the player that is sneaking
+ * @param player The player that is sneaking
  * @param isSneaking True if they're now sneaking, false if they stopped
  */
-data class PlayerSneakEvent(val username: String, val isSneaking: Boolean) : Event()
+data class PlayerSneakEvent(val player: Player, val isSneaking: Boolean) : Event()
 
 //Modifiable events
 

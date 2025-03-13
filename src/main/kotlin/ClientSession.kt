@@ -158,9 +158,9 @@ class ClientSession(
             )
         }
 
+        EventManager.fire(PlayerQuitEvent(player))
         Bullet.players.remove(player)
 
-        EventManager.fire(PlayerQuitEvent(player.username))
         close()
     }
 

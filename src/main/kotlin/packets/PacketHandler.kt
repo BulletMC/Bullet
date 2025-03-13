@@ -66,7 +66,7 @@ class PacketHandler(
     fun onPlayerAction(packet: ClientEntityActionPacket) {
         when(packet.actionID) {
             0 -> { //Start sneaking
-                val event = PlayerSneakEvent(client.player.username, true)
+                val event = PlayerSneakEvent(client.player, true)
                 EventManager.fire(event)
                 if(event.isCancelled) return
 
@@ -75,7 +75,7 @@ class PacketHandler(
             }
 
             1 -> { //Stop sneaking
-                val event = PlayerSneakEvent(client.player.username, false)
+                val event = PlayerSneakEvent(client.player, false)
                 EventManager.fire(event)
                 if(event.isCancelled) return
 
@@ -84,7 +84,7 @@ class PacketHandler(
             }
 
             3 -> { //Start sprinting
-                val event = PlayerSprintEvent(client.player.username, true)
+                val event = PlayerSprintEvent(client.player, true)
                 EventManager.fire(event)
                 if(event.isCancelled) return
 
@@ -92,7 +92,7 @@ class PacketHandler(
             }
 
             4 -> { //Stop sprinting
-                val event = PlayerSprintEvent(client.player.username, false)
+                val event = PlayerSprintEvent(client.player, false)
                 EventManager.fire(event)
                 if(event.isCancelled) return
 
@@ -349,7 +349,7 @@ class PacketHandler(
 
         val formattedMessage = message.replace('&', '§')
 
-        val event = PlayerChatEvent(client.player.username, formattedMessage)
+        val event = PlayerChatEvent(client.player, formattedMessage)
         EventManager.fire(event)
         if(event.isCancelled) return
 
@@ -368,7 +368,7 @@ class PacketHandler(
      */
     @PacketReceiver
     fun onKeepAlive(packet: ClientKeepAlivePacket) {
-        val event = PlayerHeartbeatEvent(client.player.username)
+        val event = PlayerHeartbeatEvent(client.player)
         EventManager.fire(event)
         if(event.isCancelled) return
 
@@ -426,7 +426,7 @@ class PacketHandler(
 
         client.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
 
-        val joinEvent = PlayerJoinEvent(client.player.username)
+        val joinEvent = PlayerJoinEvent(client.player)
         EventManager.fire(joinEvent)
         if(joinEvent.isCancelled) return
 
