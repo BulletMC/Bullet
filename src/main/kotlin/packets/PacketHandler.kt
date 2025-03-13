@@ -2,13 +2,13 @@ package com.aznos.packets
 
 import com.aznos.Bullet
 import com.aznos.Bullet.breakingBlocks
-import com.aznos.Bullet.players
 import com.aznos.Bullet.sprinting
 import com.aznos.ClientSession
 import com.aznos.GameState
 import com.aznos.commands.CommandCodes
 import com.aznos.commands.CommandManager
 import com.aznos.commands.CommandManager.buildCommandGraphFromDispatcher
+import com.aznos.datatypes.MetadataType
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.GameMode
 import com.aznos.events.*
@@ -21,7 +21,6 @@ import com.aznos.packets.status.`in`.ClientStatusPingPacket
 import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
 import com.aznos.entity.player.data.Location
-import com.aznos.entity.player.data.MetadataEntry
 import com.aznos.entity.player.data.Position
 import com.aznos.packets.play.`in`.ClientAnimationPacket
 import com.aznos.packets.play.`in`.ClientBlockPlacementPacket
@@ -38,7 +37,6 @@ import com.aznos.packets.play.out.movement.ServerEntityPositionAndRotationPacket
 import com.aznos.packets.play.out.movement.ServerEntityPositionPacket
 import com.aznos.packets.play.out.movement.ServerEntityRotationPacket
 import com.aznos.world.data.BlockStatus
-import com.aznos.world.data.Particle
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -575,7 +573,7 @@ class PacketHandler(
     private fun updateEntityMetadata(player: Player, index: Int, value: Int) {
         val packet = ServerEntityMetadataPacket(
             player.entityID,
-            listOf(MetadataEntry(index.toByte(), 18, value))
+            listOf(MetadataType.MetadataEntry(index.toByte(), 18, value))
         )
 
         for(otherPlayer in Bullet.players) {
