@@ -1,8 +1,6 @@
 package com.aznos.packets.play.`in`
 
-import com.aznos.datatypes.VarInt
 import com.aznos.datatypes.VarInt.readVarInt
-import com.aznos.entity.player.data.Location
 import com.aznos.entity.player.data.Position
 import com.aznos.packets.Packet
 

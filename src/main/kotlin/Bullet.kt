@@ -20,9 +20,7 @@ import java.net.BindException
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.util.Base64
-import java.util.UUID
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicLong
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -154,6 +152,7 @@ object Bullet : AutoCloseable {
      *
      * @param resourcePath The path to the PNG file resource
      */
+    @Suppress("unused")
     fun setFaviconFromPNG(resourcePath: String) {
         try {
             val stream = javaClass.getResourceAsStream(resourcePath)

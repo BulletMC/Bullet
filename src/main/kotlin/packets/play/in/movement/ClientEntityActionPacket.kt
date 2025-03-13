@@ -1,6 +1,5 @@
 package com.aznos.packets.play.`in`.movement
 
-import com.aznos.datatypes.StringType.readString
 import com.aznos.datatypes.VarInt.readVarInt
 import com.aznos.packets.Packet
 
