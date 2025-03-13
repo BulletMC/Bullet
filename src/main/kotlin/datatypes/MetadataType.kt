@@ -11,7 +11,8 @@ object MetadataType {
     /**
      * Represents a metadata entry
      *
-     *  @param index Unique index key determining the meaning of the following values, if this is 0xFF it's the end of the metadata
+     *  @param index Unique index key determining the meaning of the following values
+     *  if this is 0xFF it's the end of the metadata
      *  @param type Only if index is not 0xFF
      *  @param value Only if index is not 0xFF
      */

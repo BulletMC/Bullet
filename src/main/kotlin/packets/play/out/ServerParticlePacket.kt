@@ -3,7 +3,7 @@ package com.aznos.packets.play.out
 import com.aznos.datatypes.VarInt.writeVarInt
 import com.aznos.entity.player.data.Position
 import com.aznos.packets.Packet
-import com.aznos.world.data.Particle
+import com.aznos.world.data.Particles
 
 /**
  * Sends a particle effect to the client
@@ -18,7 +18,7 @@ import com.aznos.world.data.Particle
  * @param particleCount The amount of particles to spawn
  */
 class ServerParticlePacket(
-    particle: Particle,
+    particle: Particles,
     longDistance: Boolean,
     position: Position,
     offsetX: Float,
@@ -40,19 +40,19 @@ class ServerParticlePacket(
         wrapper.writeInt(particleCount)
 
         when(particle) {
-            is Particle.Block -> {
+            is Particles.Block -> {
                 wrapper.writeVarInt(particle.blockState)
             }
-            is Particle.Dust -> {
+            is Particles.Dust -> {
                 wrapper.writeFloat(particle.red)
                 wrapper.writeFloat(particle.green)
                 wrapper.writeFloat(particle.blue)
                 wrapper.writeFloat(particle.scale)
             }
-            is Particle.FallingDust -> {
+            is Particles.FallingDust -> {
                 wrapper.writeVarInt(particle.blockState)
             }
-            is Particle.Item -> {
+            is Particles.Item -> {
                 wrapper.writeVarInt(particle.itemId)
             }
             else -> {}

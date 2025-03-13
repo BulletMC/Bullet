@@ -1,15 +1,10 @@
 package com.aznos
 
-import com.aznos.Bullet.favicon
-import com.aznos.Bullet.logger
-import com.aznos.Bullet.players
-import com.aznos.Bullet.pool
-import com.aznos.Bullet.server
 import com.aznos.commands.CommandManager
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.Position
 import com.aznos.packets.play.out.ServerParticlePacket
-import com.aznos.world.data.Particle
+import com.aznos.world.data.Particles
 import com.aznos.world.data.TimeOfDay
 import com.google.gson.JsonParser
 import dev.dewy.nbt.api.registry.TagTypeRegistry
@@ -134,7 +129,7 @@ object Bullet : AutoCloseable {
                         for(otherPlayer in players) {
                             if(otherPlayer != player) {
                                 otherPlayer.clientSession.sendPacket(ServerParticlePacket(
-                                    Particle.Block(1),
+                                    Particles.Block(1),
                                     false,
                                     Position(x, y, z),
                                     0.001f,
