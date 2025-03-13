@@ -35,6 +35,7 @@ import com.aznos.packets.play.out.movement.ServerEntityPositionAndRotationPacket
 import com.aznos.packets.play.out.movement.ServerEntityPositionPacket
 import com.aznos.packets.play.out.movement.ServerEntityRotationPacket
 import com.aznos.world.data.BlockStatus
+import com.aznos.world.data.Particle
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -394,6 +395,21 @@ class PacketHandler(
 
         val (nodes, rootIndex) = buildCommandGraphFromDispatcher(CommandManager.dispatcher)
         client.sendPacket(ServerDeclareCommandsPacket(nodes, rootIndex))
+
+        val particle = Particle.Flame
+        Bullet.logger.info("Sending particle packet: ${particle.id}")
+        client.sendPacket(ServerParticlePacket(
+            particle,
+            false,
+            8.5,
+            10.0,
+            8.5,
+            0.2f,
+            0.2f,
+            0.2f,
+            0.5f,
+            20
+        ))
     }
 
     /**

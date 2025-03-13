@@ -1,66 +1,74 @@
 package com.aznos.world.data
 
-enum class Particles(val id: Int) {
-    AMBIENT_ENTITY_EFFECT(0),
-    ANGRY_VILLAGER(1),
-    BARRIER(2),
-    BLOCK(3),
-    BUBBLE(4),
-    CLOUD(5),
-    CRIT(6),
-    DAMAGE_INDICATOR(7),
-    DRAGON_BREATH(8),
-    DRIPPING_LAVA(9),
-    FALLING_LAVA(10),
-    LANDING_LAVA(11),
-    DRIPPING_WATER(12),
-    FALLING_WATER(13),
-    DUST(14),
-    EFFECT(15),
-    ELDER_GUARDIAN(16),
-    ENCHANTED_HIT(17),
-    ENCHANT(18),
-    END_ROD(19),
-    ENTITY_EFFECT(20),
-    EXPLOSION_EMITTER(21),
-    EXPLOSION(22),
-    FALLING_DUST(23),
-    FIREWORK(24),
-    FISHING(25),
-    FLAME(26),
-    FLASH(27),
-    HAPPY_VILLAGER(28),
-    COMPOSTER(29),
-    HEART(30),
-    INSTANT_EFFECT(31),
-    ITEM(32),
-    ITEM_SLIME(33),
-    ITEM_SNOWBALL(34),
-    LARGE_SMOKE(35),
-    LAVA(36),
-    MYCELIUM(37),
-    NOTE(38),
-    POOF(39),
-    PORTAL(40),
-    RAIN(41),
-    SMOKE(42),
-    SNEEZE(43),
-    SPIT(44),
-    SQUID_INK(45),
-    SWEEP_ATTACK(46),
-    TOTEM_OF_UNDYING(47),
-    UNDERWATER(48),
-    SPLASH(49),
-    WITCH(50),
-    BUBBLE_POP(51),
-    CURRENT_DOWN(52),
-    BUBBLE_COLUMN_UP(53),
-    NAUTILUS(54),
-    DOLPHIN(55),
-    CAMPFIRE_COSY_SMOKE(56),
-    CAMPFIRE_SIGNAL_SMOKE(57),
-    DRIPPING_HONEY(58),
-    FALLING_HONEY(59),
-    LANDING_HONEY(60),
-    FALLING_NECTAR(61)
+@Suppress("unused")
+sealed class Particle(val id: Int) {
+    data object AmbientEntityEffect : Particle(0)
+    data object AngryVillager : Particle(1)
+    data object Barrier : Particle(2)
+
+    class Block(val blockState: Int) : Particle(3)
+    data object Bubble : Particle(4)
+    data object Cloud : Particle(5)
+    data object Crit : Particle(6)
+    data object DamageIndicator : Particle(7)
+    data object DragonBreath : Particle(8)
+    data object DrippingLava : Particle(9)
+    data object FallingLava : Particle(10)
+    data object LandingLava : Particle(11)
+    data object DrippingWater : Particle(12)
+    data object FallingWater : Particle(13)
+
+    class Dust(val red: Float, val green: Float, val blue: Float, val scale: Float) : Particle(14)
+
+    data object Effect : Particle(15)
+    data object ElderGuardian : Particle(16)
+    data object EnchantedHit : Particle(17)
+    data object Enchant : Particle(18)
+    data object EndRod : Particle(19)
+    data object EntityEffect : Particle(20)
+    data object ExplosionEmitter : Particle(21)
+    data object Explosion : Particle(22)
+
+    class FallingDust(val blockState: Int) : Particle(23)
+
+    data object Firework : Particle(24)
+    data object Fishing : Particle(25)
+    data object Flame : Particle(26)
+    data object Flash : Particle(27)
+    data object HappyVillager : Particle(28)
+    data object Composter : Particle(29)
+    data object Heart : Particle(30)
+    data object InstantEffect : Particle(31)
+
+    class Item(val itemId: Int) : Particle(32)
+
+    data object ItemSlime : Particle(33)
+    data object ItemSnowball : Particle(34)
+    data object LargeSmoke : Particle(35)
+    data object Lava : Particle(36)
+    data object Mycelium : Particle(37)
+    data object Note : Particle(38)
+    data object Poof : Particle(39)
+    data object Portal : Particle(40)
+    data object Rain : Particle(41)
+    data object Smoke : Particle(42)
+    data object Sneeze : Particle(43)
+    data object Spit : Particle(44)
+    data object SquidInk : Particle(45)
+    data object SweepAttack : Particle(46)
+    data object TotemOfUndying : Particle(47)
+    data object Underwater : Particle(48)
+    data object Splash : Particle(49)
+    data object Witch : Particle(50)
+    data object BubblePop : Particle(51)
+    data object CurrentDown : Particle(52)
+    data object BubbleColumnUp : Particle(53)
+    data object Nautilus : Particle(54)
+    data object Dolphin : Particle(55)
+    data object CampfireCosySmoke : Particle(56)
+    data object CampfireSignalSmoke : Particle(57)
+    data object DrippingHoney : Particle(58)
+    data object FallingHoney : Particle(59)
+    data object LandingHoney : Particle(60)
+    data object FallingNectar : Particle(61)
 }
