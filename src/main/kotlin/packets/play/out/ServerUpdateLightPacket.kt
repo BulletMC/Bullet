@@ -14,7 +14,6 @@ class ServerUpdateLightPacket(
 
     companion object {
         val key = Keyed(0x2B, ResourceLocation.vanilla("play.out.light_update"))
-
     }
 
     override fun retrieveData(): ByteArray {
