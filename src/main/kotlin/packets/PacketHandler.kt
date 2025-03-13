@@ -23,6 +23,7 @@ import com.aznos.entity.player.data.Position
 import com.aznos.packets.play.`in`.ClientAnimationPacket
 import com.aznos.packets.play.`in`.ClientBlockPlacementPacket
 import com.aznos.packets.play.`in`.ClientDiggingPacket
+import com.aznos.packets.play.`in`.movement.ClientEntityActionPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
 import com.aznos.packets.play.`in`.movement.ClientPlayerPositionAndRotation
 import com.aznos.packets.play.`in`.movement.ClientPlayerPositionPacket
@@ -56,6 +57,24 @@ import java.util.UUID
 class PacketHandler(
     private val client: ClientSession
 ) {
+    /**
+     * Called when a client performs an action, such as jumping, sneaking, or sprinting
+     */
+    @PacketReceiver
+    fun onPlayerAction(packet: ClientEntityActionPacket) {
+        when(packet.actionID) {
+            3 -> { //Start sprinting
+
+            }
+            4 -> { //Stop sprinting
+
+            }
+        }
+    }
+
+    /**
+     * Called when a client starts digging a block
+     */
     @PacketReceiver
     fun onPlayerDig(packet: ClientDiggingPacket) {
         if(client.player.gameMode == GameMode.CREATIVE && packet.status == BlockStatus.STARTED_DIGGING.id) {
