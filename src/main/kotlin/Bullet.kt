@@ -128,20 +128,22 @@ object Bullet : AutoCloseable {
                         val player = players.find { it.entityID == entityID } ?: continue
 
                         val x = player.location.x
-                        val y = player.location.y + 0.5f
+                        val y = player.location.y + 0.1f
                         val z = player.location.z
 
-                        for(plr in players) {
-                            plr.clientSession.sendPacket(ServerParticlePacket(
-                                Particle.Cloud,
-                                false,
-                                Position(x, y, z),
-                                0.05f,
-                                0.01f,
-                                0.05f,
-                                0.0f,
-                                10
-                            ))
+                        for(otherPlayer in players) {
+                            if(otherPlayer != player) {
+                                otherPlayer.clientSession.sendPacket(ServerParticlePacket(
+                                    Particle.Block(1),
+                                    false,
+                                    Position(x, y, z),
+                                    0.001f,
+                                    0.0005f,
+                                    0.001f,
+                                    0.0f,
+                                    5
+                                ))
+                            }
                         }
                     }
 
