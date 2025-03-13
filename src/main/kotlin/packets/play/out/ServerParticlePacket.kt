@@ -1,6 +1,7 @@
 package com.aznos.packets.play.out
 
 import com.aznos.datatypes.VarInt.writeVarInt
+import com.aznos.entity.player.data.Position
 import com.aznos.packets.Packet
 import com.aznos.world.data.Particle
 
@@ -9,9 +10,7 @@ import com.aznos.world.data.Particle
  *
  * @param particle The particle ID to send
  * @param longDistance If true, particle distance increases from 256 to 65536
- * @param x The X position of the particle
- * @param y The Y position of the particle
- * @param z The Z position of the particle
+ * @param position The position of the particle
  * @param offsetX The X offset of the particle (multiplied by nextGaussian)
  * @param offsetY The Y offset of the particle (multiplied by nextGaussian)
  * @param offsetZ The Z offset of the particle (multiplied by nextGaussian)
@@ -21,9 +20,7 @@ import com.aznos.world.data.Particle
 class ServerParticlePacket(
     particle: Particle,
     longDistance: Boolean,
-    x: Double,
-    y: Double,
-    z: Double,
+    position: Position,
     offsetX: Float,
     offsetY: Float,
     offsetZ: Float,
@@ -33,9 +30,9 @@ class ServerParticlePacket(
     init {
         wrapper.writeInt(particle.id)
         wrapper.writeBoolean(longDistance)
-        wrapper.writeDouble(x)
-        wrapper.writeDouble(y)
-        wrapper.writeDouble(z)
+        wrapper.writeDouble(position.x)
+        wrapper.writeDouble(position.y)
+        wrapper.writeDouble(position.z)
         wrapper.writeFloat(offsetX)
         wrapper.writeFloat(offsetY)
         wrapper.writeFloat(offsetZ)

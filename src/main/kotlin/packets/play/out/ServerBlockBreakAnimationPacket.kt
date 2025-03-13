@@ -19,9 +19,9 @@ class ServerBlockBreakAnimationPacket(
     init {
         wrapper.writeVarInt(entityID)
 
-        val blockPosition: Long = ((location.x and 0x3FFFFFF).toLong() shl 38) or
-                ((location.z and 0x3FFFFFF).toLong() shl 12) or
-                (location.y and 0xFFF).toLong()
+        val blockPosition: Long = ((location.x.toLong() and 0x3FFFFFF) shl 38) or
+                ((location.z.toLong() and 0x3FFFFFF) shl 12) or
+                (location.y.toLong() and 0xFFF)
 
         wrapper.writeLong(blockPosition)
         wrapper.writeByte(stage)

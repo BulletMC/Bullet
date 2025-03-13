@@ -2,6 +2,7 @@ package com.aznos.packets
 
 import com.aznos.Bullet
 import com.aznos.Bullet.breakingBlocks
+import com.aznos.Bullet.sprinting
 import com.aznos.ClientSession
 import com.aznos.GameState
 import com.aznos.commands.CommandCodes
@@ -65,10 +66,10 @@ class PacketHandler(
     fun onPlayerAction(packet: ClientEntityActionPacket) {
         when(packet.actionID) {
             3 -> { //Start sprinting
-
+                sprinting.add(client.player.entityID)
             }
             4 -> { //Stop sprinting
-
+                sprinting.remove(client.player.entityID)
             }
         }
     }
@@ -395,21 +396,6 @@ class PacketHandler(
 
         val (nodes, rootIndex) = buildCommandGraphFromDispatcher(CommandManager.dispatcher)
         client.sendPacket(ServerDeclareCommandsPacket(nodes, rootIndex))
-
-        val particle = Particle.Flame
-        Bullet.logger.info("Sending particle packet: ${particle.id}")
-        client.sendPacket(ServerParticlePacket(
-            particle,
-            false,
-            8.5,
-            10.0,
-            8.5,
-            0.2f,
-            0.2f,
-            0.2f,
-            0.5f,
-            20
-        ))
     }
 
     /**

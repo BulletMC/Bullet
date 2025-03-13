@@ -1,8 +1,15 @@
 package com.aznos
 
+import com.aznos.Bullet.favicon
+import com.aznos.Bullet.logger
+import com.aznos.Bullet.players
+import com.aznos.Bullet.pool
+import com.aznos.Bullet.server
 import com.aznos.commands.CommandManager
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.Position
+import com.aznos.packets.play.out.ServerParticlePacket
+import com.aznos.world.data.Particle
 import com.aznos.world.data.TimeOfDay
 import com.google.gson.JsonParser
 import dev.dewy.nbt.api.registry.TagTypeRegistry
@@ -18,8 +25,10 @@ import java.net.BindException
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.util.Base64
+import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -41,6 +50,7 @@ object Bullet : AutoCloseable {
     val players = mutableListOf<Player>()
 
     val breakingBlocks = mutableMapOf<Position, Job>()
+    val sprinting = mutableSetOf<Int>()
 
     var worldAge = 0L
     var timeOfDay: Long = TimeOfDay.SUNRISE.time
@@ -71,7 +81,9 @@ object Bullet : AutoCloseable {
         dimensionCodec = CompoundTag().fromJson(parsed, 0, TagTypeRegistry())
 
         CommandManager.registerCommands()
+
         scheduleTimeUpdate()
+        scheduleSprintingParticles()
 
         logger.info("Bullet server started at $host:$port")
 
@@ -102,6 +114,38 @@ object Bullet : AutoCloseable {
                     for(player in players) {
                         player.setTimeOfDay(timeOfDay)
                     }
+                }
+            }
+        }
+    }
+
+    @OptIn(DelicateCoroutinesApi::class)
+    private fun scheduleSprintingParticles() {
+        GlobalScope.launch {
+            coroutineScope {
+                while(isActive) {
+                    for(entityID in sprinting) {
+                        val player = players.find { it.entityID == entityID } ?: continue
+
+                        val x = player.location.x
+                        val y = player.location.y + 0.5f
+                        val z = player.location.z
+
+                        for(plr in players) {
+                            plr.clientSession.sendPacket(ServerParticlePacket(
+                                Particle.Cloud,
+                                false,
+                                Position(x, y, z),
+                                0.05f,
+                                0.01f,
+                                0.05f,
+                                0.0f,
+                                10
+                            ))
+                        }
+                    }
+
+                    delay(200.milliseconds)
                 }
             }
         }
