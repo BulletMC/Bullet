@@ -49,7 +49,7 @@ class TeleportCommand {
             sender.sendPacket(ServerEntityTeleportPacket(
                 sender.entityID,
                 Location(coords.x, coords.y, coords.z, coords.yaw, coords.pitch),
-                sender.onGround
+                true
             ))
         } else {
             val targetPlayer = Bullet.players.find { it.username.equals(arg, ignoreCase = true) }
@@ -60,11 +60,13 @@ class TeleportCommand {
                     .color(NamedTextColor.GRAY)
                 )
 
-                sender.sendPacket(ServerEntityTeleportPacket(
-                    sender.entityID,
-                    targetPlayer.location,
-                    sender.onGround
-                ))
+                for(player in Bullet.players) {
+                    player.sendPacket(ServerEntityTeleportPacket(
+                        sender.entityID,
+                        targetPlayer.location,
+                        true
+                    ))
+                }
             } else {
                 sender.sendMessage(Component.text("Player not found: $arg").color(NamedTextColor.RED))
                 return CommandCodes.ILLEGAL_ARGUMENT.id
@@ -89,11 +91,13 @@ class TeleportCommand {
                 .color(NamedTextColor.GREEN)
             )
 
-            targetPlayer.sendPacket(ServerEntityTeleportPacket(
-                targetPlayer.entityID,
-                Location(coords.x, coords.y, coords.z, coords.yaw, coords.pitch),
-                targetPlayer.onGround
-            ))
+            for(player in Bullet.players) {
+                player.sendPacket(ServerEntityTeleportPacket(
+                    targetPlayer.entityID,
+                    Location(coords.x, coords.y, coords.z, coords.yaw, coords.pitch),
+                    true
+                ))
+            }
         } else {
             val destinationPlayer = Bullet.players.find { it.username.equals(destArg, ignoreCase = true) }
             if(destinationPlayer != null) {
@@ -103,11 +107,13 @@ class TeleportCommand {
                     .color(NamedTextColor.GREEN)
                 )
 
-                targetPlayer.sendPacket(ServerEntityTeleportPacket(
-                    targetPlayer.entityID,
-                    destinationPlayer.location,
-                    targetPlayer.onGround
-                ))
+                for(player in Bullet.players) {
+                    player.sendPacket(ServerEntityTeleportPacket(
+                        targetPlayer.entityID,
+                        destinationPlayer.location,
+                        true
+                    ))
+                }
             } else {
                 sender.sendMessage(Component.text("Destination not found: $destArg").color(NamedTextColor.RED))
                 return CommandCodes.ILLEGAL_ARGUMENT.id
