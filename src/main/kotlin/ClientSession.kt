@@ -2,6 +2,7 @@ package com.aznos
 
 import com.aznos.datatypes.VarInt
 import com.aznos.datatypes.VarInt.readVarInt
+import com.aznos.datatypes.VarInt.writeVarInt
 import com.aznos.entity.player.Player
 import com.aznos.events.EventManager
 import com.aznos.events.PlayerQuitEvent
@@ -23,10 +24,7 @@ import com.aznos.registry.Registry
 import dev.dewy.nbt.tags.collection.CompoundTag
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
-import java.io.BufferedInputStream
-import java.io.DataInputStream
-import java.io.EOFException
-import java.io.IOException
+import java.io.*
 import java.net.Socket
 import java.net.SocketException
 import java.util.*
@@ -236,7 +234,17 @@ class ClientSession(
             return
         }
 
-        out.write(serverPacket.retrieveData())
+        val packetData = serverPacket.retrieveData()
+        val packetId = serverPacket.resourceLocation.id
+
+        val baos = ByteArrayOutputStream()
+        val packetOut = DataOutputStream(baos)
+
+        packetOut.writeVarInt(packetData.size + VarInt.getVarIntSize(packetId))
+        packetOut.writeVarInt(packetId)
+        packetOut.write(packetData)
+
+        out.write(baos.toByteArray())
         out.flush()
     }
 

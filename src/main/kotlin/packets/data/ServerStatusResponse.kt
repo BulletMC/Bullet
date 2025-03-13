@@ -1,6 +1,7 @@
 package com.aznos.packets.data
 
 import kotlinx.serialization.Serializable
+import net.kyori.adventure.text.Component
 
 /**
  * Data class representing the server status response
@@ -15,7 +16,7 @@ import kotlinx.serialization.Serializable
 data class ServerStatusResponse(
     val version: Version,
     val players: Players,
-    val description: String,
+    val description: Component,
     val favicon: String? = null,
     val enforcesSecureChat: Boolean
 ) {
