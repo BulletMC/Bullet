@@ -18,6 +18,6 @@ class ClientPluginMessagePacket(data: ByteArray) : Packet(data) {
         val input = getIStream()
 
         channel = input.readString()
-        pluginData = ByteArray(input.available())
+        pluginData = input.readNBytes(input.available())
     }
 }

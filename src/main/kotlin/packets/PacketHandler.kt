@@ -9,6 +9,7 @@ import com.aznos.commands.CommandCodes
 import com.aznos.commands.CommandManager
 import com.aznos.commands.CommandManager.buildCommandGraphFromDispatcher
 import com.aznos.datatypes.MetadataType
+import com.aznos.datatypes.VarInt.readVarInt
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.GameMode
 import com.aznos.events.*
@@ -44,6 +45,8 @@ import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.minimessage.MiniMessage
 import packets.handshake.HandshakePacket
 import packets.status.out.ServerStatusResponsePacket
+import java.io.ByteArrayInputStream
+import java.io.DataInputStream
 import java.util.UUID
 
 /**
@@ -55,6 +58,21 @@ import java.util.UUID
 class PacketHandler(
     private val client: ClientSession
 ) {
+    @PacketReceiver
+    fun onPluginMessage(packet: ClientPluginMessagePacket) {
+        when(packet.channel) {
+            "minecraft:brand" -> {
+                val input = DataInputStream(ByteArrayInputStream(packet.pluginData))
+                val length = input.readVarInt()
+
+                val brandBytes = ByteArray(length)
+                input.readFully(brandBytes)
+
+                client.player.brand = String(brandBytes, Charsets.UTF_8)
+            }
+        }
+    }
+
     @PacketReceiver
     fun onPlayerSettingsChange(packet: ClientSettingsPacket) {
         client.player.viewDistance = packet.viewDistance.toInt()

@@ -36,7 +36,7 @@ class ClientSession(
     private val socket: Socket,
 ) : AutoCloseable {
     private val out = socket.getOutputStream()
-    private val input = DataInputStream(BufferedInputStream(socket.getInputStream()))
+    val input = DataInputStream(BufferedInputStream(socket.getInputStream()))
     private val handler = PacketHandler(this)
 
     var state = GameState.HANDSHAKE

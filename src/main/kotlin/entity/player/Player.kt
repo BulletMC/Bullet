@@ -26,6 +26,7 @@ class Player(
     lateinit var uuid: UUID
     lateinit var location: Location
     lateinit var locale: String
+    lateinit var brand: String
 
     var gameMode: GameMode = GameMode.CREATIVE
         private set
