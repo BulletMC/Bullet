@@ -16,6 +16,7 @@ import com.aznos.packets.newPacket.ServerPacket
  * @param yaw The new yaw of the entity
  * @param pitch The new pitch of the entity
  * @param onGround Whether the entity is on the ground or not
+ *
  */
 class ServerEntityPositionAndRotationPacket(
     var entityID: Int,
