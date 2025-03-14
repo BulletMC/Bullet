@@ -417,12 +417,12 @@ class PacketHandler(
         val response = ServerStatusResponse(
             ServerStatusResponse.Version(Bullet.VERSION, Bullet.PROTOCOL),
             ServerStatusResponse.Players(event.maxPlayers, event.onlinePlayers),
-            event.motd,
+            Component.text(event.motd).color(NamedTextColor.RED),
             Bullet.favicon,
             false
         )
 
-        client.sendPacket(ServerStatusResponsePacket(Json.encodeToString(response)))
+        client.sendPacket(ServerStatusResponsePacket(response))
     }
 
     /**
