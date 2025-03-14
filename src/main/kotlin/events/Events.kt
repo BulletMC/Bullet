@@ -65,6 +65,17 @@ data class PlayerSprintEvent(val username: Player, val isSprinting: Boolean) : E
  */
 data class PlayerSneakEvent(val player: Player, val isSneaking: Boolean) : Event()
 
+/**
+ * Sent right after the player joins the games and informs the server what brand the client is running
+ * For the default vanilla client, this is just "vanilla"
+ *
+ * Cancelling this event will kick the player
+ *
+ * @param player The player
+ * @param brand The brand the client is running
+ */
+data class PlayerBrandEvent(val player: Player, val brand: String) : Event()
+
 //Modifiable events
 
 /**

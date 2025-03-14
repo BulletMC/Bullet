@@ -68,7 +68,15 @@ class PacketHandler(
                 val brandBytes = ByteArray(length)
                 input.readFully(brandBytes)
 
-                client.player.brand = String(brandBytes, Charsets.UTF_8)
+                val brand = String(brandBytes, Charsets.UTF_8)
+                client.player.brand = brand
+
+                val event = PlayerBrandEvent(client.player, brand)
+                EventManager.fire(event)
+                if(event.isCancelled) {
+                    client.player.disconnect("Your client brand is not supported!")
+                    return
+                }
             }
         }
     }
