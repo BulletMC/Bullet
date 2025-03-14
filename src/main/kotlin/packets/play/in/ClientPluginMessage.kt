@@ -4,9 +4,10 @@ import com.aznos.datatypes.StringType.readString
 import com.aznos.packets.Packet
 
 /**
- * Must have at least op level 2 to use, appears to only be used in single-player
+ * Mods and plugins can use this to send their data, minecraft uses some plugin channels
  *
- * @property locked Whether the difficulty is locked
+ * @property channel Name of the plugin channel used to send the data
+ * @property pluginData Any data
  */
 @Suppress("unused")
 class ClientPluginMessage(data: ByteArray) : Packet(data) {
