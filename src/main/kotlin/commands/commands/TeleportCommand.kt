@@ -46,11 +46,13 @@ class TeleportCommand {
                 .color(NamedTextColor.GRAY)
             )
 
-            sender.sendPacket(ServerEntityTeleportPacket(
-                sender.entityID,
-                Location(coords.x, coords.y, coords.z, coords.yaw, coords.pitch),
-                true
-            ))
+            for(player in Bullet.players) {
+                player.sendPacket(ServerEntityTeleportPacket(
+                    sender.entityID,
+                    Location(coords.x, coords.y, coords.z, coords.yaw, coords.pitch),
+                    true
+                ))
+            }
         } else {
             val targetPlayer = Bullet.players.find { it.username.equals(arg, ignoreCase = true) }
             if(targetPlayer != null) {
