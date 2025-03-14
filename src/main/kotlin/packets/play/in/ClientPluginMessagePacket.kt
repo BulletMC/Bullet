@@ -10,7 +10,7 @@ import com.aznos.packets.Packet
  * @property pluginData Any data
  */
 @Suppress("unused")
-class ClientPluginMessage(data: ByteArray) : Packet(data) {
+class ClientPluginMessagePacket(data: ByteArray) : Packet(data) {
     val channel: String
     val pluginData: ByteArray
 
