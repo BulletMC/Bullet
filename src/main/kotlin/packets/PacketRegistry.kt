@@ -2,11 +2,7 @@ package com.aznos.packets
 
 import com.aznos.GameState
 import com.aznos.packets.login.`in`.ClientLoginStartPacket
-import com.aznos.packets.play.`in`.ClientAnimationPacket
-import com.aznos.packets.play.`in`.ClientBlockPlacementPacket
-import com.aznos.packets.play.`in`.ClientChatMessagePacket
-import com.aznos.packets.play.`in`.ClientDiggingPacket
-import com.aznos.packets.play.`in`.ClientKeepAlivePacket
+import com.aznos.packets.play.`in`.*
 import com.aznos.packets.play.`in`.movement.ClientEntityActionPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
 import com.aznos.packets.play.`in`.movement.ClientPlayerPositionAndRotation
@@ -50,7 +46,9 @@ object PacketRegistry {
         //PLAY
         val playPackets = ConcurrentHashMap<Int, Class<out Packet>>().apply {
             this[0x03] = ClientChatMessagePacket::class.java
+            this[0x05] = ClientSettingsPacket::class.java
             this[0x10] = ClientKeepAlivePacket::class.java
+            this[0x11] = ClientLockDifficultyPacket::class.java
             this[0x12] = ClientPlayerPositionPacket::class.java
             this[0x13] = ClientPlayerPositionAndRotation::class.java
             this[0x14] = ClientPlayerRotation::class.java
