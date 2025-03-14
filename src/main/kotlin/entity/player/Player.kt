@@ -25,9 +25,12 @@ class Player(
     lateinit var username: String
     lateinit var uuid: UUID
     lateinit var location: Location
+    lateinit var locale: String
+
     var gameMode: GameMode = GameMode.CREATIVE
         private set
     var onGround by Delegates.notNull<Boolean>()
+    var viewDistance by Delegates.notNull<Int>()
     var isSneaking: Boolean = false
 
     /**

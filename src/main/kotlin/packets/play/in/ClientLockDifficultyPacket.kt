@@ -7,6 +7,7 @@ import com.aznos.packets.Packet
  *
  * @property locked Whether the difficulty is locked
  */
+@Suppress("unused")
 class ClientLockDifficultyPacket(data: ByteArray) : Packet(data) {
     private val locked: Boolean = getIStream().readBoolean()
 }

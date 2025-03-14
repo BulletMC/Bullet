@@ -15,16 +15,12 @@ import com.aznos.events.*
 import com.aznos.packets.data.ServerStatusResponse
 import com.aznos.packets.login.`in`.ClientLoginStartPacket
 import com.aznos.packets.login.out.ServerLoginSuccessPacket
-import com.aznos.packets.play.`in`.ClientChatMessagePacket
-import com.aznos.packets.play.`in`.ClientKeepAlivePacket
 import com.aznos.packets.status.`in`.ClientStatusPingPacket
 import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
 import com.aznos.entity.player.data.Location
 import com.aznos.entity.player.data.Position
-import com.aznos.packets.play.`in`.ClientAnimationPacket
-import com.aznos.packets.play.`in`.ClientBlockPlacementPacket
-import com.aznos.packets.play.`in`.ClientDiggingPacket
+import com.aznos.packets.play.`in`.*
 import com.aznos.packets.play.`in`.movement.ClientEntityActionPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
 import com.aznos.packets.play.`in`.movement.ClientPlayerPositionAndRotation
@@ -59,6 +55,19 @@ import java.util.UUID
 class PacketHandler(
     private val client: ClientSession
 ) {
+    @PacketReceiver
+    fun onPlayerSettingsChange(packet: ClientSettingsPacket) {
+        client.player.viewDistance = packet.viewDistance.toInt()
+        client.player.locale = packet.locale
+
+        client.player.sendPacket(
+            ServerChunkPacket(
+                0,
+                0
+            )
+        )
+    }
+
     /**
      * Called when a client performs an action, such as jumping, sneaking, or sprinting
      */
