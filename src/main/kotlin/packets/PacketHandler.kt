@@ -9,22 +9,19 @@ import com.aznos.commands.CommandCodes
 import com.aznos.commands.CommandManager
 import com.aznos.commands.CommandManager.buildCommandGraphFromDispatcher
 import com.aznos.datatypes.MetadataType
+import com.aznos.datatypes.VarInt.readVarInt
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.GameMode
 import com.aznos.events.*
 import com.aznos.packets.data.ServerStatusResponse
 import com.aznos.packets.login.`in`.ClientLoginStartPacket
 import com.aznos.packets.login.out.ServerLoginSuccessPacket
-import com.aznos.packets.play.`in`.ClientChatMessagePacket
-import com.aznos.packets.play.`in`.ClientKeepAlivePacket
 import com.aznos.packets.status.`in`.ClientStatusPingPacket
 import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
 import com.aznos.entity.player.data.Location
 import com.aznos.entity.player.data.Position
-import com.aznos.packets.play.`in`.ClientAnimationPacket
-import com.aznos.packets.play.`in`.ClientBlockPlacementPacket
-import com.aznos.packets.play.`in`.ClientDiggingPacket
+import com.aznos.packets.play.`in`.*
 import com.aznos.packets.play.`in`.movement.ClientEntityActionPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
 import com.aznos.packets.play.`in`.movement.ClientPlayerPositionAndRotation
@@ -48,6 +45,8 @@ import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.minimessage.MiniMessage
 import packets.handshake.HandshakePacket
 import packets.status.out.ServerStatusResponsePacket
+import java.io.ByteArrayInputStream
+import java.io.DataInputStream
 import java.util.UUID
 
 /**
@@ -59,6 +58,42 @@ import java.util.UUID
 class PacketHandler(
     private val client: ClientSession
 ) {
+    @PacketReceiver
+    fun onPluginMessage(packet: ClientPluginMessagePacket) {
+        when(packet.channel) {
+            "minecraft:brand" -> {
+                val input = DataInputStream(ByteArrayInputStream(packet.pluginData))
+                val length = input.readVarInt()
+
+                val brandBytes = ByteArray(length)
+                input.readFully(brandBytes)
+
+                val brand = String(brandBytes, Charsets.UTF_8)
+                client.player.brand = brand
+
+                val event = PlayerBrandEvent(client.player, brand)
+                EventManager.fire(event)
+                if(event.isCancelled) {
+                    client.player.disconnect("Your client brand is not supported!")
+                    return
+                }
+            }
+        }
+    }
+
+    @PacketReceiver
+    fun onPlayerSettingsChange(packet: ClientSettingsPacket) {
+        client.player.viewDistance = packet.viewDistance.toInt()
+        client.player.locale = packet.locale
+
+        client.player.sendPacket(
+            ServerChunkPacket(
+                0,
+                0
+            )
+        )
+    }
+
     /**
      * Called when a client performs an action, such as jumping, sneaking, or sprinting
      */
