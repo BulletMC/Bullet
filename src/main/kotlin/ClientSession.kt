@@ -147,16 +147,11 @@ class ClientSession(
         keepAliveTimer?.cancel()
         keepAliveTimer = null
 
-        for(session in Bullet.players) {
-            session.clientSession.sendPacket(
+        for(player in Bullet.players) {
+            player.sendPacket(
                 ServerPlayerInfoPacket(
                     4,
-                    listOf(
-                        PlayerInfo(
-                            player.uuid,
-                            player.username
-                        )
-                    )
+                    player
                 )
             )
         }
@@ -185,22 +180,9 @@ class ClientSession(
     fun sendPlayerSpawnPacket() {
         for(otherPlayer in Bullet.players) {
             if(otherPlayer.clientSession != this) {
-                otherPlayer.clientSession.sendPacket(
-                    ServerPlayerInfoPacket(
-                        0,
-                        listOf(
-                            PlayerInfo(
-                                player.uuid,
-                                player.username,
-                                gameMode = player.gameMode,
-                                ping = 50,
-                                hasDisplayName = false
-                            )
-                        )
-                    )
-                )
+                otherPlayer.sendPacket(ServerPlayerInfoPacket(0, player))
 
-                otherPlayer.clientSession.sendPacket(
+                otherPlayer.sendPacket(
                     ServerSpawnPlayerPacket(
                         player.entityID,
                         player.uuid,
@@ -212,20 +194,7 @@ class ClientSession(
                     )
                 )
 
-                sendPacket(
-                    ServerPlayerInfoPacket(
-                        0,
-                        listOf(
-                            PlayerInfo(
-                                otherPlayer.uuid,
-                                otherPlayer.username,
-                                gameMode = otherPlayer.gameMode,
-                                ping = 50,
-                                hasDisplayName = false
-                            )
-                        )
-                    )
-                )
+                sendPacket(ServerPlayerInfoPacket(0, otherPlayer))
 
                 sendPacket(
                     ServerSpawnPlayerPacket(
@@ -240,6 +209,8 @@ class ClientSession(
                 )
             }
         }
+
+        sendPacket(ServerPlayerInfoPacket(0, player))
     }
 
     /**

@@ -21,6 +21,7 @@ import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
 import com.aznos.entity.player.data.Location
 import com.aznos.entity.player.data.Position
+import com.aznos.packets.data.PlayerInfo
 import com.aznos.packets.play.`in`.*
 import com.aznos.packets.play.`in`.movement.ClientEntityActionPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
@@ -415,7 +416,13 @@ class PacketHandler(
         val rtt = (currentTime - receivedTimestamp).toInt()
 
         client.player.ping = rtt / 2
-        Bullet.logger.info("Player ${client.player.username} has a ping of $rtt ms")
+
+        for(player in Bullet.players) {
+            player.sendPacket(ServerPlayerInfoPacket(
+                2,
+                client.player
+            ))
+        }
     }
 
     /**
