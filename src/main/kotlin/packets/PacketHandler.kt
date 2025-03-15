@@ -215,8 +215,10 @@ class PacketHandler(
                         event.location.y,
                         event.location.z
                     ),
-                    2 //TODO: Check what block the player is holding, and update this
+                    client.player.blockID //TODO: Check what block the player is holding, and update this
                 ))
+
+                client.player.blockID++
             }
         }
     }
