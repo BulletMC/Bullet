@@ -74,10 +74,6 @@ object Bullet : AutoCloseable {
         val parsed = JsonParser.parseReader(reader).asJsonObject
         dimensionCodec = CompoundTag().fromJson(parsed, 0, TagTypeRegistry())
 
-        javaClass.getResourceAsStream("/codec.json")?.let {
-            Block.loadBlocksFromJSON(it)
-        }
-
         CommandManager.registerCommands()
 
         scheduleTimeUpdate()
