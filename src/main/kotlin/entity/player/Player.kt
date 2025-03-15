@@ -34,7 +34,7 @@ class Player(
     var properties: MutableList<PlayerProperty> = mutableListOf()
     var gameMode: GameMode = GameMode.CREATIVE
         private set
-    var onGround by Delegates.notNull<Boolean>()
+    var onGround: Boolean = true
     var viewDistance: Int = 0
     var isSneaking: Boolean = false
     var ping: Int = 0

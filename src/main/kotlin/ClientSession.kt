@@ -9,11 +9,7 @@ import com.aznos.packets.Packet
 import com.aznos.packets.PacketHandler
 import com.aznos.packets.PacketRegistry
 import com.aznos.packets.login.out.ServerLoginDisconnectPacket
-import com.aznos.packets.play.out.ServerChunkPacket
-import com.aznos.packets.play.out.ServerKeepAlivePacket
-import com.aznos.packets.play.out.ServerPlayDisconnectPacket
-import com.aznos.packets.play.out.ServerPlayerInfoPacket
-import com.aznos.packets.play.out.ServerSpawnPlayerPacket
+import com.aznos.packets.play.out.*
 import com.aznos.packets.status.LegacyPingRequest
 import java.io.BufferedInputStream
 import java.io.DataInputStream
@@ -224,9 +220,14 @@ class ClientSession(
         }
 
         val chunksToLoad = newChunks - player.loadedChunks
+        val chunksToUnload = player.loadedChunks - newChunks
 
         for(chunk in chunksToLoad) {
             sendPacket(ServerChunkPacket(chunk.first, chunk.second))
+        }
+
+        for(chunk in chunksToUnload) {
+            sendPacket(ServerUnloadChunkPacket(chunk.first, chunk.second))
         }
 
         player.loadedChunks.clear()
