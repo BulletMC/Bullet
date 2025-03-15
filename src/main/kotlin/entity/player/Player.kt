@@ -23,6 +23,8 @@ import kotlin.properties.Delegates
 class Player(
     val clientSession: ClientSession
 ) : Entity() {
+    val loadedChunks: MutableSet<Pair<Int, Int>> = mutableSetOf()
+
     lateinit var username: String
     lateinit var uuid: UUID
     lateinit var location: Location
@@ -33,11 +35,11 @@ class Player(
     var gameMode: GameMode = GameMode.CREATIVE
         private set
     var onGround by Delegates.notNull<Boolean>()
-    var viewDistance by Delegates.notNull<Int>()
+    var viewDistance: Int = 0
     var isSneaking: Boolean = false
     var ping: Int = 0
     var chunkX: Int = 0
-    var chunkY: Int = 0
+    var chunkZ: Int = 0
 
     /**
      * Sends a packet to the players client session

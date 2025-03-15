@@ -9,6 +9,7 @@ import com.aznos.packets.Packet
 import com.aznos.packets.PacketHandler
 import com.aznos.packets.PacketRegistry
 import com.aznos.packets.login.out.ServerLoginDisconnectPacket
+import com.aznos.packets.play.out.ServerChunkPacket
 import com.aznos.packets.play.out.ServerKeepAlivePacket
 import com.aznos.packets.play.out.ServerPlayDisconnectPacket
 import com.aznos.packets.play.out.ServerPlayerInfoPacket
@@ -210,6 +211,26 @@ class ClientSession(
         }
 
         sendPacket(ServerPlayerInfoPacket(0, player))
+    }
+
+    fun updatePlayerChunks(chunkX: Int, chunkZ: Int) {
+        val viewDistance = player.viewDistance
+        val newChunks = mutableSetOf<Pair<Int, Int>>()
+
+        for(dx in -viewDistance..viewDistance) {
+            for(dz in -viewDistance..viewDistance) {
+                newChunks.add(Pair(chunkX + dx, chunkZ + dz))
+            }
+        }
+
+        val chunksToLoad = newChunks - player.loadedChunks
+
+        for(chunk in chunksToLoad) {
+            sendPacket(ServerChunkPacket(chunk.first, chunk.second))
+        }
+
+        player.loadedChunks.clear()
+        player.loadedChunks.addAll(newChunks)
     }
 
     /**
