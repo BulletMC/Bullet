@@ -26,12 +26,12 @@ data class Block(val id: Int, val minecraftID: String) {
         fun loadBlocksFromJSON(inputStream: InputStream) {
             val reader = InputStreamReader(inputStream)
             val json = JsonParser.parseReader(reader).asJsonObject
-            val blockArray = json.getAsJsonObject("minecraft:block")?.getAsJsonArray("value")
 
-            require(blockArray is JsonArray) { "Invalid format: Expected an array for 'minecraft:block.value'" }
+            val blockRegistry = json.getAsJsonObject("minecraft:block")?.getAsJsonArray("value")
+            require(blockRegistry is JsonArray) { "Invalid format: Expected an array for 'minecraft:block.value'" }
 
             var idCounter = 0
-            for(blockElement in blockArray) {
+            for(blockElement in blockRegistry) {
                 if(blockElement.isJsonObject) {
                     val blockObj = blockElement.asJsonObject
                     val blockName = blockObj.get("name")?.asString
@@ -45,6 +45,7 @@ data class Block(val id: Int, val minecraftID: String) {
                 }
             }
         }
+
 
         /**
          * Retrieves a block by its numerical ID
