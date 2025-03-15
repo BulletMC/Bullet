@@ -21,7 +21,6 @@ import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
 import com.aznos.entity.player.data.Location
 import com.aznos.entity.player.data.Position
-import com.aznos.packets.data.PlayerInfo
 import com.aznos.packets.play.`in`.*
 import com.aznos.packets.play.`in`.movement.ClientEntityActionPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
@@ -87,12 +86,10 @@ class PacketHandler(
         client.player.viewDistance = packet.viewDistance.toInt()
         client.player.locale = packet.locale
 
-        client.player.sendPacket(
-            ServerChunkPacket(
-                0,
-                0
-            )
-        )
+        client.sendPacket(ServerChunkPacket(0, 0))
+
+        client.sendPacket(ServerUpdateViewPositionPacket(client.player.chunkX, client.player.chunkZ))
+        client.updatePlayerChunks(client.player.chunkX, client.player.chunkZ)
     }
 
     /**
@@ -276,6 +273,19 @@ class PacketHandler(
         val player = client.player
         val lastLocation = player.location
 
+        val newChunkX = (packet.x / 16).toInt()
+        val newChunkZ = (packet.z / 16).toInt()
+
+        if(newChunkX != player.chunkX || newChunkZ != player.chunkZ) {
+            player.chunkX = newChunkX
+            player.chunkZ = newChunkZ
+            client.sendPacket(ServerUpdateViewPositionPacket(
+                newChunkX,
+                newChunkZ
+            ))
+            client.updatePlayerChunks(newChunkX, newChunkZ)
+        }
+
         val (deltaX, deltaY, deltaZ) = calculateDeltas(
             packet.x,
             packet.feetY,
@@ -319,6 +329,19 @@ class PacketHandler(
     fun onPlayerPosition(packet: ClientPlayerPositionPacket) {
         val player = client.player
         val lastLocation = player.location
+
+        val newChunkX = (packet.x / 16).toInt()
+        val newChunkZ = (packet.z / 16).toInt()
+
+        if(newChunkX != player.chunkX || newChunkZ != player.chunkZ) {
+            player.chunkX = newChunkX
+            player.chunkZ = newChunkZ
+            client.sendPacket(ServerUpdateViewPositionPacket(
+                newChunkX,
+                newChunkZ
+            ))
+            client.updatePlayerChunks(newChunkX, newChunkZ)
+        }
 
         val (deltaX, deltaY, deltaZ) = calculateDeltas(
             packet.x,
@@ -485,11 +508,10 @@ class PacketHandler(
         client.scheduleKeepAlive()
 
         client.sendPacket(ServerChunkPacket(0, 0))
-        client.sendPacket(ServerChunkPacket(0, 16))
-        client.sendPacket(ServerChunkPacket(16, 0))
-        client.sendPacket(ServerChunkPacket(16, 16))
-
         sendSpawnPlayerPackets(player)
+
+        client.sendPacket(ServerUpdateViewPositionPacket(player.chunkX, player.chunkZ))
+        client.updatePlayerChunks(player.chunkX, player.chunkZ)
 
         val (nodes, rootIndex) = buildCommandGraphFromDispatcher(CommandManager.dispatcher)
         client.sendPacket(ServerDeclareCommandsPacket(nodes, rootIndex))

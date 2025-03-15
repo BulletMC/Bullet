@@ -94,7 +94,7 @@ class ServerChunkPacket(
         baos.write(bitsPerBlock)
         baos.writeVarInt(2)
         baos.writeVarInt(0)
-        baos.writeVarInt(1) //The block
+        baos.writeVarInt(9) //The block
         baos.writeVarInt(packed.size)
 
         for(l in packed) {
