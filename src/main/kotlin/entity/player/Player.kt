@@ -36,6 +36,8 @@ class Player(
     var viewDistance by Delegates.notNull<Int>()
     var isSneaking: Boolean = false
     var ping: Int = 0
+    var chunkX: Int = 0
+    var chunkY: Int = 0
 
     /**
      * Sends a packet to the players client session
