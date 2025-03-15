@@ -400,6 +400,7 @@ class PacketHandler(
 
     /**
      * Handles when the client responds to the server keep alive packet to tell the server the client is still online
+     * It also calculates the round trip time (RTT) and updates the players ping
      */
     @PacketReceiver
     fun onKeepAlive(packet: ClientKeepAlivePacket) {
@@ -408,6 +409,13 @@ class PacketHandler(
         if(event.isCancelled) return
 
         client.respondedToKeepAlive = true
+
+        val receivedTimestamp = packet.keepAliveID
+        val currentTime = System.currentTimeMillis()
+        val rtt = (currentTime - receivedTimestamp).toInt()
+
+        client.player.ping = rtt / 2
+        Bullet.logger.info("Player ${client.player.username} has a ping of $rtt ms")
     }
 
     /**

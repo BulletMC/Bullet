@@ -48,6 +48,7 @@ class ClientSession(
      * This timer will keep track of when to send the keep alive packet to the client
      */
     private var keepAliveTimer: Timer? = null
+    private var lastKeepAliveTimestamp: Long = 0
     var respondedToKeepAlive: Boolean = true
 
     /**
@@ -122,7 +123,9 @@ class ClientSession(
                         cancel()
                         return
                     }
-                    sendPacket(ServerKeepAlivePacket(System.currentTimeMillis()))
+
+                    lastKeepAliveTimestamp = System.currentTimeMillis()
+                    sendPacket(ServerKeepAlivePacket(lastKeepAliveTimestamp))
                     respondedToKeepAlive = true
                 }
             }, 10.seconds.inWholeMilliseconds, 10.seconds.inWholeMilliseconds)
