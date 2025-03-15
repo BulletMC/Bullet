@@ -23,7 +23,7 @@ The vanilla minecraft server that is written by Mojang, comes with a host of lim
     <li>NMS - Bullet doesn't rely on outdated mojang code, and instead does everything from scratch.</li>
 </ol>
 
-<img src="./img/comparision.png">
+<img src="./img/comparision.png" alt="Comparison chart">
 
 ### Why not use minestom or another pre existing server?
 <ol>

@@ -1,10 +1,13 @@
 package com.aznos.packets.play.out
 
+import com.aznos.Bullet.players
 import com.aznos.datatypes.StringType.writeString
 import com.aznos.datatypes.UUIDType.writeUUID
 import com.aznos.datatypes.VarInt.writeVarInt
+import com.aznos.entity.player.Player
 import com.aznos.packets.Packet
 import com.aznos.packets.data.PlayerInfo
+import java.util.UUID
 
 /**
  * Sent by the server to update the player list (TAB menu)
@@ -15,54 +18,42 @@ import com.aznos.packets.data.PlayerInfo
  */
 class ServerPlayerInfoPacket(
     private val action: Int,
-    private val players: List<PlayerInfo>
+    player: Player
 ) : Packet(0x32) {
     init {
         wrapper.writeVarInt(action)
-        wrapper.writeVarInt(players.size)
+        wrapper.writeVarInt(1)
 
-        for(player in players) {
-            wrapper.writeUUID(player.uuid)
-            when(action) {
-                0 -> { //Add player
-                    wrapper.writeString(player.username)
-                    wrapper.writeVarInt(player.properties.size)
+        wrapper.writeUUID(player.uuid)
+        when(action) {
+            0 -> { //Add player
+                wrapper.writeString(player.username)
+                wrapper.writeVarInt(player.properties.size)
 
-                    for(property in player.properties) {
-                        wrapper.writeString(property.name)
-                        wrapper.writeString(property.value)
-                        wrapper.writeBoolean(property.isSigned)
-                        if(property.isSigned) {
-                            wrapper.writeString(property.signature ?: "")
-                        }
-                    }
-
-                    wrapper.writeVarInt(player.gameMode.id)
-                    wrapper.writeVarInt(player.ping)
-                    wrapper.writeBoolean(player.hasDisplayName)
-                    if(player.hasDisplayName) {
-                        wrapper.writeString(player.displayName ?: "")
+                for(property in player.properties) {
+                    wrapper.writeString(property.name)
+                    wrapper.writeString(property.value)
+                    wrapper.writeBoolean(property.isSigned)
+                    if(property.isSigned) {
+                        wrapper.writeString(property.signature ?: "")
                     }
                 }
 
-                1 -> {  //Update Gamemode
-                    wrapper.writeVarInt(player.gameMode.id)
-                }
+                wrapper.writeVarInt(player.gameMode.id)
+                wrapper.writeVarInt(player.ping)
+                wrapper.writeBoolean(false)
+            }
 
-                2 -> { //Update Ping
-                    wrapper.writeVarInt(player.ping)
-                }
+            1 -> {  //Update Gamemode
+                wrapper.writeVarInt(player.gameMode.id)
+            }
 
-                3 -> { //Update Display Name
-                    wrapper.writeBoolean(player.hasDisplayName)
-                    if(player.hasDisplayName) {
-                        wrapper.writeString(player.displayName ?: "")
-                    }
-                }
+            2 -> { //Update Ping
+                wrapper.writeVarInt(player.ping)
+            }
 
-                4 -> { //Remove player
+            4 -> { //Remove player
 
-                }
             }
         }
     }

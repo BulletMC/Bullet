@@ -7,6 +7,7 @@ import com.aznos.entity.player.data.ChatPosition
 import com.aznos.entity.player.data.GameMode
 import com.aznos.entity.player.data.Location
 import com.aznos.packets.Packet
+import com.aznos.packets.data.PlayerProperty
 import com.aznos.packets.play.out.ServerChangeGameStatePacket
 import com.aznos.packets.play.out.ServerChatMessagePacket
 import com.aznos.packets.play.out.ServerTimeUpdatePacket
@@ -28,11 +29,13 @@ class Player(
     lateinit var locale: String
     lateinit var brand: String
 
+    var properties: MutableList<PlayerProperty> = mutableListOf()
     var gameMode: GameMode = GameMode.CREATIVE
         private set
     var onGround by Delegates.notNull<Boolean>()
     var viewDistance by Delegates.notNull<Int>()
     var isSneaking: Boolean = false
+    var ping: Int = 0
 
     /**
      * Sends a packet to the players client session
