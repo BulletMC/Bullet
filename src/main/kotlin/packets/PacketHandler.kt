@@ -87,9 +87,9 @@ class PacketHandler(
         client.player.locale = packet.locale
 
         client.sendPacket(ServerChunkPacket(0, 0))
-        client.sendPacket(ServerChunkPacket(0, 1))
-        client.sendPacket(ServerChunkPacket(1, 0))
-        client.sendPacket(ServerChunkPacket(1, 1))
+
+        client.sendPacket(ServerUpdateViewPositionPacket(client.player.chunkX, client.player.chunkZ))
+        client.updatePlayerChunks(client.player.chunkX, client.player.chunkZ)
     }
 
     /**
@@ -508,10 +508,6 @@ class PacketHandler(
         client.scheduleKeepAlive()
 
         client.sendPacket(ServerChunkPacket(0, 0))
-        client.sendPacket(ServerChunkPacket(0, 1))
-        client.sendPacket(ServerChunkPacket(1, 0))
-        client.sendPacket(ServerChunkPacket(1, 1))
-
         sendSpawnPlayerPackets(player)
 
         client.sendPacket(ServerUpdateViewPositionPacket(player.chunkX, player.chunkZ))
