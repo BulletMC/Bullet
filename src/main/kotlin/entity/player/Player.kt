@@ -40,7 +40,6 @@ class Player(
     var ping: Int = 0
     var chunkX: Int = 0
     var chunkZ: Int = 0
-    var blockID: Int = 1 //Temp
 
     /**
      * Sends a packet to the players client session

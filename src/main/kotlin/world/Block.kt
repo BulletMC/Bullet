@@ -1,13 +1,10 @@
 package com.aznos.world
 
-import com.google.gson.JsonArray
-import com.google.gson.JsonParser
-import java.io.File
-import java.io.InputStream
-import java.io.InputStreamReader
-
 /**
- * A block in the world.
+ * Enum of all the blocks in the game
+ *
+ * @param id The numerical ID of the block
+ * @param minecraftID The string ID of the block, (e.g. "minecraft:stone")
  */
 enum class Block(val id: Int, val minecraftID: String) {
     AIR(0, "minecraft:air"),
@@ -19,155 +16,170 @@ enum class Block(val id: Int, val minecraftID: String) {
     ANDESITE(6, "minecraft:andesite"),
     POLISHED_ANDESITE(7, "minecraft:polished_andesite"),
 
-    GRASS_BLOCK(8, "minecraft:grass_block"),
-    DIRT(9, "minecraft:dirt"),
-    COARSE_DIRT(10, "minecraft:coarse_dirt"),
-    PODZOL(11, "minecraft:podzol"),
+    SNOWY_GRASS_BLOCK(8, "minecraft:snowy_grass_block"),
+    GRASS_BLOCK(9, "minecraft:grass_block"),
 
-    COBBLESTONE(12, "minecraft:cobblestone"),
-    PLANKS(13, "minecraft:planks"),
-    SAPLING(14, "minecraft:sapling"),
-    BEDROCK(15, "minecraft:bedrock"),
+    DIRT(10, "minecraft:dirt"),
+    COARSE_DIRT(11, "minecraft:coarse_dirt"),
+    PODZOL(12, "minecraft:podzol"),
 
-    WATER_FLOWING(16, "minecraft:flowing_water"),
-    WATER(17, "minecraft:water"),
-    LAVA_FLOWING(18, "minecraft:flowing_lava"),
-    LAVA(19, "minecraft:lava"),
+    COBBLESTONE(13, "minecraft:cobblestone"),
+    PLANKS(14, "minecraft:planks"),
+    SAPLING(15, "minecraft:sapling"),
+    BEDROCK(16, "minecraft:bedrock"),
 
-    SAND(20, "minecraft:sand"),
-    RED_SAND(21, "minecraft:red_sand"),
-    GRAVEL(22, "minecraft:gravel"),
+    WATER_FLOWING(17, "minecraft:flowing_water"),
+    WATER(18, "minecraft:water"),
+    LAVA_FLOWING(19, "minecraft:flowing_lava"),
+    LAVA(20, "minecraft:lava"),
 
-    GOLD_ORE(23, "minecraft:gold_ore"),
-    IRON_ORE(24, "minecraft:iron_ore"),
-    COAL_ORE(25, "minecraft:coal_ore"),
+    SAND(21, "minecraft:sand"),
+    RED_SAND(22, "minecraft:red_sand"),
+    GRAVEL(23, "minecraft:gravel"),
 
-    OAK_LOG(26, "minecraft:log"),
-    LEAVES(27, "minecraft:leaves"),
-    SPONGE(28, "minecraft:sponge"),
-    GLASS(29, "minecraft:glass"),
+    GOLD_ORE(24, "minecraft:gold_ore"),
+    IRON_ORE(25, "minecraft:iron_ore"),
+    COAL_ORE(26, "minecraft:coal_ore"),
 
-    LAPIS_ORE(30, "minecraft:lapis_ore"),
-    LAPIS_BLOCK(31, "minecraft:lapis_block"),
-    DISPENSER(32, "minecraft:dispenser"),
+    OAK_LOG(27, "minecraft:log"),
+    LEAVES(28, "minecraft:leaves"),
+    SPONGE(29, "minecraft:sponge"),
+    GLASS(30, "minecraft:glass"),
 
-    SANDSTONE(33, "minecraft:sandstone"),
-    CHISELED_SANDSTONE(34, "minecraft:chiseled_sandstone"),
-    SMOOTH_SANDSTONE(35, "minecraft:smooth_sandstone"),
+    LAPIS_ORE(31, "minecraft:lapis_ore"),
+    LAPIS_BLOCK(32, "minecraft:lapis_block"),
+    DISPENSER(33, "minecraft:dispenser"),
 
-    NOTE_BLOCK(36, "minecraft:noteblock"),
-    BED(37, "minecraft:bed"),
-    POWERED_RAIL(38, "minecraft:golden_rail"),
-    DETECTOR_RAIL(39, "minecraft:detector_rail"),
-    STICKY_PISTON(40, "minecraft:sticky_piston"),
+    SANDSTONE(34, "minecraft:sandstone"),
+    CHISELED_SANDSTONE(35, "minecraft:chiseled_sandstone"),
+    SMOOTH_SANDSTONE(36, "minecraft:smooth_sandstone"),
 
-    COBWEB(41, "minecraft:web"),
-    TALL_GRASS(42, "minecraft:tallgrass"),
-    DEAD_BUSH(43, "minecraft:deadbush"),
-    PISTON(44, "minecraft:piston"),
-    PISTON_HEAD(45, "minecraft:piston_head"),
+    NOTE_BLOCK(37, "minecraft:noteblock"),
+    BED(38, "minecraft:bed"),
+    POWERED_RAIL(39, "minecraft:golden_rail"),
+    DETECTOR_RAIL(40, "minecraft:detector_rail"),
+    STICKY_PISTON(41, "minecraft:sticky_piston"),
 
-    WOOL(46, "minecraft:wool"),
-    DANDELION(47, "minecraft:yellow_flower"),
-    POPPY(48, "minecraft:red_flower"),
-    BROWN_MUSHROOM(49, "minecraft:brown_mushroom"),
-    RED_MUSHROOM(50, "minecraft:red_mushroom"),
+    COBWEB(42, "minecraft:web"),
+    TALL_GRASS(43, "minecraft:tallgrass"),
+    DEAD_BUSH(44, "minecraft:deadbush"),
+    PISTON(45, "minecraft:piston"),
+    PISTON_HEAD(46, "minecraft:piston_head"),
 
-    GOLD_BLOCK(51, "minecraft:gold_block"),
-    IRON_BLOCK(52, "minecraft:iron_block"),
-    DOUBLE_STONE_SLAB(53, "minecraft:double_stone_slab"),
-    STONE_SLAB(54, "minecraft:stone_slab"),
-    BRICK_BLOCK(55, "minecraft:brick_block"),
-    TNT(56, "minecraft:tnt"),
-    BOOKSHELF(57, "minecraft:bookshelf"),
+    WOOL(47, "minecraft:wool"),
+    DANDELION(48, "minecraft:yellow_flower"),
+    POPPY(49, "minecraft:red_flower"),
+    BROWN_MUSHROOM(50, "minecraft:brown_mushroom"),
+    RED_MUSHROOM(51, "minecraft:red_mushroom"),
 
-    MOSSY_COBBLESTONE(58, "minecraft:mossy_cobblestone"),
-    OBSIDIAN(59, "minecraft:obsidian"),
-    TORCH(60, "minecraft:torch"),
-    FIRE(61, "minecraft:fire"),
+    GOLD_BLOCK(52, "minecraft:gold_block"),
+    IRON_BLOCK(53, "minecraft:iron_block"),
+    DOUBLE_STONE_SLAB(54, "minecraft:double_stone_slab"),
+    STONE_SLAB(55, "minecraft:stone_slab"),
+    BRICK_BLOCK(56, "minecraft:brick_block"),
+    TNT(57, "minecraft:tnt"),
+    BOOKSHELF(58, "minecraft:bookshelf"),
 
-    MOB_SPAWNER(62, "minecraft:mob_spawner"),
-    OAK_STAIRS(63, "minecraft:oak_stairs"),
-    CHEST(64, "minecraft:chest"),
-    REDSTONE_WIRE(65, "minecraft:redstone_wire"),
-    DIAMOND_ORE(66, "minecraft:diamond_ore"),
-    DIAMOND_BLOCK(67, "minecraft:diamond_block"),
+    MOSSY_COBBLESTONE(59, "minecraft:mossy_cobblestone"),
+    OBSIDIAN(60, "minecraft:obsidian"),
+    TORCH(61, "minecraft:torch"),
+    FIRE(62, "minecraft:fire"),
 
-    CRAFTING_TABLE(68, "minecraft:crafting_table"),
-    WHEAT(69, "minecraft:wheat"),
-    FARMLAND(70, "minecraft:farmland"),
-    FURNACE(71, "minecraft:furnace"),
-    LIT_FURNACE(72, "minecraft:lit_furnace"),
+    MOB_SPAWNER(63, "minecraft:mob_spawner"),
+    OAK_STAIRS(64, "minecraft:oak_stairs"),
+    CHEST(65, "minecraft:chest"),
+    REDSTONE_WIRE(66, "minecraft:redstone_wire"),
+    DIAMOND_ORE(67, "minecraft:diamond_ore"),
+    DIAMOND_BLOCK(68, "minecraft:diamond_block"),
 
-    STANDING_SIGN(73, "minecraft:standing_sign"),
-    WOODEN_DOOR(74, "minecraft:wooden_door"),
-    LADDER(75, "minecraft:ladder"),
-    RAIL(76, "minecraft:rail"),
-    STONE_STAIRS(77, "minecraft:stone_stairs"),
+    CRAFTING_TABLE(69, "minecraft:crafting_table"),
+    WHEAT(70, "minecraft:wheat"),
+    FARMLAND(71, "minecraft:farmland"),
+    FURNACE(72, "minecraft:furnace"),
+    LIT_FURNACE(73, "minecraft:lit_furnace"),
 
-    WALL_SIGN(78, "minecraft:wall_sign"),
-    LEVER(79, "minecraft:lever"),
-    STONE_PRESSURE_PLATE(80, "minecraft:stone_pressure_plate"),
-    IRON_DOOR(81, "minecraft:iron_door"),
-    WOODEN_PRESSURE_PLATE(82, "minecraft:wooden_pressure_plate"),
+    STANDING_SIGN(74, "minecraft:standing_sign"),
+    WOODEN_DOOR(75, "minecraft:wooden_door"),
+    LADDER(76, "minecraft:ladder"),
+    RAIL(77, "minecraft:rail"),
+    STONE_STAIRS(78, "minecraft:stone_stairs"),
 
-    REDSTONE_ORE(83, "minecraft:redstone_ore"),
-    LIT_REDSTONE_ORE(84, "minecraft:lit_redstone_ore"),
-    UNLIT_REDSTONE_TORCH(85, "minecraft:unlit_redstone_torch"),
-    REDSTONE_TORCH(86, "minecraft:redstone_torch"),
+    WALL_SIGN(79, "minecraft:wall_sign"),
+    LEVER(80, "minecraft:lever"),
+    STONE_PRESSURE_PLATE(81, "minecraft:stone_pressure_plate"),
+    IRON_DOOR(82, "minecraft:iron_door"),
+    WOODEN_PRESSURE_PLATE(83, "minecraft:wooden_pressure_plate"),
 
-    STONE_BUTTON(87, "minecraft:stone_button"),
-    SNOW_LAYER(88, "minecraft:snow_layer"),
-    ICE(89, "minecraft:ice"),
-    SNOW_BLOCK(90, "minecraft:snow"),
+    REDSTONE_ORE(84, "minecraft:redstone_ore"),
+    LIT_REDSTONE_ORE(85, "minecraft:lit_redstone_ore"),
+    UNLIT_REDSTONE_TORCH(86, "minecraft:unlit_redstone_torch"),
+    REDSTONE_TORCH(87, "minecraft:redstone_torch"),
 
-    CACTUS(91, "minecraft:cactus"),
-    CLAY(92, "minecraft:clay"),
-    SUGAR_CANE(93, "minecraft:reeds"),
-    JUKEBOX(94, "minecraft:jukebox"),
-    FENCE(95, "minecraft:fence"),
+    STONE_BUTTON(88, "minecraft:stone_button"),
+    SNOW_LAYER(89, "minecraft:snow_layer"),
+    ICE(90, "minecraft:ice"),
+    SNOW_BLOCK(91, "minecraft:snow"),
 
-    PUMPKIN(96, "minecraft:pumpkin"),
-    NETHERRACK(97, "minecraft:netherrack"),
-    SOUL_SAND(98, "minecraft:soul_sand"),
-    GLOWSTONE(99, "minecraft:glowstone"),
-    NETHER_PORTAL(100, "minecraft:portal"),
+    CACTUS(92, "minecraft:cactus"),
+    CLAY(93, "minecraft:clay"),
+    SUGAR_CANE(94, "minecraft:reeds"),
+    JUKEBOX(95, "minecraft:jukebox"),
+    FENCE(96, "minecraft:fence"),
 
-    JACK_O_LANTERN(101, "minecraft:lit_pumpkin"),
-    CAKE(102, "minecraft:cake"),
-    UNPOWERED_REPEATER(103, "minecraft:unpowered_repeater"),
-    POWERED_REPEATER(104, "minecraft:powered_repeater"),
+    PUMPKIN(97, "minecraft:pumpkin"),
+    NETHERRACK(98, "minecraft:netherrack"),
+    SOUL_SAND(99, "minecraft:soul_sand"),
+    GLOWSTONE(100, "minecraft:glowstone"),
+    NETHER_PORTAL(101, "minecraft:portal"),
 
-    STAINED_GLASS(105, "minecraft:stained_glass"),
-    TRAPDOOR(106, "minecraft:trapdoor"),
-    STONE_BRICKS(107, "minecraft:stonebrick"),
-    MYCELIUM(108, "minecraft:mycelium"),
+    JACK_O_LANTERN(102, "minecraft:lit_pumpkin"),
+    CAKE(103, "minecraft:cake"),
+    UNPOWERED_REPEATER(104, "minecraft:unpowered_repeater"),
+    POWERED_REPEATER(105, "minecraft:powered_repeater"),
 
-    WATER_LILY(109, "minecraft:waterlily"),
-    NETHER_BRICKS(110, "minecraft:nether_brick"),
-    NETHER_WART(111, "minecraft:nether_wart"),
-    ENCHANTING_TABLE(112, "minecraft:enchanting_table"),
+    STAINED_GLASS(106, "minecraft:stained_glass"),
+    TRAPDOOR(107, "minecraft:trapdoor"),
+    STONE_BRICKS(108, "minecraft:stonebrick"),
+    MYCELIUM(109, "minecraft:mycelium"),
 
-    QUARTZ_BLOCK(113, "minecraft:quartz_block"),
-    QUARTZ_STAIRS(114, "minecraft:quartz_stairs"),
-    HOPPER(115, "minecraft:hopper"),
-    DROPPER(116, "minecraft:dropper"),
+    WATER_LILY(110, "minecraft:waterlily"),
+    NETHER_BRICKS(111, "minecraft:nether_brick"),
+    NETHER_WART(112, "minecraft:nether_wart"),
+    ENCHANTING_TABLE(113, "minecraft:enchanting_table"),
 
-    PRISMARINE(117, "minecraft:prismarine"),
-    SEA_LANTERN(118, "minecraft:sea_lantern"),
-    HAY_BLOCK(119, "minecraft:hay_block"),
+    QUARTZ_BLOCK(114, "minecraft:quartz_block"),
+    QUARTZ_STAIRS(115, "minecraft:quartz_stairs"),
+    HOPPER(116, "minecraft:hopper"),
+    DROPPER(117, "minecraft:dropper"),
 
-    CARPET(120, "minecraft:carpet"),
-    HARDENED_CLAY(121, "minecraft:hardened_clay"),
-    COAL_BLOCK(122, "minecraft:coal_block"),
-    PACKED_ICE(123, "minecraft:packed_ice"),
-    STRUCTURE_BLOCK(124, "minecraft:structure_block");
+    PRISMARINE(118, "minecraft:prismarine"),
+    SEA_LANTERN(119, "minecraft:sea_lantern"),
+    HAY_BLOCK(120, "minecraft:hay_block"),
+
+    CARPET(121, "minecraft:carpet"),
+    HARDENED_CLAY(122, "minecraft:hardened_clay"),
+    COAL_BLOCK(123, "minecraft:coal_block"),
+    PACKED_ICE(124, "minecraft:packed_ice"),
+    STRUCTURE_BLOCK(125, "minecraft:structure_block");
 
     companion object {
-        private val blocksByID = entries.associateBy { it.id }
-        private val blocksByName = entries.associateBy { it.minecraftID }
+        private val blocksByID = values().associateBy { it.id }
+        private val blocksByName = values().associateBy { it.minecraftID }
 
+        /**
+         * Get a block by its ID
+         *
+         * @param id The numerical ID of the block
+         * @return The block with the given ID, or null if it doesn't exist
+         */
         fun getBlockByID(id: Int): Block? = blocksByID[id]
+
+        /**
+         * Get a block by its name
+         *
+         * @param name The string ID of the block
+         * @return The block with the given name, or null if it doesn't exist
+         */
         fun getBlockByName(name: String): Block? = blocksByName[name]
     }
 }

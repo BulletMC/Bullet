@@ -33,6 +33,7 @@ import com.aznos.packets.play.out.movement.ServerEntityMovementPacket
 import com.aznos.packets.play.out.movement.ServerEntityPositionAndRotationPacket
 import com.aznos.packets.play.out.movement.ServerEntityPositionPacket
 import com.aznos.packets.play.out.movement.ServerEntityRotationPacket
+import com.aznos.world.Block
 import com.aznos.world.data.BlockStatus
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -215,10 +216,8 @@ class PacketHandler(
                         event.location.y,
                         event.location.z
                     ),
-                    client.player.blockID //TODO: Check what block the player is holding, and update this
+                    Block.STONE.id //TODO: Check what block the player is holding, and update this
                 ))
-
-                client.player.blockID++
             }
         }
     }
