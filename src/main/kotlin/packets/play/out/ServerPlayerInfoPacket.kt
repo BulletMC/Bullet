@@ -6,8 +6,6 @@ import com.aznos.datatypes.UUIDType.writeUUID
 import com.aznos.datatypes.VarInt.writeVarInt
 import com.aznos.entity.player.Player
 import com.aznos.packets.Packet
-import com.aznos.packets.data.PlayerInfo
-import java.util.UUID
 
 /**
  * Sent by the server to update the player list (TAB menu)

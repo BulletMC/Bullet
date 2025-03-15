@@ -21,7 +21,6 @@ import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
 import com.aznos.entity.player.data.Location
 import com.aznos.entity.player.data.Position
-import com.aznos.packets.data.PlayerInfo
 import com.aznos.packets.play.`in`.*
 import com.aznos.packets.play.`in`.movement.ClientEntityActionPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
@@ -87,12 +86,10 @@ class PacketHandler(
         client.player.viewDistance = packet.viewDistance.toInt()
         client.player.locale = packet.locale
 
-        client.player.sendPacket(
-            ServerChunkPacket(
-                0,
-                0
-            )
-        )
+        client.sendPacket(ServerChunkPacket(0, 0))
+        client.sendPacket(ServerChunkPacket(0, 1))
+        client.sendPacket(ServerChunkPacket(1, 0))
+        client.sendPacket(ServerChunkPacket(1, 1))
     }
 
     /**
@@ -485,9 +482,9 @@ class PacketHandler(
         client.scheduleKeepAlive()
 
         client.sendPacket(ServerChunkPacket(0, 0))
-        client.sendPacket(ServerChunkPacket(0, 16))
-        client.sendPacket(ServerChunkPacket(16, 0))
-        client.sendPacket(ServerChunkPacket(16, 16))
+        client.sendPacket(ServerChunkPacket(0, 1))
+        client.sendPacket(ServerChunkPacket(1, 0))
+        client.sendPacket(ServerChunkPacket(1, 1))
 
         sendSpawnPlayerPackets(player)
 

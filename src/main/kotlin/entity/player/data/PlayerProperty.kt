@@ -1,4 +1,4 @@
-package com.aznos.packets.data
+package com.aznos.entity.player.data
 
 /**
  * Represents a player property (ex: skin textures)

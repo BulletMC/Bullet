@@ -7,7 +7,7 @@ import com.aznos.entity.player.data.ChatPosition
 import com.aznos.entity.player.data.GameMode
 import com.aznos.entity.player.data.Location
 import com.aznos.packets.Packet
-import com.aznos.packets.data.PlayerProperty
+import com.aznos.entity.player.data.PlayerProperty
 import com.aznos.packets.play.out.ServerChangeGameStatePacket
 import com.aznos.packets.play.out.ServerChatMessagePacket
 import com.aznos.packets.play.out.ServerTimeUpdatePacket
