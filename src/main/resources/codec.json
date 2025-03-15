@@ -8952,5 +8952,13 @@
         }
       }
     }
+  },
+  "minecraft:block": {
+    "type": "minecraft:block",
+    "value": [
+      {"name": "minecraft:stone", "id": 1},
+      {"name": "minecraft:grass_block", "id": 8},
+      {"name": "minecraft:dirt", "id": 9}
+    ]
   }
 }
