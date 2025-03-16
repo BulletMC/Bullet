@@ -21,7 +21,7 @@ import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
 import com.aznos.entity.player.data.Location
 import com.aznos.entity.player.data.Position
-import com.aznos.entity.player.data.Slot
+import com.aznos.datatypes.Slot
 import com.aznos.packets.play.`in`.*
 import com.aznos.packets.play.`in`.movement.ClientEntityActionPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
@@ -71,11 +71,8 @@ class PacketHandler(
         if(packet.slot.present) {
             val block = Block.getBlockByID(packet.slot.itemID!!) ?: Block.AIR
             client.player.inventory[packet.slotIndex.toInt()] = block.id
-
-            Bullet.logger.info("Player ${client.player.username} added ${block.name} to slot ${packet.slotIndex}")
         } else {
             client.player.inventory.remove(packet.slotIndex.toInt())
-            Bullet.logger.info("Player ${client.player.username} removed item from slot ${packet.slotIndex}")
         }
 
         if(packet.slotIndex.toInt() == client.player.selectedSlot + 36) {
@@ -722,8 +719,8 @@ class PacketHandler(
     private fun sendHeldItemUpdate() {
         val heldItemID = client.player.getHeldItem()
 
-        val heldItemSlot = if(heldItemID == 0) Slot(false)
-        else Slot(true, heldItemID, 1, null)
+        val heldItemSlot = if(heldItemID == 0) Slot.SlotData(false)
+        else Slot.SlotData(true, heldItemID, 1, null)
 
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {

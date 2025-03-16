@@ -1,7 +1,8 @@
 package com.aznos.packets.play.out
 
 import com.aznos.datatypes.VarInt.writeVarInt
-import com.aznos.entity.player.data.Slot
+import com.aznos.datatypes.Slot
+import com.aznos.datatypes.Slot.writeSlot
 import com.aznos.packets.Packet
 
 /**
@@ -12,7 +13,7 @@ import com.aznos.packets.Packet
  */
 class ServerEntityEquipmentPacket(
     entityID: Int,
-    equipment: List<Pair<Int, Slot>>
+    equipment: List<Pair<Int, Slot.SlotData>>
 ) : Packet(0x47) {
     init {
         wrapper.writeVarInt(entityID)
@@ -22,7 +23,7 @@ class ServerEntityEquipmentPacket(
             val slotByte = if(index == equipment.lastIndex) slot else slot or 0x80
             wrapper.writeByte(slotByte)
 
-            Slot.write(wrapper, item)
+            wrapper.writeSlot(item)
         }
     }
 }
