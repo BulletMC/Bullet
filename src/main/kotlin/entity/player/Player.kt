@@ -31,6 +31,9 @@ class Player(
     lateinit var locale: String
     lateinit var brand: String
 
+    var inventory: MutableMap<Int, Int> = mutableMapOf()
+    var selectedSlot: Int = 0
+
     var properties: MutableList<PlayerProperty> = mutableListOf()
     var gameMode: GameMode = GameMode.CREATIVE
         private set
@@ -68,12 +71,31 @@ class Player(
         sendPacket(ServerChatMessagePacket(message, ChatPosition.CHAT, null))
     }
 
+    /**
+     * Sets the time of day (clientside) for the player
+     *
+     * @param time The time to set it to
+     */
     fun setTimeOfDay(time: Long) {
         sendPacket(ServerTimeUpdatePacket(Bullet.worldAge, time))
     }
 
+    /**
+     * Sets the game mode for the player
+     *
+     * @param mode The game mode to set
+     */
     fun setGameMode(mode: GameMode) {
         gameMode = mode
         sendPacket(ServerChangeGameStatePacket(3, mode.id.toFloat()))
+    }
+
+    /**
+     * Returns the players held item
+     *
+     * @return The item ID
+     */
+    fun getHeldItem(): Int? {
+        return inventory[selectedSlot]
     }
 }

@@ -54,6 +54,7 @@ object PacketRegistry {
             this[0x13] = ClientPlayerPositionAndRotation::class.java
             this[0x14] = ClientPlayerRotation::class.java
             this[0x15] = ClientPlayerMovement::class.java
+            this[0x28] = ClientCreativeInventoryActionPacket::class.java
             this[0x1B] = ClientDiggingPacket::class.java
             this[0x1C] = ClientEntityActionPacket::class.java
             this[0x2C] = ClientAnimationPacket::class.java

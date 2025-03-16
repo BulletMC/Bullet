@@ -60,6 +60,15 @@ class PacketHandler(
     private val client: ClientSession
 ) {
     @PacketReceiver
+    fun onCreativeInventoryAction(packet: ClientCreativeInventoryActionPacket) {
+        if(packet.slot.present) {
+            client.player.inventory[packet.slotIndex.toInt()] = packet.slot.itemID!!
+        } else {
+            client.player.inventory.remove(packet.slotIndex.toInt())
+        }
+    }
+
+    @PacketReceiver
     fun onPluginMessage(packet: ClientPluginMessagePacket) {
         when(packet.channel) {
             "minecraft:brand" -> {
@@ -590,6 +599,11 @@ class PacketHandler(
         val player = Player(client)
         player.username = username
         player.uuid = uuid
+
+        for(i in 1..45) {
+            player.inventory[i] = 0
+        }
+
         player.location = Location(8.5, 2.0, 8.5, 0f, 0f)
         player.onGround = false
 
