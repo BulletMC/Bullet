@@ -67,9 +67,13 @@ class PacketHandler(
     @PacketReceiver
     fun onCreativeInventoryAction(packet: ClientCreativeInventoryActionPacket) {
         if(packet.slot.present) {
-            client.player.inventory[packet.slotIndex.toInt()] = packet.slot.itemID!!
+            val block = Block.getBlockByID(packet.slot.itemID!!) ?: Block.AIR
+            client.player.inventory[packet.slotIndex.toInt()] = block.id
+
+            Bullet.logger.info("Player ${client.player.username} added ${block.name} to slot ${packet.slotIndex}")
         } else {
             client.player.inventory.remove(packet.slotIndex.toInt())
+            Bullet.logger.info("Player ${client.player.username} removed item from slot ${packet.slotIndex}")
         }
     }
 
@@ -222,6 +226,8 @@ class PacketHandler(
             5 -> event.location.x += 1
         }
 
+        val heldItem = client.player.getHeldItem() ?: 0
+
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {
                 otherPlayer.sendPacket(ServerBlockChangePacket(
@@ -230,7 +236,7 @@ class PacketHandler(
                         event.location.y,
                         event.location.z
                     ),
-                    Block.STONE.id //TODO: Check what block the player is holding, and update this
+                    heldItem
                 ))
             }
         }

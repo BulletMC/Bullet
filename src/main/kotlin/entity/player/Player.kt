@@ -11,6 +11,7 @@ import com.aznos.entity.player.data.PlayerProperty
 import com.aznos.packets.play.out.ServerChangeGameStatePacket
 import com.aznos.packets.play.out.ServerChatMessagePacket
 import com.aznos.packets.play.out.ServerTimeUpdatePacket
+import com.aznos.world.Block
 import net.kyori.adventure.text.TextComponent
 import java.util.UUID
 import kotlin.properties.Delegates
@@ -95,7 +96,12 @@ class Player(
      *
      * @return The item ID
      */
-    fun getHeldItem(): Int? {
-        return inventory[selectedSlot]
+    fun getHeldItem(): Int {
+        val slotIndex = selectedSlot + 36
+        val blockID = inventory[slotIndex]
+
+        return blockID?.let {
+            Block.getBlockByID(it)?.id
+        } ?: 0
     }
 }
