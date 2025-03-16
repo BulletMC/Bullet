@@ -21,6 +21,7 @@ import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
 import com.aznos.entity.player.data.Location
 import com.aznos.entity.player.data.Position
+import com.aznos.datatypes.Slot
 import com.aznos.packets.play.`in`.*
 import com.aznos.packets.play.`in`.movement.ClientEntityActionPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
@@ -59,6 +60,26 @@ import java.util.UUID
 class PacketHandler(
     private val client: ClientSession
 ) {
+    @PacketReceiver
+    fun onHeldItemChange(packet: ClientHeldItemChangePacket) {
+        client.player.selectedSlot = packet.slot.toInt()
+        sendHeldItemUpdate()
+    }
+
+    @PacketReceiver
+    fun onCreativeInventoryAction(packet: ClientCreativeInventoryActionPacket) {
+        if(packet.slot.present) {
+            val block = Block.getBlockByID(packet.slot.itemID!!) ?: Block.AIR
+            client.player.inventory[packet.slotIndex.toInt()] = block.id
+        } else {
+            client.player.inventory.remove(packet.slotIndex.toInt())
+        }
+
+        if(packet.slotIndex.toInt() == client.player.selectedSlot + 36) {
+            sendHeldItemUpdate()
+        }
+    }
+
     @PacketReceiver
     fun onPluginMessage(packet: ClientPluginMessagePacket) {
         when(packet.channel) {
@@ -208,6 +229,8 @@ class PacketHandler(
             5 -> event.location.x += 1
         }
 
+        val heldItem = client.player.getHeldItem() ?: 0
+
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {
                 otherPlayer.sendPacket(ServerBlockChangePacket(
@@ -216,7 +239,7 @@ class PacketHandler(
                         event.location.y,
                         event.location.z
                     ),
-                    Block.STONE.id //TODO: Check what block the player is holding, and update this
+                    heldItem
                 ))
             }
         }
@@ -590,6 +613,11 @@ class PacketHandler(
         val player = Player(client)
         player.username = username
         player.uuid = uuid
+
+        for(i in 1..45) {
+            player.inventory[i] = 0
+        }
+
         player.location = Location(8.5, 2.0, 8.5, 0f, 0f)
         player.onGround = false
 
@@ -684,6 +712,22 @@ class PacketHandler(
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != player) {
                 otherPlayer.sendPacket(packet)
+            }
+        }
+    }
+
+    private fun sendHeldItemUpdate() {
+        val heldItemID = client.player.getHeldItem()
+
+        val heldItemSlot = if(heldItemID == 0) Slot.SlotData(false)
+        else Slot.SlotData(true, heldItemID, 1, null)
+
+        for(otherPlayer in Bullet.players) {
+            if(otherPlayer != client.player) {
+                otherPlayer.sendPacket(ServerEntityEquipmentPacket(
+                    client.player.entityID,
+                    listOf(0 to heldItemSlot)
+                ))
             }
         }
     }

@@ -10,7 +10,9 @@ import com.aznos.packets.Packet
 import com.aznos.entity.player.data.PlayerProperty
 import com.aznos.packets.play.out.ServerChangeGameStatePacket
 import com.aznos.packets.play.out.ServerChatMessagePacket
+import com.aznos.packets.play.out.ServerHeldItemChangePacket
 import com.aznos.packets.play.out.ServerTimeUpdatePacket
+import com.aznos.world.Block
 import net.kyori.adventure.text.TextComponent
 import java.util.UUID
 import kotlin.properties.Delegates
@@ -30,6 +32,9 @@ class Player(
     lateinit var location: Location
     lateinit var locale: String
     lateinit var brand: String
+
+    var inventory: MutableMap<Int, Int> = mutableMapOf()
+    var selectedSlot: Int = 0
 
     var properties: MutableList<PlayerProperty> = mutableListOf()
     var gameMode: GameMode = GameMode.CREATIVE
@@ -68,12 +73,45 @@ class Player(
         sendPacket(ServerChatMessagePacket(message, ChatPosition.CHAT, null))
     }
 
+    /**
+     * Sets the time of day (clientside) for the player
+     *
+     * @param time The time to set it to
+     */
     fun setTimeOfDay(time: Long) {
         sendPacket(ServerTimeUpdatePacket(Bullet.worldAge, time))
     }
 
+    /**
+     * Sets the game mode for the player
+     *
+     * @param mode The game mode to set
+     */
     fun setGameMode(mode: GameMode) {
         gameMode = mode
         sendPacket(ServerChangeGameStatePacket(3, mode.id.toFloat()))
+    }
+
+    /**
+     * Returns the players held item
+     *
+     * @return The item ID
+     */
+    fun getHeldItem(): Int {
+        val slotIndex = selectedSlot + 36
+        val blockID = inventory[slotIndex]
+
+        return blockID?.let {
+            Block.getBlockByID(it)?.id ?: it
+        } ?: 0
+    }
+
+    /**
+     * Sets the players held item slot in the hotbar (0-8)
+     *
+     * @param slot The slot to select
+     */
+    fun setHeldSlot(slot: Int) {
+        sendPacket(ServerHeldItemChangePacket(slot.toByte()))
     }
 }
