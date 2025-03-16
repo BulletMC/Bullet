@@ -1,7 +1,14 @@
-    package com.aznos.world
+package com.aznos.world
 
-    enum class Block(val baseId: Int, val minecraftID: String, val defaultState: Int) {
-        AIR(0, "minecraft:air", 0),
+/**
+ * Enum class that contains all the blocks in minecraft
+ *
+ * @param id The numerical ID of the block
+ * @param minecraftID The minecraft string ID of the block (e.g "minecraft:stone")
+ * @param defaultState The default state of the block
+ */
+enum class Block(val id: Int, val minecraftID: String, val defaultState: Int) {
+AIR(0, "minecraft:air", 0),
 
 STONE(1, "minecraft:stone", 1),
 
@@ -1527,14 +1534,14 @@ CRACKED_NETHER_BRICKS(761, "minecraft:cracked_nether_bricks", 17110),
 
 QUARTZ_BRICKS(762, "minecraft:quartz_bricks", 17111);
         
-        companion object {
-            private val blocksByBaseId = values().associateBy { it.baseId }
-            private val blocksByName = values().associateBy { it.minecraftID }
-            fun getBlockByID(id: Int): Block? = blocksByBaseId[id]
-            fun getBlockByName(name: String): Block? = blocksByName[name]
-        }
+companion object {
+        private val blocksByID = entries.associateBy { it.id }
+        private val blocksByName = entries.associateBy { it.minecraftID }
+        fun getBlockByID(id: Int): Block? = blocksByID[id]
+        fun getBlockByName(name: String): Block? = blocksByName[name]
+}
 
-        operator fun invoke(vararg props: Pair<String, Any>): BlockInstance {
-            return BlockInstance(this, defaultState, props.toMap())
-        }
+    operator fun invoke(vararg props: Pair<String, Any>): BlockInstance {
+        return BlockInstance(this, defaultState, props.toMap())
     }
+}
