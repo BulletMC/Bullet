@@ -102,7 +102,7 @@ class Player(
         val blockID = inventory[slotIndex]
 
         return blockID?.let {
-            Block.getBlockByID(it)?.id
+            Block.getBlockByID(it)?.baseId ?: it
         } ?: 0
     }
 
