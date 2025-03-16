@@ -1,6 +1,9 @@
 package com.aznos.packets
 
 import com.aznos.GameState
+import com.aznos.packets.configuration.`in`.ClientConfigFinishAckPacket
+import com.aznos.packets.configuration.`in`.ClientConfigPacksPacket
+import com.aznos.packets.login.`in`.ClientLoginAckPacket
 import com.aznos.packets.login.`in`.ClientLoginStartPacket
 import com.aznos.packets.play.`in`.ClientChatMessagePacket
 import com.aznos.packets.play.`in`.ClientKeepAlivePacket
@@ -39,13 +42,15 @@ object PacketRegistry {
         //LOGIN
         val loginPackets = ConcurrentHashMap<Int, Class<out Packet>>().apply {
             this[0x00] = ClientLoginStartPacket::class.java
+            this[0x03] = ClientLoginAckPacket::class.java
         }
 
         packets[GameState.LOGIN] = loginPackets
 
         //CONFIGURATION
         val configurationPackets = ConcurrentHashMap<Int, Class<out Packet>>().apply {
-
+            this[0x03] = ClientConfigFinishAckPacket::class.java
+            this[0x07] = ClientConfigPacksPacket::class.java
         }
 
         packets[GameState.CONFIGURATION] = configurationPackets

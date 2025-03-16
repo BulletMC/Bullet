@@ -9,7 +9,7 @@ class DimensionTypeRegistry : Registry<DimensionTypes>(ResourceLocation.vanilla(
 
     init {
         for (entry in DimensionTypes.entries) {
-            register(ResourceLocation.vanilla(entry.name), entry)
+            register(ResourceLocation.vanilla(entry.name.lowercase()), entry)
         }
     }
 

@@ -8,7 +8,7 @@ class WolfVariantRegistry : Registry<WolfVariants>(ResourceLocation.vanilla("wol
 
     init {
         for (entry in WolfVariants.entries) {
-            register(ResourceLocation.vanilla(entry.name), entry)
+            register(ResourceLocation.vanilla(entry.name.lowercase()), entry)
         }
     }
 

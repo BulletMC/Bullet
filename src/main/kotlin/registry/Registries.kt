@@ -11,11 +11,7 @@ object Registries {
 
     val biomes = BiomeTypes().register()
 
-    init {
-        for (registry in registries) {
-            registry.lock()
-        }
-    }
+    fun getRegistries(): List<Registry<*>> = registries.toList()
 
     private fun <T> Registry<T>.register(): Registry<T> {
         registries.add(this)

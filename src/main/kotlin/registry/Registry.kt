@@ -1,15 +1,12 @@
 package com.aznos.registry
 
-import com.aznos.datatypes.NBTType.writeNbtCompound
-import com.aznos.datatypes.StringType.writeString
-import com.aznos.datatypes.VarInt.writeVarInt
+import com.aznos.packets.configuration.out.ServerConfigRegistryData
 import com.aznos.packets.newPacket.ResourceLocation
 import dev.dewy.nbt.tags.collection.CompoundTag
-import java.io.ByteArrayOutputStream
-import java.io.DataOutputStream
 
 abstract class Registry<T>(val key: ResourceLocation) {
-    var cachedNetworkPacket: ByteArray? = null; private set
+
+    var cachedNetworkPacket: ServerConfigRegistryData? = null; private set
     private val map = mutableMapOf<ResourceLocation, T>()
     private var locked: Boolean = false
 
@@ -18,20 +15,7 @@ abstract class Registry<T>(val key: ResourceLocation) {
     fun lock() {
         if (locked) return
         locked = true
-
-        val buffer = ByteArrayOutputStream()
-        val wrapper = DataOutputStream(buffer)
-
-        wrapper.writeString(key.toString())
-        wrapper.writeVarInt(map.size)
-
-        for ((key, value) in map) {
-            wrapper.writeString(key.toString())
-            wrapper.writeBoolean(true)
-            wrapper.writeNbtCompound(asCompound(value))
-        }
-
-        cachedNetworkPacket = buffer.toByteArray()
+        cachedNetworkPacket = ServerConfigRegistryData.fromRegistry(this)
     }
 
     private fun checkLocked() {

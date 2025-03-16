@@ -8,20 +8,17 @@ import com.aznos.events.EventManager
 import com.aznos.events.PlayerQuitEvent
 import com.aznos.packets.Packet
 import com.aznos.packets.PacketHandler
+import com.aznos.packets.PacketReceiver
 import com.aznos.packets.PacketRegistry
-import com.aznos.packets.configuration.out.ServerConfigRegistryData
 import com.aznos.packets.login.out.ServerLoginDisconnectPacket
 import com.aznos.packets.data.PlayerInfo
+import com.aznos.packets.handlers.HandshakePacketHandler
 import com.aznos.packets.login.`in`.ClientLoginStartPacket
-import com.aznos.packets.newPacket.ResourceLocation
 import com.aznos.packets.newPacket.ServerPacket
 import com.aznos.packets.play.out.*
 import com.aznos.packets.play.out.chat.ServerSystemChatMessagePacket
 import com.aznos.packets.play.out.entity.ServerSpawnEntityPacket
 import com.aznos.packets.status.LegacyPingRequest
-import com.aznos.registry.Registries
-import com.aznos.registry.Registry
-import dev.dewy.nbt.tags.collection.CompoundTag
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
 import java.io.*
@@ -36,16 +33,15 @@ import kotlin.time.Duration.Companion.seconds
  * @param socket The clients socket connection
  * @property out The output stream to send packets to the client
  * @property input The input stream to read packets from the client
- * @property handler The packet handler to handle incoming packets
  */
 class ClientSession(
     private val socket: Socket,
 ) : AutoCloseable {
     private val out = socket.getOutputStream()
     private val input = DataInputStream(BufferedInputStream(socket.getInputStream()))
-    private val handler = PacketHandler(this)
 
-    var state = GameState.HANDSHAKE
+    var state = GameState.HANDSHAKE; private set
+    private var statePacketHandler: PacketHandler = HandshakePacketHandler(this)
     var protocol = -1
 
     lateinit var player: Player
@@ -102,9 +98,18 @@ class ClientSession(
                     val packet: Packet = packetClass
                         .getConstructor(ByteArray::class.java)
                         .newInstance(data)
-                    handler.handle(packet)
+
+                    for (method in statePacketHandler.javaClass.methods) {
+                        if (method.isAnnotationPresent(PacketReceiver::class.java)) {
+                            val params: Array<Class<*>> = method.parameterTypes
+                            if (params.size == 1 && params[0] == packet.javaClass) {
+                                method.invoke(statePacketHandler, packet)
+                            }
+                        }
+                    }
+
                 } else {
-                    Bullet.logger.warning("Unhandled packet with raw packet ID: 0x$id (Hex: 0x${id.toString(16)})")
+                    Bullet.logger.warning("Unhandled packet with raw packet ID: 0x$id (Hex: 0x${id.toString(16)}, State: $state)")
                 }
             }
         } catch (e: EOFException) {
@@ -183,28 +188,6 @@ class ClientSession(
         close()
     }
 
-    fun sendRegistries() {
-        sendPacket(ServerConfigRegistryData(Registries.dimension_type))
-        sendPacket(ServerConfigRegistryData(Registries.biomes))
-        sendPacket(ServerConfigRegistryData(Registries.wolf_variant))
-        sendPacket(ServerConfigRegistryData(Registries.damage_type))
-        sendPacket(ServerConfigRegistryData(Registries.painting_variant))
-//
-//        sendPacket(
-//            ServerConfigRegistryData(
-//                ResourceLocation.vanilla("painting_variant"), listOf(
-//                    ServerConfigRegistryData.RawEntry(ResourceLocation.vanilla("alban"), CompoundTag().apply {
-//                        putString("asset_id", "minecraft:alban")
-//                        putInt("height", 1)
-//                        putInt("width", 1)
-//                        putString("title", "gg")
-//                        putString("author", "gg")
-//                    })
-//                )
-//            )
-//        )
-    }
-
     fun isClientValid(packet: ClientLoginStartPacket): Boolean {
         if (protocol > Bullet.PROTOCOL) {
             disconnect(Component.text("Please downgrade your minecraft version to " + Bullet.VERSION))
@@ -246,6 +229,11 @@ class ClientSession(
 
         out.write(baos.toByteArray())
         out.flush()
+    }
+
+    fun changeNetworkState(newState: GameState) {
+        state = newState
+        statePacketHandler = newState.packetHandler.constructors.first().newInstance(this) as PacketHandler
     }
 
     fun sendPlayerSpawnPacket() {

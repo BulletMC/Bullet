@@ -21,7 +21,7 @@ class DamageTypeGenerator : CodeGenerator() {
             .build())
 
         for (entry in AssetFetcher.fetchChildrenJsonFiles("data/minecraft/damage_type")) {
-            enum.addEnumConstant(entry.key.uppercase(), TypeSpec.anonymousClassBuilder("\$S", entry.value.asJsonObject.get("message_id").asString).build())
+            enum.addEnumConstant(entry.key.uppercase(), TypeSpec.anonymousClassBuilder("\$S", entry.key).build())
         }
 
         writeClass(JavaFile.builder("com.aznos.data", enum.build()).build())

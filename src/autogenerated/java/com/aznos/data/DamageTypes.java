@@ -6,23 +6,23 @@ import org.jetbrains.annotations.NotNull;
 public enum DamageTypes {
   THROWN("thrown"),
 
-  GENERIC_KILL("genericKill"),
+  GENERIC_KILL("generic_kill"),
 
-  UNATTRIBUTED_FIREBALL("onFire"),
+  UNATTRIBUTED_FIREBALL("unattributed_fireball"),
 
-  BAD_RESPAWN_POINT("badRespawnPoint"),
+  BAD_RESPAWN_POINT("bad_respawn_point"),
 
-  FALLING_ANVIL("anvil"),
+  FALLING_ANVIL("falling_anvil"),
 
   FIREWORKS("fireworks"),
 
-  OUT_OF_WORLD("outOfWorld"),
+  OUT_OF_WORLD("out_of_world"),
 
   SONIC_BOOM("sonic_boom"),
 
-  OUTSIDE_BORDER("outsideBorder"),
+  OUTSIDE_BORDER("outside_border"),
 
-  ENDER_PEARL("fall"),
+  ENDER_PEARL("ender_pearl"),
 
   MACE_SMASH("mace_smash"),
 
@@ -32,19 +32,19 @@ public enum DamageTypes {
 
   CRAMMING("cramming"),
 
-  DRY_OUT("dryout"),
+  DRY_OUT("dry_out"),
 
   CACTUS("cactus"),
 
   WITHER("wither"),
 
-  MOB_ATTACK("mob"),
+  MOB_ATTACK("mob_attack"),
 
-  FLY_INTO_WALL("flyIntoWall"),
+  FLY_INTO_WALL("fly_into_wall"),
 
-  WITHER_SKULL("witherSkull"),
+  WITHER_SKULL("wither_skull"),
 
-  PLAYER_ATTACK("player"),
+  PLAYER_ATTACK("player_attack"),
 
   GENERIC("generic"),
 
@@ -54,53 +54,53 @@ public enum DamageTypes {
 
   THORNS("thorns"),
 
-  MOB_PROJECTILE("mob"),
+  MOB_PROJECTILE("mob_projectile"),
 
   STALAGMITE("stalagmite"),
 
-  HOT_FLOOR("hotFloor"),
+  HOT_FLOOR("hot_floor"),
 
-  FALLING_STALACTITE("fallingStalactite"),
+  FALLING_STALACTITE("falling_stalactite"),
 
-  FALLING_BLOCK("fallingBlock"),
+  FALLING_BLOCK("falling_block"),
 
-  WIND_CHARGE("mob"),
+  WIND_CHARGE("wind_charge"),
 
-  LIGHTNING_BOLT("lightningBolt"),
+  LIGHTNING_BOLT("lightning_bolt"),
 
   EXPLOSION("explosion"),
 
   STING("sting"),
 
-  PLAYER_EXPLOSION("explosion.player"),
+  PLAYER_EXPLOSION("player_explosion"),
 
-  DRAGON_BREATH("dragonBreath"),
+  DRAGON_BREATH("dragon_breath"),
 
   FALL("fall"),
 
   ARROW("arrow"),
 
-  SPIT("mob"),
+  SPIT("spit"),
 
-  IN_WALL("inWall"),
+  IN_WALL("in_wall"),
 
-  MOB_ATTACK_NO_AGGRO("mob"),
+  MOB_ATTACK_NO_AGGRO("mob_attack_no_aggro"),
 
-  SWEET_BERRY_BUSH("sweetBerryBush"),
+  SWEET_BERRY_BUSH("sweet_berry_bush"),
 
   FIREBALL("fireball"),
 
-  ON_FIRE("onFire"),
+  ON_FIRE("on_fire"),
 
   MAGIC("magic"),
 
-  CAMPFIRE("inFire"),
+  CAMPFIRE("campfire"),
 
-  IN_FIRE("inFire"),
+  IN_FIRE("in_fire"),
 
   FREEZE("freeze"),
 
-  INDIRECT_MAGIC("indirectMagic");
+  INDIRECT_MAGIC("indirect_magic");
 
   public final String messageId;
 

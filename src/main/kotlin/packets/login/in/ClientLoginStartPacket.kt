@@ -12,3 +12,4 @@ import com.aznos.packets.Packet
 class ClientLoginStartPacket(data: ByteArray) : Packet(data) {
     var username: String = getIStream().readString()
 }
+

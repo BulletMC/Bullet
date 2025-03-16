@@ -1,15 +1,13 @@
 package com.aznos
 
+import com.aznos.commands.CommandManager
 import com.aznos.entity.player.Player
-import com.google.gson.JsonParser
-import dev.dewy.nbt.api.registry.TagTypeRegistry
-import dev.dewy.nbt.tags.collection.CompoundTag
+import com.aznos.registry.Registries
 import java.io.IOException
-import java.io.InputStreamReader
 import java.net.BindException
 import java.net.InetSocketAddress
 import java.net.ServerSocket
-import java.util.Base64
+import java.util.*
 import java.util.concurrent.Executors
 import java.util.logging.Logger
 
@@ -46,15 +44,8 @@ object Bullet : AutoCloseable {
             return
         }
 
-        println("Bullet server started at $host:$port")
-        val reader = javaClass.getResourceAsStream("/codec.json")?.let {
-            InputStreamReader(it)
-        }
-
-        //val parsed = JsonParser.parseReader(reader).asJsonObject
-        //dimensionCodec = CompoundTag().fromJson(parsed, 0, TagTypeRegistry())
-
-        //CommandManager.registerCommands()
+        Registries.getRegistries().forEach { it.lock() }
+        CommandManager.registerCommands()
 
         logger.info("Bullet server started at $host:$port")
 

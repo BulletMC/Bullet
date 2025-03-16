@@ -3,10 +3,13 @@ package com.aznos.datatypes
 import dev.dewy.nbt.api.registry.TagTypeRegistry
 import dev.dewy.nbt.tags.TagType
 import dev.dewy.nbt.tags.collection.CompoundTag
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.TextComponent
+import net.kyori.adventure.text.TranslatableComponent
+import net.kyori.adventure.text.format.TextDecoration
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException
-import java.util.*
 
 object NBTType {
 
@@ -33,6 +36,52 @@ object NBTType {
         }
 
         tag.write(this, 0, tagTypeRegistry)
+    }
+
+    /*
+     * Converts a Component
+     */
+    fun componentToNbtComponent(component: Component): CompoundTag {
+        val root = CompoundTag()
+
+        // https://minecraft.wiki/w/Text_component_format
+        when (component) {
+            is TextComponent -> {
+                if (component.content().isNotEmpty()) {
+                    root.putString("text", component.content())
+                }
+            }
+            is TranslatableComponent -> {
+                root.putString("type", "translatable")
+                root.putString("translate", component.key())
+
+                if (component.fallback() != null) {
+                    root.putString("fallback", component.fallback()!!)
+                }
+
+                if (component.children().isNotEmpty()) {
+                    root.putList("with", component.children().map { componentToNbtComponent(it) })
+                }
+            }
+            else -> TODO()
+        }
+
+        if (component.color() != null) {
+            root.putString("color", component.color()!!.asHexString())
+        }
+
+        if (component.font() != null) {
+            root.putString("font", component.font()!!.asString())
+        }
+
+        for (entry in component.decorations()) {
+            if (entry.value == TextDecoration.State.TRUE) {
+                root.putBoolean(entry.key.name, true)
+            }
+        }
+
+        // TODO: Interactivity like click_events, open_url, run_command, suggest_command, etc.
+        return root
     }
 
 }

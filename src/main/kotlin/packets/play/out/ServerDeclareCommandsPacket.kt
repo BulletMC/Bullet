@@ -57,11 +57,11 @@ class ServerDeclareCommandsPacket(
                 }
 
                 if(node.flags.flags.any { it.type is GraphCommandNode.FlagTypes.SuggestionsTypeFlag }) {
-                    if(node.suggestionsType == null) {
+                    if(node.suggestionsType.isEmpty) {
                         throw IOException("Suggestions flag set but no suggestions type provided")
                     }
 
-                    writeString(node.suggestionsType)
+                    writeString(node.suggestionsType.get().toString())
                 }
             }
 

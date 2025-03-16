@@ -97,8 +97,7 @@ object CommandManager {
                 redirect = redirectIndex,
                 name = name,
                 parser = parser,
-                properties = propertiesValue,
-                suggestionsType = null
+                properties = propertiesValue
             )
         }.toMutableList()
 
