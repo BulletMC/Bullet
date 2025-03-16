@@ -70,7 +70,7 @@ class PacketHandler(
     fun onCreativeInventoryAction(packet: ClientCreativeInventoryActionPacket) {
         if(packet.slot.present) {
             val block = Block.getBlockByID(packet.slot.itemID!!) ?: Block.AIR
-            client.player.inventory[packet.slotIndex.toInt()] = block.baseId
+            client.player.inventory[packet.slotIndex.toInt()] = block.id
         } else {
             client.player.inventory.remove(packet.slotIndex.toInt())
         }
