@@ -60,6 +60,11 @@ class PacketHandler(
     private val client: ClientSession
 ) {
     @PacketReceiver
+    fun onHeldItemChange(packet: ClientHeldItemChangePacket) {
+        client.player.selectedSlot = packet.slot.toInt()
+    }
+
+    @PacketReceiver
     fun onCreativeInventoryAction(packet: ClientCreativeInventoryActionPacket) {
         if(packet.slot.present) {
             client.player.inventory[packet.slotIndex.toInt()] = packet.slot.itemID!!
