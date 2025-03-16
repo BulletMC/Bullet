@@ -10,6 +10,7 @@ import com.aznos.packets.Packet
 import com.aznos.entity.player.data.PlayerProperty
 import com.aznos.packets.play.out.ServerChangeGameStatePacket
 import com.aznos.packets.play.out.ServerChatMessagePacket
+import com.aznos.packets.play.out.ServerHeldItemChangePacket
 import com.aznos.packets.play.out.ServerTimeUpdatePacket
 import com.aznos.world.Block
 import net.kyori.adventure.text.TextComponent
@@ -103,5 +104,14 @@ class Player(
         return blockID?.let {
             Block.getBlockByID(it)?.id
         } ?: 0
+    }
+
+    /**
+     * Sets the players held item slot in the hotbar (0-8)
+     *
+     * @param slot The slot to select
+     */
+    fun setHeldSlot(slot: Int) {
+        sendPacket(ServerHeldItemChangePacket(slot.toByte()))
     }
 }
