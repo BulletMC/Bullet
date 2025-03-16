@@ -21,6 +21,7 @@ import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
 import com.aznos.entity.player.data.Location
 import com.aznos.entity.player.data.Position
+import com.aznos.entity.player.data.Slot
 import com.aznos.packets.play.`in`.*
 import com.aznos.packets.play.`in`.movement.ClientEntityActionPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
@@ -62,6 +63,7 @@ class PacketHandler(
     @PacketReceiver
     fun onHeldItemChange(packet: ClientHeldItemChangePacket) {
         client.player.selectedSlot = packet.slot.toInt()
+        sendHeldItemUpdate()
     }
 
     @PacketReceiver
@@ -74,6 +76,10 @@ class PacketHandler(
         } else {
             client.player.inventory.remove(packet.slotIndex.toInt())
             Bullet.logger.info("Player ${client.player.username} removed item from slot ${packet.slotIndex}")
+        }
+
+        if(packet.slotIndex.toInt() == client.player.selectedSlot + 36) {
+            sendHeldItemUpdate()
         }
     }
 
@@ -709,6 +715,22 @@ class PacketHandler(
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != player) {
                 otherPlayer.sendPacket(packet)
+            }
+        }
+    }
+
+    private fun sendHeldItemUpdate() {
+        val heldItemID = client.player.getHeldItem()
+
+        val heldItemSlot = if(heldItemID == 0) Slot(false)
+        else Slot(true, heldItemID, 1, null)
+
+        for(otherPlayer in Bullet.players) {
+            if(otherPlayer != client.player) {
+                otherPlayer.sendPacket(ServerEntityEquipmentPacket(
+                    client.player.entityID,
+                    listOf(0 to heldItemSlot)
+                ))
             }
         }
     }
