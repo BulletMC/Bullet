@@ -108,8 +108,6 @@ class PacketHandler(
         client.player.viewDistance = packet.viewDistance.toInt()
         client.player.locale = packet.locale
 
-        client.sendPacket(ServerChunkPacket(0, 0))
-
         client.sendPacket(ServerUpdateViewPositionPacket(client.player.chunkX, client.player.chunkZ))
         client.updatePlayerChunks(client.player.chunkX, client.player.chunkZ)
     }
@@ -513,7 +511,7 @@ class PacketHandler(
                 "minecraft:overworld",
                 Bullet.dimensionCodec!!,
                 Bullet.max_players,
-                8,
+                32,
                 reducedDebugInfo = false,
                 enableRespawnScreen = true,
                 isDebug = false,
