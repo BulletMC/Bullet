@@ -327,6 +327,7 @@ class PacketHandler(
     fun onPlayerPositionAndRotation(packet: ClientPlayerPositionAndRotation) {
         val player = client.player
         val lastLocation = player.location
+        val wasOnGround = player.onGround
 
         val newChunkX = (packet.x / 16).toInt()
         val newChunkZ = (packet.z / 16).toInt()
@@ -350,25 +351,26 @@ class PacketHandler(
             lastLocation.z
         )
 
-        if(!packet.onGround && !sprinting.contains(player.entityID)) {
-            player.exhaustion += 0.05f
-            Bullet.logger.info("Player jumped")
+        if(!packet.onGround && wasOnGround) {
+            if(sprinting.contains(player.entityID)) {
+                player.exhaustion += 0.2f
+                Bullet.logger.info("Sprint + Jump")
+            } else {
+                player.exhaustion += 0.05f
+                Bullet.logger.info("Jump")
+            }
         }
 
         if(sprinting.contains(player.entityID)) {
             val distance = sqrt(
-                (player.location.x - player.lastSprintLocation!!.x).pow(2) +
-                        (player.location.z - player.lastSprintLocation!!.z).pow(2)
+                (packet.x - player.lastSprintLocation!!.x).pow(2) +
+                        (packet.z - player.lastSprintLocation!!.z).pow(2)
             )
 
-            if(!packet.onGround) {
-                player.exhaustion += 0.2f
-                Bullet.logger.info("Player sprinted and jumped")
-            } else {
-                if(distance > 1) {
-                    player.exhaustion += 0.1f
-                    Bullet.logger.info("Player sprinted")
-                }
+            if(distance >= 1) {
+                player.exhaustion += 0.1f
+                player.lastSprintLocation = player.location
+                Bullet.logger.info("Sprint")
             }
         }
 
@@ -406,6 +408,7 @@ class PacketHandler(
     fun onPlayerPosition(packet: ClientPlayerPositionPacket) {
         val player = client.player
         val lastLocation = player.location
+        val wasOnGround = player.onGround
 
         val newChunkX = (packet.x / 16).toInt()
         val newChunkZ = (packet.z / 16).toInt()
@@ -429,25 +432,26 @@ class PacketHandler(
             lastLocation.z
         )
 
-        if(!packet.onGround && !sprinting.contains(player.entityID)) {
-            player.exhaustion += 0.05f
-            Bullet.logger.info("Player jumped")
+        if(!packet.onGround && wasOnGround) {
+            if(sprinting.contains(player.entityID)) {
+                player.exhaustion += 0.2f
+                Bullet.logger.info("Sprint + Jump")
+            } else {
+                player.exhaustion += 0.05f
+                Bullet.logger.info("Jump")
+            }
         }
 
         if(sprinting.contains(player.entityID)) {
             val distance = sqrt(
-                (player.location.x - player.lastSprintLocation!!.x).pow(2) +
-                        (player.location.z - player.lastSprintLocation!!.z).pow(2)
+                (packet.x - player.lastSprintLocation!!.x).pow(2) +
+                        (packet.z - player.lastSprintLocation!!.z).pow(2)
             )
 
-            if(!packet.onGround) {
-                player.exhaustion += 0.2f
-                Bullet.logger.info("Player sprinted and jumped")
-            } else {
-                if(distance > 1) {
-                    player.exhaustion += 0.1f
-                    Bullet.logger.info("Player sprinted")
-                }
+            if(distance >= 1) {
+                player.exhaustion += 0.1f
+                player.lastSprintLocation = player.location
+                Bullet.logger.info("Sprint")
             }
         }
 
