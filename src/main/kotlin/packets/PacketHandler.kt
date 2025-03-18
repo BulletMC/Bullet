@@ -50,6 +50,8 @@ import packets.status.out.ServerStatusResponsePacket
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.util.UUID
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 /**
  * Handles all incoming packets by dispatching them to the appropriate handler methods
@@ -164,6 +166,7 @@ class PacketHandler(
                 if(event.isCancelled) return
 
                 sprinting.add(client.player.entityID)
+                client.player.lastSprintLocation = client.player.location
             }
 
             4 -> { //Stop sprinting
@@ -172,6 +175,7 @@ class PacketHandler(
                 if(event.isCancelled) return
 
                 sprinting.remove(client.player.entityID)
+                client.player.lastSprintLocation = null
             }
         }
     }
@@ -206,7 +210,12 @@ class PacketHandler(
                     startBlockBreak(event.location, breakTime.toInt())
                 }
 
-                BlockStatus.CANCELLED_DIGGING.id, BlockStatus.FINISHED_DIGGING.id -> {
+                BlockStatus.CANCELLED_DIGGING.id -> {
+                    stopBlockBreak(event.location)
+                }
+
+                BlockStatus.FINISHED_DIGGING.id -> {
+                    client.player.exhaustion += 0.005f
                     stopBlockBreak(event.location)
                 }
             }
@@ -339,6 +348,17 @@ class PacketHandler(
             lastLocation.z
         )
 
+        if(sprinting.contains(player.entityID)) {
+            val distance = sqrt(
+                (player.location.x - player.lastSprintLocation!!.x).pow(2) +
+                (player.location.z - player.lastSprintLocation!!.z).pow(2)
+            )
+
+            if(distance > 1) {
+                player.exhaustion += 0.1f
+            }
+        }
+
         player.location = Location(packet.x, packet.feetY, packet.z, packet.yaw, packet.pitch)
         player.onGround = packet.onGround
 
@@ -395,6 +415,17 @@ class PacketHandler(
             lastLocation.y,
             lastLocation.z
         )
+
+        if(sprinting.contains(player.entityID)) {
+            val distance = sqrt(
+                (player.location.x - player.lastSprintLocation!!.x).pow(2) +
+                    (player.location.z - player.lastSprintLocation!!.z).pow(2)
+            )
+
+            if(distance > 1) {
+                player.exhaustion += 0.1f
+            }
+        }
 
         player.location = Location(packet.x, packet.feetY, packet.z, player.location.yaw, player.location.pitch)
         player.onGround = packet.onGround

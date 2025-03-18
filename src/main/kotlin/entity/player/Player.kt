@@ -50,6 +50,8 @@ class Player(
     var health: Int = 20
     var foodLevel: Int = 20
     var saturation: Float = 5f
+    var exhaustion: Float = 0f
+    var lastSprintLocation: Location? = null
 
     /**
      * Sends a packet to the players client session
