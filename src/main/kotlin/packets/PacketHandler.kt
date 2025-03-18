@@ -550,6 +550,7 @@ class PacketHandler(
         Bullet.players.add(player)
         client.sendPlayerSpawnPacket()
         client.scheduleKeepAlive()
+        client.scheduleHalfSecondUpdate()
 
         client.sendPacket(ServerChunkPacket(0, 0))
         sendSpawnPlayerPackets(player)
