@@ -72,7 +72,11 @@ class PacketHandler(
                         player.foodLevel,
                         player.saturation
                     ))
-                    Bullet.logger.info("Player ${player.username} was hit!")
+
+                    player.sendPacket(ServerAnimationPacket(
+                        player.entityID,
+                        1
+                    ))
                 }
             }
         }
