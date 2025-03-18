@@ -4,7 +4,7 @@ import com.aznos.commands.CommandManager
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.Position
 import com.aznos.packets.play.out.ServerParticlePacket
-import com.aznos.world.Block
+import com.aznos.world.World
 import com.aznos.world.data.Particles
 import com.aznos.world.data.TimeOfDay
 import com.google.gson.JsonParser
@@ -43,11 +43,10 @@ object Bullet : AutoCloseable {
     private var server: ServerSocket? = null
     val players = mutableListOf<Player>()
 
+    val world = World("world")
+
     val breakingBlocks = mutableMapOf<Position, Job>()
     val sprinting = mutableSetOf<Int>()
-
-    var worldAge = 0L
-    var timeOfDay: Long = TimeOfDay.SUNRISE.time
 
     var dimensionCodec: CompoundTag? = null
 
@@ -102,11 +101,11 @@ object Bullet : AutoCloseable {
                 while(isActive) {
                     delay(1.seconds)
 
-                    timeOfDay = (timeOfDay + 20) % 24000
-                    worldAge += 20
+                    world.timeOfDay = (world.timeOfDay + 20) % 24000
+                    world.worldAge += 20
 
                     for(player in players) {
-                        player.setTimeOfDay(timeOfDay)
+                        player.setTimeOfDay(world.timeOfDay)
                     }
                 }
             }

@@ -38,7 +38,7 @@ class PerformanceCommand {
         val threadCount = threadMXBean.threadCount
         val peakThreadCount = threadMXBean.peakThreadCount
         val playerCount = Bullet.players.size
-        val uptime = formatUptime(Bullet.worldAge)
+        val uptime = formatUptime(Bullet.world.worldAge)
 
         return Component.text()
             .append(Component.text("⚡ Server Performance ⚡", NamedTextColor.GOLD, TextDecoration.BOLD))

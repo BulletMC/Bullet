@@ -1,4 +1,4 @@
-package com.aznos.world
+package com.aznos.world.blocks
 
 fun Block.GRASS_BLOCK(snowy: Boolean = false): BlockInstance {
     require(this == Block.GRASS_BLOCK) { "Not a GRASS_BLOCK block" }

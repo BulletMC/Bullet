@@ -44,8 +44,8 @@ detekt {
 
 // Exclude generated files from detekt
 tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
-    exclude("**/world/BlockExtensions.kt")
-    exclude("**/world/Block.kt")
+    exclude("**/world/blocks/BlockExtensions.kt")
+    exclude("**/world/blocks/Block.kt")
 }
 
 application {

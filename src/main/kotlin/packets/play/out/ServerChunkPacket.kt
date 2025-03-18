@@ -2,7 +2,7 @@ package com.aznos.packets.play.out
 
 import com.aznos.datatypes.VarInt.writeVarInt
 import com.aznos.packets.Packet
-import com.aznos.world.Block
+import com.aznos.world.blocks.Block
 import dev.dewy.nbt.Nbt
 import dev.dewy.nbt.tags.collection.CompoundTag
 import java.io.ByteArrayOutputStream

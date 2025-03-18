@@ -12,10 +12,10 @@ import com.aznos.packets.play.out.ServerChangeGameStatePacket
 import com.aznos.packets.play.out.ServerChatMessagePacket
 import com.aznos.packets.play.out.ServerHeldItemChangePacket
 import com.aznos.packets.play.out.ServerTimeUpdatePacket
-import com.aznos.world.Block
+import com.aznos.world.blocks.Block
+import com.aznos.world.World
 import net.kyori.adventure.text.TextComponent
 import java.util.UUID
-import kotlin.properties.Delegates
 
 /**
  * Represents a player in the game
@@ -45,6 +45,7 @@ class Player(
     var ping: Int = 0
     var chunkX: Int = 0
     var chunkZ: Int = 0
+    var world: World? = Bullet.world
 
     /**
      * Sends a packet to the players client session
@@ -79,7 +80,8 @@ class Player(
      * @param time The time to set it to
      */
     fun setTimeOfDay(time: Long) {
-        sendPacket(ServerTimeUpdatePacket(Bullet.worldAge, time))
+        world?.timeOfDay = time
+        sendPacket(ServerTimeUpdatePacket(Bullet.world.worldAge, time))
     }
 
     /**
