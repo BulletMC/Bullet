@@ -47,6 +47,10 @@ class Player(
     var chunkZ: Int = 0
     var world: World? = Bullet.world
 
+    var health: Int = 20
+    var foodLevel: Int = 20
+    var saturation: Float = 5f
+
     /**
      * Sends a packet to the players client session
      *

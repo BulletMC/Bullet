@@ -62,7 +62,20 @@ class PacketHandler(
 ) {
     @PacketReceiver
     fun onEntityInteract(packet: ClientInteractEntityPacket) {
-        Bullet.logger.info("${packet.entityID} was interacted with type ${packet.type}")
+        if(packet.type == 1) {
+            for(player in Bullet.players) {
+                if(player.entityID == packet.entityID && player.gameMode == GameMode.SURVIVAL) {
+                    player.health -= 1
+
+                    player.sendPacket(ServerUpdateHealthPacket(
+                        player.health.toFloat(),
+                        player.foodLevel,
+                        player.saturation
+                    ))
+                    Bullet.logger.info("Player ${player.username} was hit!")
+                }
+            }
+        }
     }
 
     @PacketReceiver
