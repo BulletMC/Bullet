@@ -350,14 +350,24 @@ class PacketHandler(
             lastLocation.z
         )
 
+        if(!packet.onGround && !sprinting.contains(player.entityID)) {
+            player.exhaustion += 0.05f
+        }
+
         if(sprinting.contains(player.entityID)) {
             val distance = sqrt(
                 (player.location.x - player.lastSprintLocation!!.x).pow(2) +
-                (player.location.z - player.lastSprintLocation!!.z).pow(2)
+                        (player.location.z - player.lastSprintLocation!!.z).pow(2)
             )
 
-            if(distance > 1) {
-                player.exhaustion += 0.1f
+            if(!packet.onGround) {
+                if(distance > 1) {
+                    player.exhaustion += 0.2f
+                }
+            } else {
+                if(distance > 1) {
+                    player.exhaustion += 0.1f
+                }
             }
         }
 
