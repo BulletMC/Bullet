@@ -1,6 +1,7 @@
 package com.aznos.commands.commands
 
 import com.aznos.Bullet
+import com.aznos.commands.CommandCodes
 import com.aznos.entity.player.Player
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.LongArgumentType
@@ -22,13 +23,11 @@ class SetTimeCommand {
                                     Component.text("Invalid time, must be between 0 and 24000")
                                 )
 
-                                return@executes 0
+                                return@executes CommandCodes.ILLEGAL_ARGUMENT.id
                             }
 
-                            Bullet.timeOfDay = time
                             context.source.setTimeOfDay(time)
-
-                            1
+                            CommandCodes.SUCCESS.id
                         }
                 )
         )

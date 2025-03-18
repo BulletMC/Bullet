@@ -1,4 +1,4 @@
-package com.aznos.world
+package com.aznos.world.blocks
 
 /**
  * Enum class that contains all the blocks in minecraft
