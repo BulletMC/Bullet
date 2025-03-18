@@ -36,6 +36,7 @@ object CommandManager {
         TeleportCommand().register(dispatcher)
         StopCommand().register(dispatcher)
         PerformanceCommand().register(dispatcher)
+        SetWeatherCommand().register(dispatcher)
     }
 
     /**
