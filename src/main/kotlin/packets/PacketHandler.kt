@@ -61,6 +61,11 @@ class PacketHandler(
     private val client: ClientSession
 ) {
     @PacketReceiver
+    fun onEntityInteract(packet: ClientInteractEntityPacket) {
+        Bullet.logger.info("${packet.entityID} was interacted with type ${packet.type}")
+    }
+
+    @PacketReceiver
     fun onHeldItemChange(packet: ClientHeldItemChangePacket) {
         client.player.selectedSlot = packet.slot.toInt()
         sendHeldItemUpdate()
