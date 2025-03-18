@@ -1,7 +1,9 @@
 package com.aznos.commands.commands
 
+import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
 import com.aznos.entity.player.Player
+import com.aznos.packets.play.out.ServerChangeGameStatePacket
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
@@ -19,9 +21,22 @@ class SetWeatherCommand {
                         .executes{ context ->
                             val message = StringArgumentType.getString(context, "weather")
                             when(message.lowercase(Locale.getDefault())) {
-                                "clear" -> context.source.world?.weather = 0
-                                "rain" -> context.source.world?.weather = 1
-                                "thunder" -> context.source.world?.weather = 2
+                                "clear" -> {
+                                    context.source.world?.weather = 0
+
+                                    for(player in Bullet.players) {
+                                        player.sendPacket(ServerChangeGameStatePacket(1, 0f))
+                                    }
+                                }
+
+                                "rain" -> {
+                                    context.source.world?.weather = 1
+
+                                    for(player in Bullet.players) {
+                                        player.sendPacket(ServerChangeGameStatePacket(2, 0f))
+                                    }
+                                }
+
                                 else -> {
                                     context.source.sendMessage(Component.text(
                                         "Invalid weather type",
