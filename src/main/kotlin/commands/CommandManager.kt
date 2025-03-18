@@ -12,6 +12,7 @@ import com.mojang.brigadier.arguments.BoolArgumentType
 import com.mojang.brigadier.arguments.DoubleArgumentType
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
+import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.tree.ArgumentCommandNode
 import com.mojang.brigadier.tree.CommandNode
 import com.mojang.brigadier.tree.LiteralCommandNode
@@ -37,6 +38,7 @@ object CommandManager {
         StopCommand().register(dispatcher)
         PerformanceCommand().register(dispatcher)
         SetWeatherCommand().register(dispatcher)
+        MessageCommand().register(dispatcher)
     }
 
     /**
