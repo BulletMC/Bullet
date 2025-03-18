@@ -79,6 +79,8 @@ class PacketHandler(
                         player.entityID,
                         1
                     ))
+
+                    player.exhaustion += 0.1f
                 }
             }
         }
