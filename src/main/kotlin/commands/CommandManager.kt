@@ -39,6 +39,7 @@ object CommandManager {
         PerformanceCommand().register(dispatcher)
         SetWeatherCommand().register(dispatcher)
         MessageCommand().register(dispatcher)
+        DifficultyCommand().register(dispatcher)
     }
 
     /**
