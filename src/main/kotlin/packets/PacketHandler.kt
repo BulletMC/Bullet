@@ -351,28 +351,7 @@ class PacketHandler(
             lastLocation.z
         )
 
-        if(!packet.onGround && wasOnGround) {
-            if(sprinting.contains(player.entityID)) {
-                player.exhaustion += 0.2f
-                Bullet.logger.info("Sprint + Jump")
-            } else {
-                player.exhaustion += 0.05f
-                Bullet.logger.info("Jump")
-            }
-        }
-
-        if(sprinting.contains(player.entityID)) {
-            val distance = sqrt(
-                (packet.x - player.lastSprintLocation!!.x).pow(2) +
-                        (packet.z - player.lastSprintLocation!!.z).pow(2)
-            )
-
-            if(distance >= 1) {
-                player.exhaustion += 0.1f
-                player.lastSprintLocation = player.location
-                Bullet.logger.info("Sprint")
-            }
-        }
+        handleFoodLevel(player, packet.x, packet.z, packet.onGround, wasOnGround)
 
         player.location = Location(packet.x, packet.feetY, packet.z, packet.yaw, packet.pitch)
         player.onGround = packet.onGround
@@ -432,28 +411,7 @@ class PacketHandler(
             lastLocation.z
         )
 
-        if(!packet.onGround && wasOnGround) {
-            if(sprinting.contains(player.entityID)) {
-                player.exhaustion += 0.2f
-                Bullet.logger.info("Sprint + Jump")
-            } else {
-                player.exhaustion += 0.05f
-                Bullet.logger.info("Jump")
-            }
-        }
-
-        if(sprinting.contains(player.entityID)) {
-            val distance = sqrt(
-                (packet.x - player.lastSprintLocation!!.x).pow(2) +
-                        (packet.z - player.lastSprintLocation!!.z).pow(2)
-            )
-
-            if(distance >= 1) {
-                player.exhaustion += 0.1f
-                player.lastSprintLocation = player.location
-                Bullet.logger.info("Sprint")
-            }
-        }
+        handleFoodLevel(player, packet.x, packet.z, packet.onGround, wasOnGround)
 
         player.location = Location(packet.x, packet.feetY, packet.z, player.location.yaw, player.location.pitch)
         player.onGround = packet.onGround
@@ -808,6 +766,40 @@ class PacketHandler(
                     client.player.entityID,
                     listOf(0 to heldItemSlot)
                 ))
+            }
+        }
+    }
+
+    /**
+     * Handles updating the food level when the player moves
+     *
+     * @param player The player to update
+     * @param x The current X position of the player
+     * @param z The current Z position of the player
+     * @param onGround Whether the player is on the ground
+     * @param wasOnGround If the player was on the ground before the movement packet was called
+     */
+    private fun handleFoodLevel(player: Player, x: Double, z: Double, onGround: Boolean, wasOnGround: Boolean) {
+        if(!onGround && wasOnGround) {
+            if(sprinting.contains(player.entityID)) {
+                player.exhaustion += 0.2f
+                Bullet.logger.info("Sprint + Jump")
+            } else {
+                player.exhaustion += 0.05f
+                Bullet.logger.info("Jump")
+            }
+        }
+
+        if(sprinting.contains(player.entityID)) {
+            val distance = sqrt(
+                (x - player.lastSprintLocation!!.x).pow(2) +
+                        (z - player.lastSprintLocation!!.z).pow(2)
+            )
+
+            if(distance >= 1) {
+                player.exhaustion += 0.1f
+                player.lastSprintLocation = player.location
+                Bullet.logger.info("Sprint")
             }
         }
     }

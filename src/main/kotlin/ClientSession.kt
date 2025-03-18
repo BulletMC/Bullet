@@ -133,6 +133,9 @@ class ClientSession(
         }
     }
 
+    /**
+     * Called every half second to update player information, like health, food, etc
+     */
     fun scheduleHalfSecondUpdate() {
         halfSecondTimer = Timer(true).apply {
             var timeSinceHealthUpdate = 0
@@ -181,7 +184,11 @@ class ClientSession(
                         }
                     }
 
-                    player.sendPacket(ServerUpdateHealthPacket(player.health.toFloat(), player.foodLevel, player.saturation))
+                    player.sendPacket(ServerUpdateHealthPacket(
+                        player.health.toFloat(),
+                        player.foodLevel,
+                        player.saturation)
+                    )
 
                     timeSinceHealthUpdate += 500
                     timeSinceHealthDecrease += 500
