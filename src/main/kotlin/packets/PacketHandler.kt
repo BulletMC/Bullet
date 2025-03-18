@@ -50,6 +50,8 @@ import packets.status.out.ServerStatusResponsePacket
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.util.UUID
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 /**
  * Handles all incoming packets by dispatching them to the appropriate handler methods
@@ -77,6 +79,8 @@ class PacketHandler(
                         player.entityID,
                         1
                     ))
+
+                    player.exhaustion += 0.1f
                 }
             }
         }
@@ -164,6 +168,7 @@ class PacketHandler(
                 if(event.isCancelled) return
 
                 sprinting.add(client.player.entityID)
+                client.player.lastSprintLocation = client.player.location
             }
 
             4 -> { //Stop sprinting
@@ -172,6 +177,7 @@ class PacketHandler(
                 if(event.isCancelled) return
 
                 sprinting.remove(client.player.entityID)
+                client.player.lastSprintLocation = null
             }
         }
     }
@@ -206,7 +212,12 @@ class PacketHandler(
                     startBlockBreak(event.location, breakTime.toInt())
                 }
 
-                BlockStatus.CANCELLED_DIGGING.id, BlockStatus.FINISHED_DIGGING.id -> {
+                BlockStatus.CANCELLED_DIGGING.id -> {
+                    stopBlockBreak(event.location)
+                }
+
+                BlockStatus.FINISHED_DIGGING.id -> {
+                    client.player.exhaustion += 0.005f
                     stopBlockBreak(event.location)
                 }
             }
@@ -316,6 +327,7 @@ class PacketHandler(
     fun onPlayerPositionAndRotation(packet: ClientPlayerPositionAndRotation) {
         val player = client.player
         val lastLocation = player.location
+        val wasOnGround = player.onGround
 
         val newChunkX = (packet.x / 16).toInt()
         val newChunkZ = (packet.z / 16).toInt()
@@ -338,6 +350,8 @@ class PacketHandler(
             lastLocation.y,
             lastLocation.z
         )
+
+        handleFoodLevel(player, packet.x, packet.z, packet.onGround, wasOnGround)
 
         player.location = Location(packet.x, packet.feetY, packet.z, packet.yaw, packet.pitch)
         player.onGround = packet.onGround
@@ -358,9 +372,9 @@ class PacketHandler(
 
                 otherPlayer.clientSession.sendPacket(
                     ServerEntityHeadLook(
-                    player.entityID,
-                    player.location.yaw
-                )
+                        player.entityID,
+                        player.location.yaw
+                    )
                 )
             }
         }
@@ -373,6 +387,7 @@ class PacketHandler(
     fun onPlayerPosition(packet: ClientPlayerPositionPacket) {
         val player = client.player
         val lastLocation = player.location
+        val wasOnGround = player.onGround
 
         val newChunkX = (packet.x / 16).toInt()
         val newChunkZ = (packet.z / 16).toInt()
@@ -395,6 +410,8 @@ class PacketHandler(
             lastLocation.y,
             lastLocation.z
         )
+
+        handleFoodLevel(player, packet.x, packet.z, packet.onGround, wasOnGround)
 
         player.location = Location(packet.x, packet.feetY, packet.z, player.location.yaw, player.location.pitch)
         player.onGround = packet.onGround
@@ -550,6 +567,7 @@ class PacketHandler(
         Bullet.players.add(player)
         client.sendPlayerSpawnPacket()
         client.scheduleKeepAlive()
+        client.scheduleHalfSecondUpdate()
 
         client.sendPacket(ServerChunkPacket(0, 0))
         sendSpawnPlayerPackets(player)
@@ -748,6 +766,40 @@ class PacketHandler(
                     client.player.entityID,
                     listOf(0 to heldItemSlot)
                 ))
+            }
+        }
+    }
+
+    /**
+     * Handles updating the food level when the player moves
+     *
+     * @param player The player to update
+     * @param x The current X position of the player
+     * @param z The current Z position of the player
+     * @param onGround Whether the player is on the ground
+     * @param wasOnGround If the player was on the ground before the movement packet was called
+     */
+    private fun handleFoodLevel(player: Player, x: Double, z: Double, onGround: Boolean, wasOnGround: Boolean) {
+        if(!onGround && wasOnGround) {
+            if(sprinting.contains(player.entityID)) {
+                player.exhaustion += 0.2f
+                Bullet.logger.info("Sprint + Jump")
+            } else {
+                player.exhaustion += 0.05f
+                Bullet.logger.info("Jump")
+            }
+        }
+
+        if(sprinting.contains(player.entityID)) {
+            val distance = sqrt(
+                (x - player.lastSprintLocation!!.x).pow(2) +
+                        (z - player.lastSprintLocation!!.z).pow(2)
+            )
+
+            if(distance >= 1) {
+                player.exhaustion += 0.1f
+                player.lastSprintLocation = player.location
+                Bullet.logger.info("Sprint")
             }
         }
     }

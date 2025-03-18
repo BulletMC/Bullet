@@ -3,6 +3,7 @@ package com.aznos
 import com.aznos.datatypes.VarInt
 import com.aznos.datatypes.VarInt.readVarInt
 import com.aznos.entity.player.Player
+import com.aznos.entity.player.data.GameMode
 import com.aznos.events.EventManager
 import com.aznos.events.PlayerQuitEvent
 import com.aznos.packets.Packet
@@ -11,6 +12,7 @@ import com.aznos.packets.PacketRegistry
 import com.aznos.packets.login.out.ServerLoginDisconnectPacket
 import com.aznos.packets.play.out.*
 import com.aznos.packets.status.LegacyPingRequest
+import com.aznos.world.data.Difficulty
 import java.io.BufferedInputStream
 import java.io.DataInputStream
 import java.io.EOFException
@@ -18,6 +20,8 @@ import java.io.IOException
 import java.net.Socket
 import java.net.SocketException
 import java.util.*
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -44,6 +48,7 @@ class ClientSession(
      * This timer will keep track of when to send the keep alive packet to the client
      */
     private var keepAliveTimer: Timer? = null
+    private var halfSecondTimer: Timer? = null
     private var lastKeepAliveTimestamp: Long = 0
     var respondedToKeepAlive: Boolean = true
 
@@ -125,6 +130,70 @@ class ClientSession(
                     respondedToKeepAlive = true
                 }
             }, 10.seconds.inWholeMilliseconds, 10.seconds.inWholeMilliseconds)
+        }
+    }
+
+    /**
+     * Called every half second to update player information, like health, food, etc
+     */
+    fun scheduleHalfSecondUpdate() {
+        halfSecondTimer = Timer(true).apply {
+            var timeSinceHealthUpdate = 0
+            var timeSinceHealthDecrease = 0
+
+            scheduleAtFixedRate(object : TimerTask() {
+                override fun run() {
+                    if(isClosed()) {
+                        cancel()
+                        return
+                    }
+
+                    if(player.exhaustion >= 4) {
+                        player.exhaustion -= 4
+                        if(player.saturation >= 1) player.saturation -= 1
+                        else player.foodLevel -= 1
+                    }
+
+                    if(player.gameMode == GameMode.SURVIVAL) {
+                        if(player.foodLevel == 20 && player.saturation > 0 && player.health != 20) {
+                            player.health = min(player.health + 1, 20)
+                            player.exhaustion += 6.0f
+                        } else if(player.foodLevel > 18 && player.health != 20) {
+                            if(timeSinceHealthUpdate == 4000) {
+                                player.health = min(player.health + 1, 20)
+                                timeSinceHealthUpdate = 0
+                                player.exhaustion += 6.0f
+                            }
+                        }
+
+                        if(player.foodLevel == 0 && player.health > 0) {
+                            if(timeSinceHealthDecrease == 4000) {
+                                when(Bullet.world.difficulty) {
+                                    Difficulty.PEACEFUL -> {}
+                                    Difficulty.EASY -> player.health = max(player.health - 1, 10)
+                                    Difficulty.NORMAL -> player.health = max(player.health - 1, 1)
+                                    Difficulty.HARD -> player.health -= 1
+                                }
+
+                                timeSinceHealthDecrease = 0
+                            }
+                        }
+
+                        if(player.world?.difficulty == Difficulty.PEACEFUL && player.foodLevel != 20) {
+                            player.foodLevel = min(player.foodLevel + 1, 20)
+                        }
+                    }
+
+                    player.sendPacket(ServerUpdateHealthPacket(
+                        player.health.toFloat(),
+                        player.foodLevel,
+                        player.saturation)
+                    )
+
+                    timeSinceHealthUpdate += 500
+                    timeSinceHealthDecrease += 500
+                }
+            }, 0, 500)
         }
     }
 
