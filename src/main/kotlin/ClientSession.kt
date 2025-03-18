@@ -148,10 +148,12 @@ class ClientSession(
                     if(player.gameMode == GameMode.SURVIVAL) {
                         if(player.foodLevel == 20 && player.saturation > 0 && player.health != 20) {
                             player.health = min(player.health + 1, 20)
+                            player.exhaustion += 6.0f
                         } else if(player.foodLevel > 18 && player.health != 20) {
                             if(timeSinceHealthUpdate == 4000) {
                                 player.health = min(player.health + 1, 20)
                                 timeSinceHealthUpdate = 0
+                                player.exhaustion += 6.0f
                             }
                         }
 
