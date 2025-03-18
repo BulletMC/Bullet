@@ -1,6 +1,5 @@
 package com.aznos
 
-import com.aznos.Bullet.isClosed
 import com.aznos.datatypes.VarInt
 import com.aznos.datatypes.VarInt.readVarInt
 import com.aznos.entity.player.Player
@@ -154,7 +153,21 @@ class ClientSession(
                         }
                     }
 
+                    if(player.foodLevel == 0 && player.health > 0) {
+                        if(timeSinceHealthDecrease == 4000) {
+                            when(Bullet.world.difficulty) {
+                                Difficulty.PEACEFUL -> {}
+                                Difficulty.EASY -> player.health = max(player.health - 1, 10)
+                                Difficulty.NORMAL -> player.health = max(player.health - 1, 1)
+                                Difficulty.HARD -> player.health -= 1
+                            }
+
+                            timeSinceHealthDecrease = 0
+                        }
+                    }
+
                     timeSinceHealthUpdate += 500
+                    timeSinceHealthDecrease += 500
                 }
             }, 0, 500)
         }
