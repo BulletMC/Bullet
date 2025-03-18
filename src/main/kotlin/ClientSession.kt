@@ -145,6 +145,12 @@ class ClientSession(
                         return
                     }
 
+                    if(player.exhaustion > 4) {
+                        player.exhaustion -= 4
+                        if(player.saturation > 1) player.saturation -= 1
+                        else player.foodLevel -= 1
+                    }
+
                     if(player.gameMode == GameMode.SURVIVAL) {
                         if(player.foodLevel == 20 && player.saturation > 0 && player.health != 20) {
                             player.health = min(player.health + 1, 20)
@@ -169,7 +175,13 @@ class ClientSession(
                                 timeSinceHealthDecrease = 0
                             }
                         }
+
+                        if(player.world?.difficulty == Difficulty.PEACEFUL && player.foodLevel != 20) {
+                            player.foodLevel = min(player.foodLevel + 1, 20)
+                        }
                     }
+
+                    player.sendPacket(ServerUpdateHealthPacket(player.health.toFloat(), player.foodLevel, player.saturation))
 
                     timeSinceHealthUpdate += 500
                     timeSinceHealthDecrease += 500

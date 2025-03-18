@@ -390,9 +390,9 @@ class PacketHandler(
 
                 otherPlayer.clientSession.sendPacket(
                     ServerEntityHeadLook(
-                    player.entityID,
-                    player.location.yaw
-                )
+                        player.entityID,
+                        player.location.yaw
+                    )
                 )
             }
         }
