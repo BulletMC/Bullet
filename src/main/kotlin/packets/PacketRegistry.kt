@@ -50,6 +50,7 @@ object PacketRegistry {
             this[0x05] = ClientSettingsPacket::class.java
             this[0x10] = ClientKeepAlivePacket::class.java
             this[0xb] = ClientPluginMessagePacket::class.java
+            this[0x0E] = ClientInteractEntityPacket::class.java
             this[0x12] = ClientPlayerPositionPacket::class.java
             this[0x13] = ClientPlayerPositionAndRotation::class.java
             this[0x14] = ClientPlayerRotation::class.java

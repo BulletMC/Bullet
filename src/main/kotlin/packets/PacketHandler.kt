@@ -61,6 +61,28 @@ class PacketHandler(
     private val client: ClientSession
 ) {
     @PacketReceiver
+    fun onEntityInteract(packet: ClientInteractEntityPacket) {
+        if(packet.type == 1) {
+            for(player in Bullet.players) {
+                if(player.entityID == packet.entityID && player.gameMode == GameMode.SURVIVAL) {
+                    player.health -= 1
+
+                    player.sendPacket(ServerUpdateHealthPacket(
+                        player.health.toFloat(),
+                        player.foodLevel,
+                        player.saturation
+                    ))
+
+                    player.sendPacket(ServerAnimationPacket(
+                        player.entityID,
+                        1
+                    ))
+                }
+            }
+        }
+    }
+
+    @PacketReceiver
     fun onHeldItemChange(packet: ClientHeldItemChangePacket) {
         client.player.selectedSlot = packet.slot.toInt()
         sendHeldItemUpdate()
