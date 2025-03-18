@@ -145,9 +145,9 @@ class ClientSession(
                         return
                     }
 
-                    if(player.exhaustion > 4) {
+                    if(player.exhaustion >= 4) {
                         player.exhaustion -= 4
-                        if(player.saturation > 1) player.saturation -= 1
+                        if(player.saturation >= 1) player.saturation -= 1
                         else player.foodLevel -= 1
                     }
 

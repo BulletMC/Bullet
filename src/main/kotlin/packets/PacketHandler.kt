@@ -352,6 +352,7 @@ class PacketHandler(
 
         if(!packet.onGround && !sprinting.contains(player.entityID)) {
             player.exhaustion += 0.05f
+            Bullet.logger.info("Player jumped")
         }
 
         if(sprinting.contains(player.entityID)) {
@@ -361,12 +362,12 @@ class PacketHandler(
             )
 
             if(!packet.onGround) {
-                if(distance > 1) {
-                    player.exhaustion += 0.2f
-                }
+                player.exhaustion += 0.2f
+                Bullet.logger.info("Player sprinted and jumped")
             } else {
                 if(distance > 1) {
                     player.exhaustion += 0.1f
+                    Bullet.logger.info("Player sprinted")
                 }
             }
         }
@@ -428,14 +429,25 @@ class PacketHandler(
             lastLocation.z
         )
 
+        if(!packet.onGround && !sprinting.contains(player.entityID)) {
+            player.exhaustion += 0.05f
+            Bullet.logger.info("Player jumped")
+        }
+
         if(sprinting.contains(player.entityID)) {
             val distance = sqrt(
                 (player.location.x - player.lastSprintLocation!!.x).pow(2) +
-                    (player.location.z - player.lastSprintLocation!!.z).pow(2)
+                        (player.location.z - player.lastSprintLocation!!.z).pow(2)
             )
 
-            if(distance > 1) {
-                player.exhaustion += 0.1f
+            if(!packet.onGround) {
+                player.exhaustion += 0.2f
+                Bullet.logger.info("Player sprinted and jumped")
+            } else {
+                if(distance > 1) {
+                    player.exhaustion += 0.1f
+                    Bullet.logger.info("Player sprinted")
+                }
             }
         }
 
