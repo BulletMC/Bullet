@@ -3,6 +3,7 @@ package com.aznos
 import com.aznos.datatypes.VarInt
 import com.aznos.datatypes.VarInt.readVarInt
 import com.aznos.entity.player.Player
+import com.aznos.entity.player.data.GameMode
 import com.aznos.events.EventManager
 import com.aznos.events.PlayerQuitEvent
 import com.aznos.packets.Packet
@@ -144,25 +145,27 @@ class ClientSession(
                         return
                     }
 
-                    if(player.foodLevel == 20 && player.saturation > 0 && player.health != 20) {
-                        player.health = min(player.health + 1, 20)
-                    } else if(player.foodLevel > 18 && player.health != 20) {
-                        if(timeSinceHealthUpdate == 4000) {
+                    if(player.gameMode == GameMode.SURVIVAL) {
+                        if(player.foodLevel == 20 && player.saturation > 0 && player.health != 20) {
                             player.health = min(player.health + 1, 20)
-                            timeSinceHealthUpdate = 0
-                        }
-                    }
-
-                    if(player.foodLevel == 0 && player.health > 0) {
-                        if(timeSinceHealthDecrease == 4000) {
-                            when(Bullet.world.difficulty) {
-                                Difficulty.PEACEFUL -> {}
-                                Difficulty.EASY -> player.health = max(player.health - 1, 10)
-                                Difficulty.NORMAL -> player.health = max(player.health - 1, 1)
-                                Difficulty.HARD -> player.health -= 1
+                        } else if(player.foodLevel > 18 && player.health != 20) {
+                            if(timeSinceHealthUpdate == 4000) {
+                                player.health = min(player.health + 1, 20)
+                                timeSinceHealthUpdate = 0
                             }
+                        }
 
-                            timeSinceHealthDecrease = 0
+                        if(player.foodLevel == 0 && player.health > 0) {
+                            if(timeSinceHealthDecrease == 4000) {
+                                when(Bullet.world.difficulty) {
+                                    Difficulty.PEACEFUL -> {}
+                                    Difficulty.EASY -> player.health = max(player.health - 1, 10)
+                                    Difficulty.NORMAL -> player.health = max(player.health - 1, 1)
+                                    Difficulty.HARD -> player.health -= 1
+                                }
+
+                                timeSinceHealthDecrease = 0
+                            }
                         }
                     }
 
