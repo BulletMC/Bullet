@@ -66,5 +66,10 @@ class MessageCommand {
                     )
             )
         )
+
+        dispatcher.register(
+            LiteralArgumentBuilder.literal<Player>("msg")
+                .redirect(dispatcher.root.getChild("message"))
+        )
     }
 }
