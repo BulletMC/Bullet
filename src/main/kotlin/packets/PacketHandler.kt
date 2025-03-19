@@ -71,7 +71,7 @@ class PacketHandler(
         if(packet.type == 1) {
             for(player in Bullet.players) {
                 if(player.entityID == packet.entityID && player.gameMode == GameMode.SURVIVAL) {
-                    player.status.health
+                    player.status.health -= 1
 
                     player.sendPacket(ServerUpdateHealthPacket(
                         player.status.health.toFloat(),

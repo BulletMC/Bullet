@@ -85,7 +85,7 @@ class ClientSession(
         }
 
         try {
-            while (!isClosed()) {
+            while(!isClosed()) {
                 val len = input.readVarInt()
                 val id = input.readVarInt()
                 val dataLength = len - VarInt.getVarIntSize(id)
@@ -94,7 +94,7 @@ class ClientSession(
                 input.readFully(data)
 
                 val packetClass = PacketRegistry.getPacket(state, id)
-                if (packetClass != null) {
+                if(packetClass != null) {
                     val packet: Packet = packetClass
                         .getConstructor(ByteArray::class.java)
                         .newInstance(data)
@@ -103,9 +103,9 @@ class ClientSession(
                     Bullet.logger.warn("Unhandled packet with raw packet ID: 0x$id (Hex: 0x${id.toString(16)})")
                 }
             }
-        } catch (e: EOFException) {
+        } catch(e: EOFException) {
             disconnect("Client closed the connection")
-        } catch (e: SocketException) {
+        } catch(e: SocketException) {
             disconnect("Connection lost")
         }
     }
