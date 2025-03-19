@@ -6,6 +6,7 @@ import com.aznos.datatypes.VarInt.writeVarInt
 import com.aznos.packets.Packet
 import com.aznos.packets.data.BossBarColor
 import com.aznos.packets.data.BossBarDividers
+import com.google.gson.JsonObject
 import java.util.UUID
 
 /**
@@ -48,7 +49,10 @@ class ServerBossBarPacket(
                 requireNotNull(color)
                 requireNotNull(division)
 
-                wrapper.writeString(title)
+                val jsonObj = JsonObject()
+                jsonObj.addProperty("text", title)
+
+                wrapper.writeString(jsonObj.toString())
                 wrapper.writeFloat(health)
                 wrapper.writeVarInt(color.id)
                 wrapper.writeVarInt(division.id)
@@ -66,7 +70,10 @@ class ServerBossBarPacket(
             }
             Action.UPDATE_TITLE -> { //Update title
                 requireNotNull(title)
-                wrapper.writeString(title)
+
+                val jsonObj = JsonObject()
+                jsonObj.addProperty("text", title)
+                wrapper.writeString(jsonObj.toString())
             }
             Action.UPDATE_STYLE -> { //Update style
                 requireNotNull(color)
