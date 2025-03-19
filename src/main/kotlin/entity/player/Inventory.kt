@@ -1,8 +1,5 @@
 package com.aznos.entity.player
 
-import com.aznos.packets.play.out.ServerHeldItemChangePacket
-import com.aznos.world.blocks.Block
-
 class Inventory {
     val items: MutableMap<Int, Int> = mutableMapOf()
 

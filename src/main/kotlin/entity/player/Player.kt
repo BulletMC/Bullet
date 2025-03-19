@@ -30,7 +30,7 @@ class Player(
     val clientSession: ClientSession
 ) : Entity() {
     lateinit var username: String
-    lateinit var uuid: UUID
+    override lateinit var uuid: UUID
     lateinit var location: Location
     lateinit var locale: String
     lateinit var brand: String

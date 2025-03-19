@@ -1,5 +1,6 @@
 package com.aznos.events
 
+import com.aznos.Bullet
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -29,6 +30,8 @@ object EventManager {
      * @param event The event to fire
      */
     fun <T : Event> fire(event: T) {
+        Bullet.logger.info("Firing event: ${event::class.java.simpleName}")
+
         listeners[event::class.java]?.forEach { listener ->
             @Suppress("UNCHECKED_CAST")
             (listener as EventListener<T>).onEvent(event)
