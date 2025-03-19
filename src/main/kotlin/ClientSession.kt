@@ -207,6 +207,8 @@ class ClientSession(
      * @param message The message to be sent to the client
      */
     fun disconnect(message: String) {
+        if(isClosed()) return
+
         if(state == GameState.PLAY) {
             sendPacket(ServerPlayDisconnectPacket(message))
         } else if(state == GameState.LOGIN) {
@@ -214,7 +216,11 @@ class ClientSession(
         }
 
         keepAliveTimer?.cancel()
+        halfSecondTimer?.cancel()
         keepAliveTimer = null
+        halfSecondTimer = null
+
+        Bullet.players.remove(player)
 
         for(player in Bullet.players) {
             player.sendPacket(
@@ -242,8 +248,13 @@ class ClientSession(
             return
         }
 
-        out.write(packet.retrieveData())
-        out.flush()
+        try {
+            out.write(packet.retrieveData())
+            out.flush()
+        } catch(e: IOException) {
+            Bullet.logger.warn("Failed to send packet to client: ${e.message}")
+            disconnect("Connection lost")
+        }
     }
 
     fun sendPlayerSpawnPacket() {
@@ -322,7 +333,14 @@ class ClientSession(
      * Closes connection
      */
     override fun close() {
+        keepAliveTimer?.cancel()
+        halfSecondTimer?.cancel()
+
         keepAliveTimer = null
+        halfSecondTimer = null
+
+        Bullet.players.remove(player)
+
         socket.close()
     }
 }
