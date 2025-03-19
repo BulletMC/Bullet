@@ -8,6 +8,9 @@ import com.aznos.entity.player.data.GameMode
 import com.aznos.entity.player.data.Location
 import com.aznos.packets.Packet
 import com.aznos.entity.player.data.PlayerProperty
+import com.aznos.packets.data.BossBarColor
+import com.aznos.packets.data.BossBarDividers
+import com.aznos.packets.play.out.ServerBossBarPacket
 import com.aznos.packets.play.out.ServerChangeGameStatePacket
 import com.aznos.packets.play.out.ServerChatMessagePacket
 import com.aznos.packets.play.out.ServerHeldItemChangePacket
@@ -16,6 +19,7 @@ import com.aznos.world.blocks.Block
 import com.aznos.world.World
 import net.kyori.adventure.text.TextComponent
 import java.util.UUID
+import kotlin.experimental.or
 
 /**
  * Represents a player in the game
@@ -25,33 +29,38 @@ import java.util.UUID
 class Player(
     val clientSession: ClientSession
 ) : Entity() {
-    val loadedChunks: MutableSet<Pair<Int, Int>> = mutableSetOf()
-
     lateinit var username: String
     lateinit var uuid: UUID
     lateinit var location: Location
     lateinit var locale: String
     lateinit var brand: String
+    var world: World? = Bullet.world
 
-    var inventory: MutableMap<Int, Int> = mutableMapOf()
+    //Inventory and Equipment
+    var inventory = Inventory()
     var selectedSlot: Int = 0
 
-    var properties: MutableList<PlayerProperty> = mutableListOf()
+    //Player attributes
+    var properties = mutableListOf<PlayerProperty>()
     var gameMode: GameMode = GameMode.CREATIVE
         private set
-    var onGround: Boolean = true
     var viewDistance: Int = 0
     var isSneaking: Boolean = false
     var ping: Int = 0
+
+    //Movement
+    var onGround: Boolean = true
     var chunkX: Int = 0
     var chunkZ: Int = 0
-    var world: World? = Bullet.world
-
-    var health: Int = 20
-    var foodLevel: Int = 20
-    var saturation: Float = 5f
-    var exhaustion: Float = 0f
     var lastSprintLocation: Location? = null
+    val loadedChunks = mutableSetOf<Pair<Int, Int>>()
+
+    //Combat and status
+    var status = StatusEffects()
+
+    //Boss bars
+    @Suppress("unused")
+    private val bossBarManager = BossBarManager(this)
 
     /**
      * Sends a packet to the players client session
@@ -100,26 +109,10 @@ class Player(
         sendPacket(ServerChangeGameStatePacket(3, mode.id.toFloat()))
     }
 
-    /**
-     * Returns the players held item
-     *
-     * @return The item ID
-     */
-    fun getHeldItem(): Int {
-        val slotIndex = selectedSlot + 36
-        val blockID = inventory[slotIndex]
+    fun getHeldItem(): Int = inventory.getHeldItem(selectedSlot)
 
-        return blockID?.let {
-            Block.getBlockByID(it)?.id ?: it
-        } ?: 0
-    }
-
-    /**
-     * Sets the players held item slot in the hotbar (0-8)
-     *
-     * @param slot The slot to select
-     */
-    fun setHeldSlot(slot: Int) {
+    fun setHeldItem(slot: Int) {
+        selectedSlot = slot
         sendPacket(ServerHeldItemChangePacket(slot.toByte()))
     }
 }

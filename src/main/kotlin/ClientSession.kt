@@ -148,46 +148,50 @@ class ClientSession(
                         return
                     }
 
-                    if(player.exhaustion >= 4) {
-                        player.exhaustion -= 4
-                        if(player.saturation >= 1) player.saturation -= 1
-                        else player.foodLevel -= 1
+                    if(player.status.exhaustion >= 4) {
+                        player.status.exhaustion -= 4
+                        if(player.status.saturation >= 1) player.status.saturation -= 1
+                        else player.status.foodLevel -= 1
                     }
 
                     if(player.gameMode == GameMode.SURVIVAL) {
-                        if(player.foodLevel == 20 && player.saturation > 0 && player.health != 20) {
-                            player.health = min(player.health + 1, 20)
-                            player.exhaustion += 6.0f
-                        } else if(player.foodLevel > 18 && player.health != 20) {
+                        if(
+                            player.status.foodLevel == 20 &&
+                            player.status.saturation > 0 &&
+                            player.status.health != 20
+                        ) {
+                            player.status.health = min(player.status.health + 1, 20)
+                            player.status.exhaustion += 6.0f
+                        } else if(player.status.foodLevel > 18 && player.status.health != 20) {
                             if(timeSinceHealthUpdate == 4000) {
-                                player.health = min(player.health + 1, 20)
+                                player.status.health = min(player.status.health + 1, 20)
                                 timeSinceHealthUpdate = 0
-                                player.exhaustion += 6.0f
+                                player.status.exhaustion += 6.0f
                             }
                         }
 
-                        if(player.foodLevel == 0 && player.health > 0) {
+                        if(player.status.foodLevel == 0 && player.status.health > 0) {
                             if(timeSinceHealthDecrease == 4000) {
                                 when(Bullet.world.difficulty) {
                                     Difficulty.PEACEFUL -> {}
-                                    Difficulty.EASY -> player.health = max(player.health - 1, 10)
-                                    Difficulty.NORMAL -> player.health = max(player.health - 1, 1)
-                                    Difficulty.HARD -> player.health -= 1
+                                    Difficulty.EASY -> player.status.health = max(player.status.health - 1, 10)
+                                    Difficulty.NORMAL -> player.status.health = max(player.status.health - 1, 1)
+                                    Difficulty.HARD -> player.status.health -= 1
                                 }
 
                                 timeSinceHealthDecrease = 0
                             }
                         }
 
-                        if(player.world?.difficulty == Difficulty.PEACEFUL && player.foodLevel != 20) {
-                            player.foodLevel = min(player.foodLevel + 1, 20)
+                        if(player.world?.difficulty == Difficulty.PEACEFUL && player.status.foodLevel != 20) {
+                            player.status.foodLevel = min(player.status.foodLevel + 1, 20)
                         }
                     }
 
                     player.sendPacket(ServerUpdateHealthPacket(
-                        player.health.toFloat(),
-                        player.foodLevel,
-                        player.saturation)
+                        player.status.health.toFloat(),
+                        player.status.foodLevel,
+                        player.status.saturation)
                     )
 
                     timeSinceHealthUpdate += 500
