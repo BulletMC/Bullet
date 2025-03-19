@@ -85,7 +85,7 @@ class ClientSession(
         }
 
         try {
-            while (!isClosed()) {
+            while(!isClosed()) {
                 val len = input.readVarInt()
                 val id = input.readVarInt()
                 val dataLength = len - VarInt.getVarIntSize(id)
@@ -94,7 +94,7 @@ class ClientSession(
                 input.readFully(data)
 
                 val packetClass = PacketRegistry.getPacket(state, id)
-                if (packetClass != null) {
+                if(packetClass != null) {
                     val packet: Packet = packetClass
                         .getConstructor(ByteArray::class.java)
                         .newInstance(data)
@@ -103,9 +103,9 @@ class ClientSession(
                     Bullet.logger.warn("Unhandled packet with raw packet ID: 0x$id (Hex: 0x${id.toString(16)})")
                 }
             }
-        } catch (e: EOFException) {
+        } catch(e: EOFException) {
             disconnect("Client closed the connection")
-        } catch (e: SocketException) {
+        } catch(e: SocketException) {
             disconnect("Connection lost")
         }
     }
@@ -207,6 +207,8 @@ class ClientSession(
      * @param message The message to be sent to the client
      */
     fun disconnect(message: String) {
+        if(isClosed()) return
+
         if(state == GameState.PLAY) {
             sendPacket(ServerPlayDisconnectPacket(message))
         } else if(state == GameState.LOGIN) {
@@ -214,7 +216,11 @@ class ClientSession(
         }
 
         keepAliveTimer?.cancel()
+        halfSecondTimer?.cancel()
         keepAliveTimer = null
+        halfSecondTimer = null
+
+        Bullet.players.remove(player)
 
         for(player in Bullet.players) {
             player.sendPacket(
@@ -242,8 +248,13 @@ class ClientSession(
             return
         }
 
-        out.write(packet.retrieveData())
-        out.flush()
+        try {
+            out.write(packet.retrieveData())
+            out.flush()
+        } catch(e: IOException) {
+            Bullet.logger.warn("Failed to send packet to client: ${e.message}")
+            disconnect("Connection lost")
+        }
     }
 
     fun sendPlayerSpawnPacket() {
@@ -322,7 +333,14 @@ class ClientSession(
      * Closes connection
      */
     override fun close() {
+        keepAliveTimer?.cancel()
+        halfSecondTimer?.cancel()
+
         keepAliveTimer = null
+        halfSecondTimer = null
+
+        Bullet.players.remove(player)
+
         socket.close()
     }
 }
