@@ -8,6 +8,9 @@ import com.aznos.entity.player.data.GameMode
 import com.aznos.entity.player.data.Location
 import com.aznos.packets.Packet
 import com.aznos.entity.player.data.PlayerProperty
+import com.aznos.packets.data.BossBarColor
+import com.aznos.packets.data.BossBarDividers
+import com.aznos.packets.play.out.ServerBossBarPacket
 import com.aznos.packets.play.out.ServerChangeGameStatePacket
 import com.aznos.packets.play.out.ServerChatMessagePacket
 import com.aznos.packets.play.out.ServerHeldItemChangePacket
@@ -16,6 +19,7 @@ import com.aznos.world.blocks.Block
 import com.aznos.world.World
 import net.kyori.adventure.text.TextComponent
 import java.util.UUID
+import kotlin.experimental.or
 
 /**
  * Represents a player in the game
@@ -25,6 +29,7 @@ import java.util.UUID
 class Player(
     val clientSession: ClientSession
 ) : Entity() {
+    val bossBars = mutableListOf<UUID>()
     val loadedChunks: MutableSet<Pair<Int, Int>> = mutableSetOf()
 
     lateinit var username: String
@@ -121,5 +126,25 @@ class Player(
      */
     fun setHeldSlot(slot: Int) {
         sendPacket(ServerHeldItemChangePacket(slot.toByte()))
+    }
+
+    fun addBossBar(title: String, health: Float? = 1f, color: BossBarColor? = BossBarColor.PINK, dividers: BossBarDividers? = BossBarDividers.NONE, darkenSky: Boolean = false, playEndMusic: Boolean = false, createFog: Boolean = false) {
+        val uuid = UUID.randomUUID()
+        bossBars.add(uuid)
+
+        var flags: Byte = 0
+        if(darkenSky) flags = flags or 0x1
+        if(playEndMusic) flags = flags or 0x2
+        if(createFog) flags = flags or 0x04
+
+        sendPacket(ServerBossBarPacket(
+            uuid,
+            ServerBossBarPacket.Action.ADD,
+            title,
+            health,
+            color,
+            dividers,
+            flags
+        ))
     }
 }

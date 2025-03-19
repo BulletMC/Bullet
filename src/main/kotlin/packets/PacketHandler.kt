@@ -22,6 +22,7 @@ import com.aznos.packets.status.out.ServerStatusPongPacket
 import com.aznos.entity.player.data.Location
 import com.aznos.entity.player.data.Position
 import com.aznos.datatypes.Slot
+import com.aznos.packets.data.BossBarDividers
 import com.aznos.packets.play.`in`.*
 import com.aznos.packets.play.`in`.movement.ClientEntityActionPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
@@ -574,6 +575,8 @@ class PacketHandler(
 
         client.sendPacket(ServerUpdateViewPositionPacket(player.chunkX, player.chunkZ))
         client.updatePlayerChunks(player.chunkX, player.chunkZ)
+
+        client.player.addBossBar("Test", dividers = BossBarDividers.NOTCHES_6)
 
         val (nodes, rootIndex) = buildCommandGraphFromDispatcher(CommandManager.dispatcher)
         client.sendPacket(ServerDeclareCommandsPacket(nodes, rootIndex))

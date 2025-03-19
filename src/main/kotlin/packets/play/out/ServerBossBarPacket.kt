@@ -21,19 +21,28 @@ import java.util.UUID
  */
 class ServerBossBarPacket(
     uuid: UUID,
-    action: Int,
+    action: Action,
     title: String? = null,
     health: Float? = null,
     color: BossBarColor? = null,
     division: BossBarDividers? = null,
     flags: Byte? = null
 ) : Packet(0x0C) {
+    enum class Action(val id: Int) {
+        ADD(0),
+        REMOVE(1),
+        UPDATE_HEALTH(2),
+        UPDATE_TITLE(3),
+        UPDATE_STYLE(4),
+        UPDATE_FLAGS(5)
+    }
+
     init {
         wrapper.writeUUID(uuid)
-        wrapper.writeVarInt(action)
+        wrapper.writeVarInt(action.id)
 
         when(action) {
-            0 -> { //Add
+            Action.ADD -> { //Add
                 requireNotNull(title)
                 requireNotNull(health)
                 requireNotNull(color)
@@ -48,28 +57,27 @@ class ServerBossBarPacket(
                     wrapper.writeByte(flags.toInt())
                 }
             }
-            1 -> { //Remove
+            Action.REMOVE -> { //Remove
 
             }
-            2 -> { //Update health
+            Action.UPDATE_HEALTH -> { //Update health
                 requireNotNull(health)
                 wrapper.writeFloat(health)
             }
-            3 -> { //Update title
+            Action.UPDATE_TITLE -> { //Update title
                 requireNotNull(title)
                 wrapper.writeString(title)
             }
-            4 -> { //Update style
+            Action.UPDATE_STYLE -> { //Update style
                 requireNotNull(color)
                 requireNotNull(division)
 
                 wrapper.writeVarInt(color.id)
                 wrapper.writeVarInt(division.id)
             }
-            5 -> { //Update flags
+            Action.UPDATE_FLAGS -> { //Update flags
                 requireNotNull(flags)
                 wrapper.writeByte(flags.toInt())
-
             }
         }
     }
