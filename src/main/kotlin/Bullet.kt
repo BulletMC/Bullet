@@ -1,6 +1,8 @@
 package com.aznos
 
 import com.aznos.commands.CommandManager
+import com.aznos.entity.Entity
+import com.aznos.entity.livingentity.LivingEntity
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.Position
 import com.aznos.packets.play.out.ServerParticlePacket
@@ -42,7 +44,9 @@ object Bullet : AutoCloseable {
 
     private val pool = Executors.newCachedThreadPool()
     private var server: ServerSocket? = null
+
     val players = mutableListOf<Player>()
+    val livingEntities = mutableListOf<LivingEntity>()
 
     val world = World("world")
 

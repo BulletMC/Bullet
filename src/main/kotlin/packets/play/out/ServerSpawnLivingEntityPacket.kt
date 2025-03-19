@@ -19,7 +19,7 @@ import java.util.UUID
  * @param velocityY The velocity of the entity on the Y axis
  * @param velocityZ The velocity of the entity on the Z axis
  */
-class SpawnLivingEntityPacket(
+class ServerSpawnLivingEntityPacket(
     entityID: Int,
     entityUUID: UUID,
     type: Int,
