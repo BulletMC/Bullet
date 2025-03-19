@@ -497,11 +497,15 @@ class PacketHandler(
         val message = packet.message
 
         if(message.length > 255) {
-            client.disconnect("Message too long")
+            client.player.sendMessage(
+                Component.text("Message is too long")
+                .color(NamedTextColor.RED)
+            )
+
             return
         }
 
-        if(message.startsWith('/')) {
+        if(message.startsWith('/') && message.length > 1) {
             val command = message.substring(1)
             val commandSource = client.player
 
