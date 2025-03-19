@@ -68,12 +68,12 @@ class PacketHandler(
         if(packet.type == 1) {
             for(player in Bullet.players) {
                 if(player.entityID == packet.entityID && player.gameMode == GameMode.SURVIVAL) {
-                    player.health -= 1
+                    player.status.health
 
                     player.sendPacket(ServerUpdateHealthPacket(
-                        player.health.toFloat(),
-                        player.foodLevel,
-                        player.saturation
+                        player.status.health.toFloat(),
+                        player.status.foodLevel,
+                        player.status.saturation
                     ))
 
                     player.sendPacket(ServerAnimationPacket(
@@ -81,7 +81,7 @@ class PacketHandler(
                         1
                     ))
 
-                    player.exhaustion += 0.1f
+                    player.status.exhaustion += 0.1f
                 }
             }
         }
@@ -97,9 +97,9 @@ class PacketHandler(
     fun onCreativeInventoryAction(packet: ClientCreativeInventoryActionPacket) {
         if(packet.slot.present) {
             val block = Block.getBlockByID(packet.slot.itemID!!) ?: Block.AIR
-            client.player.inventory[packet.slotIndex.toInt()] = block.id
+            client.player.inventory.items[packet.slotIndex.toInt()] = block.id
         } else {
-            client.player.inventory.remove(packet.slotIndex.toInt())
+            client.player.inventory.items.remove(packet.slotIndex.toInt())
         }
 
         if(packet.slotIndex.toInt() == client.player.selectedSlot + 36) {
@@ -218,7 +218,7 @@ class PacketHandler(
                 }
 
                 BlockStatus.FINISHED_DIGGING.id -> {
-                    client.player.exhaustion += 0.005f
+                    client.player.status.exhaustion += 0.005f
                     stopBlockBreak(event.location)
                 }
             }
@@ -576,8 +576,6 @@ class PacketHandler(
         client.sendPacket(ServerUpdateViewPositionPacket(player.chunkX, player.chunkZ))
         client.updatePlayerChunks(player.chunkX, player.chunkZ)
 
-        client.player.addBossBar("Test", dividers = BossBarDividers.NOTCHES_6)
-
         val (nodes, rootIndex) = buildCommandGraphFromDispatcher(CommandManager.dispatcher)
         client.sendPacket(ServerDeclareCommandsPacket(nodes, rootIndex))
     }
@@ -656,7 +654,7 @@ class PacketHandler(
         player.uuid = uuid
 
         for(i in 1..45) {
-            player.inventory[i] = 0
+            player.inventory.items[i] = 0
         }
 
         player.location = Location(8.5, 2.0, 8.5, 0f, 0f)
@@ -785,11 +783,9 @@ class PacketHandler(
     private fun handleFoodLevel(player: Player, x: Double, z: Double, onGround: Boolean, wasOnGround: Boolean) {
         if(!onGround && wasOnGround) {
             if(sprinting.contains(player.entityID)) {
-                player.exhaustion += 0.2f
-                Bullet.logger.info("Sprint + Jump")
+                player.status.exhaustion += 0.2f
             } else {
-                player.exhaustion += 0.05f
-                Bullet.logger.info("Jump")
+                player.status.exhaustion += 0.05f
             }
         }
 
@@ -800,9 +796,8 @@ class PacketHandler(
             )
 
             if(distance >= 1) {
-                player.exhaustion += 0.1f
+                player.status.exhaustion += 0.1f
                 player.lastSprintLocation = player.location
-                Bullet.logger.info("Sprint")
             }
         }
     }
