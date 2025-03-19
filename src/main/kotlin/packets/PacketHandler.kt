@@ -22,7 +22,6 @@ import com.aznos.packets.status.out.ServerStatusPongPacket
 import com.aznos.entity.player.data.Location
 import com.aznos.entity.player.data.Position
 import com.aznos.datatypes.Slot
-import com.aznos.packets.data.BossBarDividers
 import com.aznos.packets.play.`in`.*
 import com.aznos.packets.play.`in`.movement.ClientEntityActionPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
@@ -285,7 +284,7 @@ class PacketHandler(
             5 -> event.location.x += 1
         }
 
-        val heldItem = client.player.getHeldItem() ?: 0
+        val heldItem = client.player.getHeldItem()
 
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {
@@ -850,7 +849,7 @@ class PacketHandler(
         if(sprinting.contains(player.entityID)) {
             val distance = sqrt(
                 (x - player.lastSprintLocation!!.x).pow(2) +
-                        (z - player.lastSprintLocation!!.z).pow(2)
+                    (z - player.lastSprintLocation!!.z).pow(2)
             )
 
             if(distance >= 1) {
