@@ -22,7 +22,6 @@ import com.aznos.packets.status.out.ServerStatusPongPacket
 import com.aznos.entity.player.data.Location
 import com.aznos.entity.player.data.Position
 import com.aznos.datatypes.Slot
-import com.aznos.packets.data.BossBarDividers
 import com.aznos.packets.play.`in`.*
 import com.aznos.packets.play.`in`.movement.ClientEntityActionPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
@@ -59,12 +58,16 @@ import kotlin.math.sqrt
  *
  * @property client The clients session
  */
-@Suppress("UnusedParameter", "TooManyFunctions")
+@Suppress("UnusedParameter", "TooManyFunctions", "LargeClass")
 class PacketHandler(
     private val client: ClientSession
 ) {
     @PacketReceiver
     fun onEntityInteract(packet: ClientInteractEntityPacket) {
+        val event = PlayerInteractEntityEvent(client.player, packet.entityID, packet.type)
+        EventManager.fire(event)
+        if(event.isCancelled) return
+
         if(packet.type == 1) {
             for(player in Bullet.players) {
                 if(player.entityID == packet.entityID && player.gameMode == GameMode.SURVIVAL) {
@@ -89,6 +92,10 @@ class PacketHandler(
 
     @PacketReceiver
     fun onHeldItemChange(packet: ClientHeldItemChangePacket) {
+        val event = PlayerHeldItemChangeEvent(client.player, packet.slot.toInt())
+        EventManager.fire(event)
+        if(event.isCancelled) return
+
         client.player.selectedSlot = packet.slot.toInt()
         sendHeldItemUpdate()
     }
@@ -132,6 +139,18 @@ class PacketHandler(
 
     @PacketReceiver
     fun onPlayerSettingsChange(packet: ClientSettingsPacket) {
+        val event = PlayerSettingsChangeEvent(
+            client.player,
+            packet.locale,
+            packet.viewDistance.toInt(),
+            packet.chatMode,
+            packet.chatColors,
+            packet.displayedSkinParts.toInt(),
+            packet.mainHand
+        )
+        EventManager.fire(event)
+        if(event.isCancelled) return
+
         client.player.viewDistance = packet.viewDistance.toInt()
         client.player.locale = packet.locale
 
@@ -227,6 +246,10 @@ class PacketHandler(
 
     @PacketReceiver
     fun onArmSwing(packet: ClientAnimationPacket) {
+        val event = PlayerArmSwingEvent(client.player)
+        EventManager.fire(event)
+        if(event.isCancelled) return
+
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {
                 otherPlayer.sendPacket(ServerAnimationPacket(client.player.entityID, 0))
@@ -261,7 +284,7 @@ class PacketHandler(
             5 -> event.location.x += 1
         }
 
-        val heldItem = client.player.getHeldItem() ?: 0
+        val heldItem = client.player.getHeldItem()
 
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {
@@ -298,6 +321,20 @@ class PacketHandler(
      */
     @PacketReceiver
     fun onPlayerRotation(packet: ClientPlayerRotation) {
+        val event = PlayerMoveEvent(
+            client.player,
+            Location(
+                client.player.location.x, client.player.location.y, client.player.location.z,
+                packet.yaw, packet.pitch
+            ),
+            Location(
+                client.player.location.x, client.player.location.y, client.player.location.z,
+                client.player.location.yaw, client.player.location.pitch
+            )
+        )
+        EventManager.fire(event)
+        if(event.isCancelled) return
+
         val player = client.player
         player.location = Location(player.location.x, player.location.y, player.location.z, packet.yaw, packet.pitch)
         player.onGround = packet.onGround
@@ -313,9 +350,9 @@ class PacketHandler(
 
                 otherPlayer.clientSession.sendPacket(
                     ServerEntityHeadLook(
-                    player.entityID,
-                    player.location.yaw
-                )
+                        player.entityID,
+                        player.location.yaw
+                    )
                 )
             }
         }
@@ -326,6 +363,20 @@ class PacketHandler(
      */
     @PacketReceiver
     fun onPlayerPositionAndRotation(packet: ClientPlayerPositionAndRotation) {
+        val event = PlayerMoveEvent(
+            client.player,
+            Location(
+                packet.x, packet.feetY, packet.z,
+                packet.yaw, packet.pitch
+            ),
+            Location(
+                client.player.location.x, client.player.location.y, client.player.location.z,
+                client.player.location.yaw, client.player.location.pitch
+            )
+        )
+        EventManager.fire(event)
+        if(event.isCancelled) return
+
         val player = client.player
         val lastLocation = player.location
         val wasOnGround = player.onGround
@@ -344,12 +395,8 @@ class PacketHandler(
         }
 
         val (deltaX, deltaY, deltaZ) = calculateDeltas(
-            packet.x,
-            packet.feetY,
-            packet.z,
-            lastLocation.x,
-            lastLocation.y,
-            lastLocation.z
+            packet.x, packet.feetY, packet.z,
+            lastLocation.x, lastLocation.y, lastLocation.z
         )
 
         handleFoodLevel(player, packet.x, packet.z, packet.onGround, wasOnGround)
@@ -386,6 +433,20 @@ class PacketHandler(
      */
     @PacketReceiver
     fun onPlayerPosition(packet: ClientPlayerPositionPacket) {
+        val event = PlayerMoveEvent(
+            client.player,
+            Location(
+                packet.x, packet.feetY, packet.z,
+                client.player.location.yaw, client.player.location.pitch
+            ),
+            Location(
+                client.player.location.x, client.player.location.y, client.player.location.z,
+                client.player.location.yaw, client.player.location.pitch
+            )
+        )
+        EventManager.fire(event)
+        if(event.isCancelled) return
+
         val player = client.player
         val lastLocation = player.location
         val wasOnGround = player.onGround
@@ -404,12 +465,8 @@ class PacketHandler(
         }
 
         val (deltaX, deltaY, deltaZ) = calculateDeltas(
-            packet.x,
-            packet.feetY,
-            packet.z,
-            lastLocation.x,
-            lastLocation.y,
-            lastLocation.z
+            packet.x, packet.feetY, packet.z,
+            lastLocation.x, lastLocation.y, lastLocation.z
         )
 
         handleFoodLevel(player, packet.x, packet.z, packet.onGround, wasOnGround)
@@ -792,7 +849,7 @@ class PacketHandler(
         if(sprinting.contains(player.entityID)) {
             val distance = sqrt(
                 (x - player.lastSprintLocation!!.x).pow(2) +
-                        (z - player.lastSprintLocation!!.z).pow(2)
+                    (z - player.lastSprintLocation!!.z).pow(2)
             )
 
             if(distance >= 1) {

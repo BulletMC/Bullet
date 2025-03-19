@@ -1,5 +1,6 @@
 package com.aznos.events
 
+import com.aznos.Bullet
 import java.util.concurrent.ConcurrentHashMap
 
 /**

@@ -1,12 +1,13 @@
 package com.aznos
 
 import com.aznos.commands.CommandManager
+import com.aznos.entity.Entity
+import com.aznos.entity.livingentity.LivingEntity
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.Position
 import com.aznos.packets.play.out.ServerParticlePacket
 import com.aznos.world.World
 import com.aznos.world.data.Particles
-import com.aznos.world.data.TimeOfDay
 import com.google.gson.JsonParser
 import dev.dewy.nbt.api.registry.TagTypeRegistry
 import dev.dewy.nbt.tags.collection.CompoundTag
@@ -41,7 +42,10 @@ object Bullet : AutoCloseable {
 
     private val pool = Executors.newCachedThreadPool()
     private var server: ServerSocket? = null
+
     val players = mutableListOf<Player>()
+    val livingEntities = mutableListOf<LivingEntity>()
+    val entities = mutableListOf<Entity>()
 
     val world = World("world")
 

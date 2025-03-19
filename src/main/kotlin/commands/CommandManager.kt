@@ -40,6 +40,7 @@ object CommandManager {
         SetWeatherCommand().register(dispatcher)
         MessageCommand().register(dispatcher)
         DifficultyCommand().register(dispatcher)
+        SpawnCommand().register(dispatcher)
     }
 
     /**
