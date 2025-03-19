@@ -27,7 +27,7 @@ class SpawnCommand {
                             var entityType: LivingEntities? = null
 
                             for(entity in LivingEntities.entries) {
-                                if(type == entity.name) {
+                                if(type.equals(entity.name, true)) {
                                     entityType = entity
                                     break
                                 }
@@ -36,8 +36,9 @@ class SpawnCommand {
                             if(entityType == null) {
                                 context.source.sendMessage(Component.text()
                                     .append(Component.text("Invalid entity type: ").color(NamedTextColor.RED))
-                                    .append(Component.text(type).color(NamedTextColor.WHITE))
+                                    .append(Component.text(type).color(NamedTextColor.YELLOW))
                                     .build())
+
                                 return@executes CommandCodes.ILLEGAL_ARGUMENT.id
                             }
 
