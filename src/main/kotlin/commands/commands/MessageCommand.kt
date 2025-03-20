@@ -17,9 +17,9 @@ class MessageCommand {
             LiteralArgumentBuilder.literal<Player>("message")
             .then(
                 RequiredArgumentBuilder.argument<Player, String>("target", StringArgumentType.word())
+                    .suggests(PlayerSuggestions.playerNameSuggestions())
                     .then(
                         RequiredArgumentBuilder.argument<Player, String>("text", StringArgumentType.greedyString())
-                            .suggests(PlayerSuggestions.playerNameSuggestions())
                             .executes { context ->
                                 val sender = context.source
                                 val targetName = StringArgumentType.getString(context, "target")
