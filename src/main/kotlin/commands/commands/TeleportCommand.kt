@@ -2,6 +2,7 @@ package com.aznos.commands.commands
 
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
+import com.aznos.commands.commands.suggestions.PlayerSuggestions
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.Location
 import com.aznos.packets.play.`in`.movement.ClientPlayerPositionAndRotation
@@ -19,6 +20,7 @@ class TeleportCommand {
             LiteralArgumentBuilder.literal<Player>("tp")
                 .then(
                     RequiredArgumentBuilder.argument<Player, String>("target", StringArgumentType.greedyString())
+                        .suggests(PlayerSuggestions.playerNameSuggestions())
                         .executes {
                             context -> executeTeleport(context.source, StringArgumentType.getString(context, "target"))
                         }
