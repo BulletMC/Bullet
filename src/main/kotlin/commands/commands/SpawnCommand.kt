@@ -9,12 +9,15 @@ import com.aznos.entity.nonliving.Entities
 import com.aznos.entity.player.Player
 import com.aznos.packets.play.out.ServerSpawnEntityPacket
 import com.aznos.packets.play.out.ServerSpawnLivingEntityPacket
+import com.aznos.world.data.Difficulty
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.builder.RequiredArgumentBuilder
+import com.mojang.brigadier.suggestion.SuggestionProvider
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import java.util.concurrent.CompletableFuture
 
 class SpawnCommand {
     fun register(dispatcher: CommandDispatcher<Player>) {
@@ -22,6 +25,7 @@ class SpawnCommand {
             LiteralArgumentBuilder.literal<Player>("spawn")
                 .then(
                     RequiredArgumentBuilder.argument<Player, String>("type", StringArgumentType.word())
+                        .suggests(entityTypeSuggestions())
                         .executes { context ->
                             val type = StringArgumentType.getString(context, "type")
 
@@ -81,5 +85,19 @@ class SpawnCommand {
                 .append(Component.text(type).color(NamedTextColor.YELLOW))
                 .build()
         )
+    }
+
+    private fun entityTypeSuggestions(): SuggestionProvider<Player> {
+        return SuggestionProvider { context, builder ->
+            LivingEntities.entries.forEach {
+                builder.suggest(it.name.lowercase())
+            }
+
+            Entities.entries.forEach {
+                builder.suggest(it.name.lowercase())
+            }
+
+            return@SuggestionProvider CompletableFuture.completedFuture(builder.build())
+        }
     }
 }
