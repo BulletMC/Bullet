@@ -4,13 +4,16 @@ import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
 import com.aznos.entity.player.Player
 import com.aznos.packets.play.out.ServerChangeGameStatePacket
+import com.aznos.world.data.Difficulty
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.builder.RequiredArgumentBuilder
+import com.mojang.brigadier.suggestion.SuggestionProvider
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import java.util.*
+import java.util.concurrent.CompletableFuture
 
 class SetWeatherCommand {
     fun register(dispatcher: CommandDispatcher<Player>) {
@@ -18,6 +21,7 @@ class SetWeatherCommand {
             LiteralArgumentBuilder.literal<Player>("setweather")
                 .then(
                     RequiredArgumentBuilder.argument<Player, String>("weather", StringArgumentType.word())
+                        .suggests(weatherSuggestions())
                         .executes{ context ->
                             val message = StringArgumentType.getString(context, "weather")
                             when(message.lowercase(Locale.getDefault())) {
@@ -57,5 +61,14 @@ class SetWeatherCommand {
                         }
                 )
         )
+    }
+
+    private fun weatherSuggestions(): SuggestionProvider<Player> {
+        return SuggestionProvider { context, builder ->
+            builder.suggest("clear")
+            builder.suggest("rain")
+
+            return@SuggestionProvider CompletableFuture.completedFuture(builder.build())
+        }
     }
 }

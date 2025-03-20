@@ -36,6 +36,7 @@ import com.aznos.packets.play.out.movement.ServerEntityPositionPacket
 import com.aznos.packets.play.out.movement.ServerEntityRotationPacket
 import com.aznos.world.blocks.Block
 import com.aznos.world.data.BlockStatus
+import com.mojang.brigadier.CommandDispatcher
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -62,6 +63,32 @@ import kotlin.math.sqrt
 class PacketHandler(
     private val client: ClientSession
 ) {
+    @PacketReceiver
+    fun onTabComplete(packet: ClientTabCompletePacket) {
+        val dispatcher = CommandManager.dispatcher
+        val rawInput = packet.text
+        val input = if (rawInput.startsWith("/")) rawInput.substring(1) else rawInput
+
+        val parseResults = dispatcher.parse(input, client.player)
+        dispatcher.getCompletionSuggestions(parseResults, input.length).thenAccept { suggestions ->
+            val matches = suggestions.list.map { it.text }
+            val lastSpace = input.lastIndexOf(' ')
+            val start = if(lastSpace == -1) 0 else lastSpace + 1
+            val length = input.length - start
+
+            val formattedMatches = matches.map { match ->
+                if(lastSpace == -1) "/$match" else " $match"
+            }
+
+            client.player.sendPacket(ServerTabCompletePacket(
+                packet.transactionID,
+                start = start,
+                length = length,
+                matches = formattedMatches
+            ))
+        }
+    }
+
     @PacketReceiver
     fun onClientStatus(packet: ClientStatusPacket) {
         when(packet.actionID) {

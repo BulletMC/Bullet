@@ -9,11 +9,11 @@ import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import com.mojang.brigadier.tree.ArgumentCommandNode
-import com.mojang.brigadier.tree.CommandNode
 import com.mojang.brigadier.tree.LiteralCommandNode
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.text.format.NamedTextColor
+import java.util.concurrent.CompletableFuture
 import kotlin.math.ceil
 import kotlin.math.min
 
@@ -31,12 +31,20 @@ class HelpCommand {
                     ).executes { context ->
                         val page = IntegerArgumentType.getInteger(context, "page")
                         sendHelpPage(context.source, page)
-
                         return@executes CommandCodes.SUCCESS.id
                     }
                 )
                 .then(
                     RequiredArgumentBuilder.argument<Player, String>("command", StringArgumentType.word())
+                        .suggests { context, builder ->
+                            CommandManager.dispatcher.root.children.forEach { child ->
+                                child.name?.let { name ->
+                                    builder.suggest(name)
+                                }
+                            }
+
+                            CompletableFuture.completedFuture(builder.build())
+                        }
                         .executes { context ->
                             val commandName = StringArgumentType.getString(context, "command")
                             val commandNode = CommandManager.dispatcher.root.getChild(commandName)
@@ -45,10 +53,6 @@ class HelpCommand {
                                 val details = getCommandDetails(commandNode)
                                 if(details is TextComponent) {
                                     context.source.sendMessage(details)
-                                } else {
-                                    context.source.sendMessage(
-                                        Component.text("Command details not found", NamedTextColor.RED)
-                                    )
                                 }
                             } else {
                                 context.source.sendMessage(
@@ -94,7 +98,7 @@ class HelpCommand {
         player.sendMessage(builder.build())
     }
 
-    private fun getCommandDetails(node: CommandNode<Player>): Component {
+    private fun getCommandDetails(node: com.mojang.brigadier.tree.CommandNode<Player>): Component {
         val builder = Component.text().content("Command: /").color(NamedTextColor.GOLD)
             .append(Component.text(node.name ?: "unknown", NamedTextColor.YELLOW))
             .append(Component.newline())
@@ -109,11 +113,8 @@ class HelpCommand {
                         builder.append(Component.text(" - <", NamedTextColor.DARK_AQUA))
                             .append(Component.text(child.name, NamedTextColor.AQUA))
                             .append(Component.text("> ", NamedTextColor.DARK_AQUA))
-                            .append(Component.text(
-                                (
-                                    "- " + child.type::class.simpleName.toString()
-                                ),
-                                NamedTextColor.GRAY)
+                            .append(
+                                Component.text("- " + child.type::class.simpleName, NamedTextColor.GRAY)
                             )
                             .append(Component.newline())
                     }
