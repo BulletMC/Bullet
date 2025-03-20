@@ -75,7 +75,7 @@ class Player(
      *
      * @param message The message to be shown on why they were disconnected
      */
-    fun disconnect(message: String) {
+    fun disconnect(message: Component) {
         clientSession.disconnect(message)
     }
 
@@ -117,6 +117,7 @@ class Player(
 
     /**
      * Sets the header of the tab list for all players
+     * Make this empty to remove it
      *
      * @param header The header component to be displayed
      */
@@ -131,6 +132,7 @@ class Player(
 
     /**
      * Sets the footer of the tab list for all players
+     * Make this empty to remove it
      *
      * @param footer The footer component to be displayed
      */

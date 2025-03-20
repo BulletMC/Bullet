@@ -218,7 +218,7 @@ object Bullet : AutoCloseable {
      */
     override fun close() {
         for(player in players) {
-            player.disconnect("Server is shutting down")
+            player.disconnect(Component.text("Server is shutting down"))
         }
 
         server?.close()

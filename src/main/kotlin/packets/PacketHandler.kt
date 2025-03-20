@@ -130,7 +130,7 @@ class PacketHandler(
                 val event = PlayerBrandEvent(client.player, brand)
                 EventManager.fire(event)
                 if(event.isCancelled) {
-                    client.player.disconnect("Your client brand is not supported!")
+                    client.player.disconnect(Component.text("Your client brand is not supported"))
                     return
                 }
             }
@@ -585,16 +585,26 @@ class PacketHandler(
         if(preJoinEvent.isCancelled) return
 
         if(client.protocol > Bullet.PROTOCOL) {
-            client.disconnect("Please downgrade your Minecraft version to " + Bullet.VERSION)
+            client.disconnect(Component.text()
+                .append(Component.text("Your client is outdated, please downgrade to minecraft version"))
+                .append(Component.text(" " + Bullet.VERSION).color(NamedTextColor.GOLD))
+                .build()
+            )
+
             return
         } else if(client.protocol < Bullet.PROTOCOL) {
-            client.disconnect("Your client is outdated, please upgrade to Minecraft version " + Bullet.VERSION)
+            client.disconnect(Component.text()
+                .append(Component.text("Your client is outdated, please upgrade to minecraft version"))
+                .append(Component.text(" " + Bullet.VERSION).color(NamedTextColor.GOLD))
+                .build()
+            )
+
             return
         }
 
         val username = packet.username
         if(!username.matches(Regex("^[a-zA-Z0-9]{3,16}$"))) {
-            client.disconnect("Invalid username")
+            client.disconnect(Component.text("Invalid username"))
             return
         }
 
