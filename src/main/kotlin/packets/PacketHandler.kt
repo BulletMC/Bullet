@@ -74,6 +74,17 @@ class PacketHandler(
                     false,
                     true
                 ))
+
+                client.player.status.health = 20
+                client.player.status.foodLevel = 20
+                client.player.status.saturation = 5.0f
+                client.player.status.exhaustion = 0f
+
+                client.player.sendPacket(
+                    ServerPlayerPositionAndLookPacket(
+                        Location(8.5, 2.0, 8.5, 0f, 0f)
+                    )
+                )
             }
 
             1 -> { // Request statistics
