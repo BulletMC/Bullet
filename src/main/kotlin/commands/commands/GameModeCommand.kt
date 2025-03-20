@@ -17,30 +17,26 @@ import java.util.concurrent.CompletableFuture
 class GameModeCommand {
     fun register(dispatcher: CommandDispatcher<Player>) {
         dispatcher.register(
-            LiteralArgumentBuilder.literal<Player>("gamemode")
-                .then(
-                    RequiredArgumentBuilder.argument<Player, String>("mode", StringArgumentType.word())
-                        .suggests(gameModeSuggestions())
-                        .executes { context ->
-                            val input = StringArgumentType.getString(context, "mode")
-                            val mode = parseGameMode(input)
-                            if(mode == null) {
-                                context.source.sendMessage(
-                                    Component.text("Invalid gamemode: $input", NamedTextColor.RED)
-                                )
-
-                                return@executes CommandCodes.ILLEGAL_ARGUMENT.id
-                            }
-
-                            context.source.setGameMode(mode)
+            LiteralArgumentBuilder.literal<Player>("gamemode").then(
+                RequiredArgumentBuilder.argument<Player, String>("mode", StringArgumentType.word())
+                    .suggests(gameModeSuggestions()).executes { context ->
+                        val input = StringArgumentType.getString(context, "mode")
+                        val mode = parseGameMode(input)
+                        if(mode == null) {
                             context.source.sendMessage(
-                                Component.text("Gamemode set to ${mode.name.lowercase()}", NamedTextColor.GREEN)
+                                Component.text("Invalid gamemode: $input", NamedTextColor.RED)
                             )
 
-                            return@executes CommandCodes.SUCCESS.id
+                            return@executes CommandCodes.ILLEGAL_ARGUMENT.id
                         }
-                )
-        )
+
+                        context.source.setGameMode(mode)
+                        context.source.sendMessage(
+                            Component.text("Gamemode set to ${mode.name.lowercase()}", NamedTextColor.GREEN)
+                        )
+
+                        return@executes CommandCodes.SUCCESS.id
+                    }))
     }
 
     private fun parseGameMode(input: String): GameMode? {
@@ -60,7 +56,6 @@ class GameModeCommand {
         return SuggestionProvider { context, builder ->
             GameMode.entries.forEach { mode ->
                 builder.suggest(mode.name.lowercase())
-                builder.suggest(mode.id.toString())
             }
 
             return@SuggestionProvider CompletableFuture.completedFuture(builder.build())
