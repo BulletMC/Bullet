@@ -63,52 +63,7 @@ object CommandManager {
         }
 
         val indexMap = ordering.withIndex().associate { it.value to it.index }
-        val graphNodes = ordering.map { node ->
-            val typeBits = when (node) {
-                is RootCommandNode<*> -> 0
-                is LiteralCommandNode<*> -> 1
-                is ArgumentCommandNode<*, *> -> 2
-                else -> 0
-            }
-
-            var flagsInt = typeBits
-            if(node.command != null) flagsInt = flagsInt or 0x04
-            if(node.redirect != null) flagsInt = flagsInt or 0x08
-
-            val suggestionsProvider = if(node is ArgumentCommandNode<*, *> && node.customSuggestions != null) {
-                "minecraft:ask_server"
-            } else {
-                null
-            }
-
-            if(suggestionsProvider != null) flagsInt = flagsInt or 0x10
-
-            val flags: Byte = flagsInt.toByte()
-            val childrenIndices: List<Int> = node.children.mapNotNull { child -> indexMap[child] }
-            val redirectIndex = node.redirect?.let { indexMap[it] }
-
-            val name: String? = when (node) {
-                is LiteralCommandNode<*> -> node.literal
-                is ArgumentCommandNode<*, *> -> node.name
-                else -> null
-            }
-
-            val (parser, propertiesValue) = if (node is ArgumentCommandNode<*, *>) {
-                getParserAndProperties(node)
-            } else {
-                null to null
-            }
-
-            GraphCommandNode(
-                flags = flags,
-                children = childrenIndices,
-                redirect = redirectIndex,
-                name = name,
-                parser = parser,
-                properties = propertiesValue,
-                suggestionsType = suggestionsProvider
-            )
-        }
+        val graphNodes = createGraphNodes(ordering, indexMap)
 
         val rootIndex = indexMap[dispatcher.root] ?: 0
         return Pair(graphNodes, rootIndex)
@@ -136,6 +91,62 @@ object CommandManager {
 
         node.redirect?.let { traverseCommandNodes(it, visited, ordering) }
         ordering.add(node)
+    }
+
+    private fun createGraphNodes(
+        ordering: List<CommandNode<*>>,
+        indexMap: Map<CommandNode<*>, Int>
+    ): List<GraphCommandNode> {
+        return ordering.map { node ->
+            val typeBits = getTypeBits(node)
+
+            var flagsInt = typeBits
+            if (node.command != null) flagsInt = flagsInt or 0x04
+            if (node.redirect != null) flagsInt = flagsInt or 0x08
+
+            val suggestionsProvider = if (node is ArgumentCommandNode<*, *> && node.customSuggestions != null) {
+                "minecraft:ask_server"
+            } else {
+                null
+            }
+
+            if (suggestionsProvider != null) flagsInt = flagsInt or 0x10
+
+            val flags: Byte = flagsInt.toByte()
+            val childrenIndices: List<Int> = node.children.mapNotNull { child -> indexMap[child] }
+            val redirectIndex = node.redirect?.let { indexMap[it] }
+
+            val name: String? = when (node) {
+                is LiteralCommandNode<*> -> node.literal
+                is ArgumentCommandNode<*, *> -> node.name
+                else -> null
+            }
+
+            val (parser, propertiesValue) = if (node is ArgumentCommandNode<*, *>) {
+                getParserAndProperties(node)
+            } else {
+                null to null
+            }
+
+            GraphCommandNode(
+                flags = flags,
+                children = childrenIndices,
+                redirect = redirectIndex,
+                name = name,
+                parser = parser,
+                properties = propertiesValue,
+                suggestionsType = suggestionsProvider
+            )
+        }
+    }
+
+    private fun getTypeBits(node: CommandNode<*>): Int {
+        return when(node) {
+            is RootCommandNode<*> -> 0
+            is LiteralCommandNode<*> -> 1
+            is ArgumentCommandNode<*, *> -> 2
+            else -> 0
+        }
     }
 
     /**
