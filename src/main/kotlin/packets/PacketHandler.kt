@@ -63,6 +63,26 @@ class PacketHandler(
     private val client: ClientSession
 ) {
     @PacketReceiver
+    fun onClientStatus(packet: ClientStatusPacket) {
+        when(packet.actionID) {
+            0 -> { // Perform respawn
+                client.player.sendPacket(ServerRespawnPacket(
+                    Bullet.dimensionCodec!!,
+                    "minecraft:overworld",
+                    GameMode.CREATIVE,
+                    false,
+                    true,
+                    false
+                ))
+            }
+
+            1 -> { // Request statistics
+
+            }
+        }
+    }
+
+    @PacketReceiver
     fun onEntityInteract(packet: ClientInteractEntityPacket) {
         val event = PlayerInteractEntityEvent(client.player, packet.entityID, packet.type)
         EventManager.fire(event)

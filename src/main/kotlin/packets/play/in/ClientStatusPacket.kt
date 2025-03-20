@@ -4,12 +4,12 @@ import com.aznos.datatypes.VarInt.readVarInt
 import com.aznos.packets.Packet
 
 /**
- * This packet is sent by the client when either the client is ready
- * to complete login or when the client is ready to respawn after death
- * for the action ID of 0
+ * This packet is sent by the client when it respawns after dying or when
+ * the client opens the statistics menu
  *
- * It can also be called with action ID of 1 when the client opens the
- * statistics menu
+ * Action ID values:
+ * 0 - Sent when the client respawns
+ * 1- Sent when the client opens the statistics menu
  *
  * @property actionID The action ID of the packet (see above)
  */
