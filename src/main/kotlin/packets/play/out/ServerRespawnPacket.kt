@@ -31,7 +31,6 @@ class ServerRespawnPacket(
 ) : Packet(0x39) {
     init {
         val nbt = Nbt()
-        nbt.toStream(codec, wrapper)
 
         val dimensionTypeList = codec.getCompound("minecraft:dimension_type")
             .getList<CompoundTag>("value")
@@ -46,7 +45,7 @@ class ServerRespawnPacket(
         wrapper.writeString(worldName)
         wrapper.writeLong(0)
         wrapper.writeByte(gameMode.id)
-        wrapper.writeByte(-1)
+        wrapper.writeByte(1)
         wrapper.writeBoolean(isDebug)
         wrapper.writeBoolean(isFlat)
         wrapper.writeBoolean(copyMetadata)

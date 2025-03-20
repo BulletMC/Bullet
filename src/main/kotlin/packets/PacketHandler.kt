@@ -69,10 +69,10 @@ class PacketHandler(
                 client.player.sendPacket(ServerRespawnPacket(
                     Bullet.dimensionCodec!!,
                     "minecraft:overworld",
-                    GameMode.CREATIVE,
+                    GameMode.SURVIVAL,
                     false,
-                    true,
-                    false
+                    false,
+                    true
                 ))
             }
 
