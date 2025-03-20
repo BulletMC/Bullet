@@ -2,6 +2,7 @@ package com.aznos.commands.commands
 
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
+import com.aznos.commands.commands.suggestions.PlayerSuggestions
 import com.aznos.entity.player.Player
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
@@ -18,6 +19,7 @@ class MessageCommand {
                 RequiredArgumentBuilder.argument<Player, String>("target", StringArgumentType.word())
                     .then(
                         RequiredArgumentBuilder.argument<Player, String>("text", StringArgumentType.greedyString())
+                            .suggests(PlayerSuggestions.playerNameSuggestions())
                             .executes { context ->
                                 val sender = context.source
                                 val targetName = StringArgumentType.getString(context, "target")
