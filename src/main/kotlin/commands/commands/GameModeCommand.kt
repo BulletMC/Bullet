@@ -55,7 +55,9 @@ class GameModeCommand {
     private fun gameModeSuggestions(): SuggestionProvider<Player> {
         return SuggestionProvider { context, builder ->
             GameMode.entries.forEach { mode ->
-                builder.suggest(mode.name.lowercase())
+                if(mode != GameMode.NONE) {
+                    builder.suggest(mode.name.lowercase())
+                }
             }
 
             return@SuggestionProvider CompletableFuture.completedFuture(builder.build())
