@@ -10,13 +10,10 @@ import com.aznos.packets.Packet
 import com.aznos.entity.player.data.PlayerProperty
 import com.aznos.packets.data.BossBarColor
 import com.aznos.packets.data.BossBarDividers
-import com.aznos.packets.play.out.ServerBossBarPacket
-import com.aznos.packets.play.out.ServerChangeGameStatePacket
-import com.aznos.packets.play.out.ServerChatMessagePacket
-import com.aznos.packets.play.out.ServerHeldItemChangePacket
-import com.aznos.packets.play.out.ServerTimeUpdatePacket
+import com.aznos.packets.play.out.*
 import com.aznos.world.blocks.Block
 import com.aznos.world.World
+import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
 import java.util.UUID
 import kotlin.experimental.or
@@ -47,6 +44,8 @@ class Player(
     var viewDistance: Int = 0
     var isSneaking: Boolean = false
     var ping: Int = 0
+    private var tabListHeader = Component.text()
+    private var tabListFooter = Component.text()
 
     //Movement
     var onGround: Boolean = true
@@ -76,7 +75,7 @@ class Player(
      *
      * @param message The message to be shown on why they were disconnected
      */
-    fun disconnect(message: String) {
+    fun disconnect(message: Component) {
         clientSession.disconnect(message)
     }
 
@@ -114,5 +113,35 @@ class Player(
     fun setHeldItem(slot: Int) {
         selectedSlot = slot
         sendPacket(ServerHeldItemChangePacket(slot.toByte()))
+    }
+
+    /**
+     * Sets the header of the tab list for all players
+     * Make this empty to remove it
+     *
+     * @param header The header component to be displayed
+     */
+    fun setTabListHeader(header: Component) {
+        val headerBuilder = Component.text().append(header)
+        sendPacket(
+            ServerPlayerListHeaderAndFooterPacket(headerBuilder.asComponent(), tabListFooter.asComponent())
+        )
+
+        tabListHeader = headerBuilder
+    }
+
+    /**
+     * Sets the footer of the tab list for all players
+     * Make this empty to remove it
+     *
+     * @param footer The footer component to be displayed
+     */
+    fun setTabListFooter(footer: Component) {
+        val footerBuilder = Component.text().append(footer)
+        sendPacket(
+            ServerPlayerListHeaderAndFooterPacket(tabListHeader.asComponent(), footerBuilder.asComponent())
+        )
+
+        tabListFooter = footerBuilder
     }
 }

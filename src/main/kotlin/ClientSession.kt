@@ -13,6 +13,7 @@ import com.aznos.packets.login.out.ServerLoginDisconnectPacket
 import com.aznos.packets.play.out.*
 import com.aznos.packets.status.LegacyPingRequest
 import com.aznos.world.data.Difficulty
+import net.kyori.adventure.text.Component
 import java.io.BufferedInputStream
 import java.io.DataInputStream
 import java.io.EOFException
@@ -80,7 +81,7 @@ class ClientSession(
                 }
             }
         } catch(e: IOException) {
-            disconnect("Invalid packet")
+            disconnect(Component.text("Invalid packet"))
             return
         }
 
@@ -104,9 +105,9 @@ class ClientSession(
                 }
             }
         } catch(e: EOFException) {
-            disconnect("Client closed the connection")
+            disconnect(Component.text("Connection lost"))
         } catch(e: SocketException) {
-            disconnect("Connection lost")
+            disconnect(Component.text("Connection lost"))
         }
     }
 
@@ -120,7 +121,7 @@ class ClientSession(
                     }
 
                     if(!respondedToKeepAlive) {
-                        disconnect("Timed out")
+                        disconnect(Component.text("Timed out"))
                         cancel()
                         return
                     }
@@ -206,7 +207,7 @@ class ClientSession(
      *
      * @param message The message to be sent to the client
      */
-    fun disconnect(message: String) {
+    fun disconnect(message: Component) {
         if(isClosed()) return
 
         if(state == GameState.PLAY) {
@@ -253,7 +254,7 @@ class ClientSession(
             out.flush()
         } catch(e: IOException) {
             Bullet.logger.warn("Failed to send packet to client: ${e.message}")
-            disconnect("Connection lost")
+            disconnect(Component.text("Connection lost"))
         }
     }
 
