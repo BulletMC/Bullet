@@ -63,6 +63,11 @@ class PacketHandler(
     private val client: ClientSession
 ) {
     @PacketReceiver
+    fun onTabComplete(packet: ClientTabCompletePacket) {
+        Bullet.logger.info("Client sent tab complete request")
+    }
+
+    @PacketReceiver
     fun onClientStatus(packet: ClientStatusPacket) {
         when(packet.actionID) {
             0 -> { // Perform respawn

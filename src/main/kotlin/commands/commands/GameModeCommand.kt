@@ -8,8 +8,11 @@ import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.builder.RequiredArgumentBuilder
+import com.mojang.brigadier.suggestion.SuggestionProvider
+import com.mojang.brigadier.suggestion.Suggestions
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import java.util.concurrent.CompletableFuture
 
 class GameModeCommand {
     fun register(dispatcher: CommandDispatcher<Player>) {
@@ -17,6 +20,7 @@ class GameModeCommand {
             LiteralArgumentBuilder.literal<Player>("gamemode")
                 .then(
                     RequiredArgumentBuilder.argument<Player, String>("mode", StringArgumentType.word())
+                        .suggests(gameModeSuggestions())
                         .executes { context ->
                             val input = StringArgumentType.getString(context, "mode")
                             val mode = parseGameMode(input)
@@ -49,6 +53,17 @@ class GameModeCommand {
             GameMode.entries.firstOrNull {
                 it.name.equals(input, ignoreCase = true)
             }
+        }
+    }
+
+    private fun gameModeSuggestions(): SuggestionProvider<Player> {
+        return SuggestionProvider { context, builder ->
+            GameMode.entries.forEach { mode ->
+                builder.suggest(mode.name.lowercase())
+                builder.suggest(mode.id.toString())
+            }
+
+            return@SuggestionProvider CompletableFuture.completedFuture(builder.build())
         }
     }
 }

@@ -75,6 +75,14 @@ object CommandManager {
             if(node.command != null) flagsInt = flagsInt or 0x04
             if(node.redirect != null) flagsInt = flagsInt or 0x08
 
+            val suggestionsProvider = if(node is ArgumentCommandNode<*, *> && node.customSuggestions != null) {
+                "minecraft:ask_server"
+            } else {
+                null
+            }
+
+            if(suggestionsProvider != null) flagsInt = flagsInt or 0x10
+
             val flags: Byte = flagsInt.toByte()
             val childrenIndices: List<Int> = node.children.mapNotNull { child -> indexMap[child] }
             val redirectIndex = node.redirect?.let { indexMap[it] }
@@ -98,7 +106,7 @@ object CommandManager {
                 name = name,
                 parser = parser,
                 properties = propertiesValue,
-                suggestionsType = null
+                suggestionsType = suggestionsProvider
             )
         }
 
