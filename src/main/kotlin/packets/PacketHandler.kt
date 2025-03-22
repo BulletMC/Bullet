@@ -8,6 +8,7 @@ import com.aznos.GameState
 import com.aznos.commands.CommandCodes
 import com.aznos.commands.CommandManager
 import com.aznos.commands.CommandManager.buildCommandGraphFromDispatcher
+import com.aznos.commands.commands.MutedUser
 import com.aznos.datatypes.MetadataType
 import com.aznos.datatypes.VarInt.readVarInt
 import com.aznos.entity.player.Player
@@ -41,6 +42,7 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -50,6 +52,7 @@ import packets.handshake.HandshakePacket
 import packets.status.out.ServerStatusResponsePacket
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
+import java.io.File
 import java.util.UUID
 import kotlin.math.pow
 import kotlin.math.sqrt
@@ -365,7 +368,6 @@ class PacketHandler(
     @PacketReceiver
     fun onPlayerMovement(packet: ClientPlayerMovement) {
         val player = client.player
-        player.onGround = packet.onGround
 
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != player) {
@@ -587,6 +589,21 @@ class PacketHandler(
             return
         }
 
+        val mutedUsersFile = File("muted_users.json")
+        if (mutedUsersFile.exists()) {
+            val mutedUsers: List<MutedUser> = Json.decodeFromString(mutedUsersFile.readText())
+            for(mutedUser in mutedUsers) {
+                if(mutedUser.username == client.player.username) {
+                    client.player.sendMessage(
+                        Component.text("You are muted!")
+                            .color(NamedTextColor.RED)
+                    )
+
+                    return
+                }
+            }
+        }
+
         val formattedMessage = message.replace('&', '§')
 
         val event = PlayerChatEvent(client.player, formattedMessage)
@@ -629,6 +646,9 @@ class PacketHandler(
         }
     }
 
+    @Serializable
+    data class BannedUser(val username: String, val reason: String)
+
     /**
      * Handles when the client tells the server it's ready to log in
      *
@@ -665,6 +685,18 @@ class PacketHandler(
             client.disconnect(Component.text("Invalid username"))
             return
         }
+
+        val bannedUsersFile = File("banned_users.json")
+        if (bannedUsersFile.exists()) {
+            val bannedUsers: List<BannedUser> = Json.decodeFromString(bannedUsersFile.readText())
+            for(bannedUser in bannedUsers) {
+                if(bannedUser.username == username) {
+                    client.disconnect(Component.text("You are banned from this server!\n\nReason: ${bannedUser.reason}"))
+                    return
+                }
+            }
+        }
+
 
         val uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:$username").toByteArray())
         val player = initializePlayer(username, uuid)
