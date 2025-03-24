@@ -2,7 +2,6 @@ package com.aznos.packets.play.out
 
 import com.aznos.datatypes.VarInt.writeVarInt
 import com.aznos.packets.Packet
-import com.aznos.world.blocks.Block
 import dev.dewy.nbt.Nbt
 import dev.dewy.nbt.tags.collection.CompoundTag
 import java.io.ByteArrayOutputStream
@@ -44,7 +43,7 @@ class ServerChunkPacket(
         wrapper.writeVarInt(sectionData.size)
         wrapper.write(sectionData)
 
-        // Block entities count
+        // com.aznos.world.blocks.com.aznos.world.blocks.Block entities count
         wrapper.writeVarInt(0)
     }
 
@@ -95,7 +94,7 @@ class ServerChunkPacket(
         baos.write(bitsPerBlock)
         baos.writeVarInt(2)
         baos.writeVarInt(0)
-        baos.writeVarInt(Block.GRASS_BLOCK(Pair("snowy", false)).stateID)
+        baos.writeVarInt(9)
         baos.writeVarInt(packed.size)
 
         for(l in packed) {

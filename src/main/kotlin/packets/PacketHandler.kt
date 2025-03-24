@@ -34,7 +34,6 @@ import com.aznos.packets.play.out.movement.ServerEntityMovementPacket
 import com.aznos.packets.play.out.movement.ServerEntityPositionAndRotationPacket
 import com.aznos.packets.play.out.movement.ServerEntityPositionPacket
 import com.aznos.packets.play.out.movement.ServerEntityRotationPacket
-import com.aznos.world.blocks.Block
 import com.aznos.world.data.BlockStatus
 import com.mojang.brigadier.CommandDispatcher
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -161,8 +160,9 @@ class PacketHandler(
     @PacketReceiver
     fun onCreativeInventoryAction(packet: ClientCreativeInventoryActionPacket) {
         if(packet.slot.present) {
-            val block = Block.getBlockByID(packet.slot.itemID!!) ?: Block.AIR
-            client.player.inventory.items[packet.slotIndex.toInt()] = block.id
+            packet.slot.itemID?.let { itemID ->
+                client.player.inventory.items[packet.slotIndex.toInt()] = itemID
+            }
         } else {
             client.player.inventory.items.remove(packet.slotIndex.toInt())
         }
@@ -343,6 +343,7 @@ class PacketHandler(
         }
 
         val heldItem = client.player.getHeldItem()
+        Bullet.logger.info("Player placed block: $heldItem")
 
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {
