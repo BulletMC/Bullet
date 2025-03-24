@@ -44,7 +44,7 @@ class ServerChunkPacket(
         wrapper.writeVarInt(sectionData.size)
         wrapper.write(sectionData)
 
-        // Block entities count
+        // com.aznos.world.blocks.com.aznos.world.blocks.Block entities count
         wrapper.writeVarInt(0)
     }
 
@@ -95,7 +95,7 @@ class ServerChunkPacket(
         baos.write(bitsPerBlock)
         baos.writeVarInt(2)
         baos.writeVarInt(0)
-        baos.writeVarInt(Block.GRASS_BLOCK(Pair("snowy", false)).stateID)
+        baos.writeVarInt(Block.DIRT.id)
         baos.writeVarInt(packed.size)
 
         for(l in packed) {

@@ -11,7 +11,6 @@ import com.aznos.entity.player.data.PlayerProperty
 import com.aznos.packets.data.BossBarColor
 import com.aznos.packets.data.BossBarDividers
 import com.aznos.packets.play.out.*
-import com.aznos.world.blocks.Block
 import com.aznos.world.World
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent

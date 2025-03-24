@@ -12,6 +12,7 @@ import com.aznos.packets.PacketRegistry
 import com.aznos.packets.login.out.ServerLoginDisconnectPacket
 import com.aznos.packets.play.out.*
 import com.aznos.packets.status.LegacyPingRequest
+import com.aznos.world.blocks.Block
 import com.aznos.world.data.Difficulty
 import net.kyori.adventure.text.Component
 import java.io.BufferedInputStream
