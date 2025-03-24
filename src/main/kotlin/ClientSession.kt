@@ -209,33 +209,35 @@ class ClientSession(
      * @param message The message to be sent to the client
      */
     fun disconnect(message: Component) {
-        if(isClosed()) return
-
         if(state == GameState.PLAY) {
             sendPacket(ServerPlayDisconnectPacket(message))
         } else if(state == GameState.LOGIN) {
             sendPacket(ServerLoginDisconnectPacket(message))
         }
 
+        Bullet.players.remove(player)
+
         keepAliveTimer?.cancel()
         halfSecondTimer?.cancel()
         keepAliveTimer = null
         halfSecondTimer = null
 
-        Bullet.players.remove(player)
-
-        for(player in Bullet.players) {
-            player.sendPacket(
+        for(plr in Bullet.players) {
+            plr.sendPacket(
                 ServerPlayerInfoPacket(
                     4,
-                    player
+                    plr
+                )
+            )
+
+            plr.sendPacket(
+                ServerDestroyEntitiesPacket(
+                    intArrayOf(player.entityID)
                 )
             )
         }
 
         EventManager.fire(PlayerQuitEvent(player))
-        Bullet.players.remove(player)
-
         close()
     }
 
