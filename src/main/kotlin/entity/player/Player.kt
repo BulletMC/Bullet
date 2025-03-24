@@ -51,6 +51,8 @@ class Player(
     var chunkX: Int = 0
     var chunkZ: Int = 0
     var lastSprintLocation: Location? = null
+    var lastGroundY: Double? = null
+    var falling: Boolean = false
     val loadedChunks = mutableSetOf<Pair<Int, Int>>()
 
     //Combat and status
