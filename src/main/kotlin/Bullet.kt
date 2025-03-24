@@ -6,7 +6,6 @@ import com.aznos.entity.livingentity.LivingEntity
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.Position
 import com.aznos.packets.play.out.ServerParticlePacket
-import com.aznos.packets.play.out.ServerPlayerListHeaderAndFooterPacket
 import com.aznos.world.World
 import com.aznos.world.data.Particles
 import com.google.gson.JsonParser
@@ -15,6 +14,7 @@ import dev.dewy.nbt.tags.collection.CompoundTag
 import kotlinx.coroutines.*
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
+import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
@@ -83,6 +83,7 @@ object Bullet : AutoCloseable {
 
         scheduleTimeUpdate()
         scheduleSprintingParticles()
+        schedulePlayerPositions()
 
         logger.info("Bullet server started at $host:$port")
 
@@ -147,6 +148,20 @@ object Bullet : AutoCloseable {
                     }
 
                     delay(200.milliseconds)
+                }
+            }
+        }
+    }
+    @OptIn(DelicateCoroutinesApi::class)
+    private fun schedulePlayerPositions() {
+        GlobalScope.launch {
+            coroutineScope {
+                while(isActive) {
+                    players.forEach { player ->
+                        world.updatePlayerLocation(player.uuid, player.location)
+                    }
+
+                    delay(50.milliseconds)
                 }
             }
         }

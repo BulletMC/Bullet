@@ -9,33 +9,26 @@ import com.aznos.commands.CommandCodes
 import com.aznos.commands.CommandManager
 import com.aznos.commands.CommandManager.buildCommandGraphFromDispatcher
 import com.aznos.datatypes.MetadataType
+import com.aznos.datatypes.Slot
 import com.aznos.datatypes.VarInt.readVarInt
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.GameMode
+import com.aznos.entity.player.data.Location
+import com.aznos.entity.player.data.Position
 import com.aznos.events.*
 import com.aznos.packets.data.ServerStatusResponse
 import com.aznos.packets.login.`in`.ClientLoginStartPacket
 import com.aznos.packets.login.out.ServerLoginSuccessPacket
+import com.aznos.packets.play.`in`.*
+import com.aznos.packets.play.`in`.movement.*
+import com.aznos.packets.play.out.*
+import com.aznos.packets.play.out.movement.*
 import com.aznos.packets.status.`in`.ClientStatusPingPacket
 import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
-import com.aznos.entity.player.data.Location
-import com.aznos.entity.player.data.Position
-import com.aznos.datatypes.Slot
-import com.aznos.packets.play.`in`.*
-import com.aznos.packets.play.`in`.movement.ClientEntityActionPacket
-import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
-import com.aznos.packets.play.`in`.movement.ClientPlayerPositionAndRotation
-import com.aznos.packets.play.`in`.movement.ClientPlayerPositionPacket
-import com.aznos.packets.play.`in`.movement.ClientPlayerRotation
-import com.aznos.packets.play.out.*
-import com.aznos.packets.play.out.movement.ServerEntityHeadLook
-import com.aznos.packets.play.out.movement.ServerEntityMovementPacket
-import com.aznos.packets.play.out.movement.ServerEntityPositionAndRotationPacket
-import com.aznos.packets.play.out.movement.ServerEntityPositionPacket
-import com.aznos.packets.play.out.movement.ServerEntityRotationPacket
 import com.aznos.world.data.BlockStatus
-import com.mojang.brigadier.CommandDispatcher
+import com.aznos.world.PlayerLocation
+import com.aznos.world.World
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -49,7 +42,7 @@ import packets.handshake.HandshakePacket
 import packets.status.out.ServerStatusResponsePacket
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
-import java.util.UUID
+import java.util.*
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -780,6 +773,8 @@ class PacketHandler(
 
     private fun initializePlayer(username: String, uuid: UUID): Player {
         val player = Player(client)
+        val savedLocation = Bullet.world.getPlayerLocationByUUID(uuid)
+
         player.username = username
         player.uuid = uuid
 
@@ -787,7 +782,12 @@ class PacketHandler(
             player.inventory.items[i] = 0
         }
 
-        player.location = Location(8.5, 2.0, 8.5, 0f, 0f)
+        if (savedLocation != null) {
+            player.location = Location(savedLocation.x, savedLocation.y, savedLocation.z, 0f, 0f)
+        }
+        else {
+                player.location = Location(8.5, 2.0, 8.5, 0f, 0f)
+        }
         player.onGround = false
 
         client.player = player
