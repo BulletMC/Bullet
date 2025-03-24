@@ -463,6 +463,31 @@ class PacketHandler(
         player.location = Location(packet.x, packet.feetY, packet.z, packet.yaw, packet.pitch)
         player.onGround = packet.onGround
 
+        if(player.gameMode == GameMode.SURVIVAL) {
+            if(player.onGround) {
+                if(player.fallDistance > 3) {
+                    val damage = ((player.fallDistance - 3).coerceAtLeast(0.0)).toInt()
+                    player.status.health -= damage
+
+                    player.sendPacket(ServerUpdateHealthPacket(
+                        player.status.health.toFloat(),
+                        player.status.foodLevel,
+                        player.status.saturation
+                    ))
+                }
+
+                player.fallDistance = 0.0
+                player.lastOnGroundY = player.location.y
+            } else {
+                if(player.location.y < player.lastOnGroundY) {
+                    player.fallDistance += player.lastOnGroundY - player.location.y
+                    player.lastOnGroundY = player.location.y
+                } else {
+                    player.lastOnGroundY = player.location.y
+                }
+            }
+        }
+
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != player) {
                 otherPlayer.clientSession.sendPacket(
@@ -532,6 +557,31 @@ class PacketHandler(
 
         player.location = Location(packet.x, packet.feetY, packet.z, player.location.yaw, player.location.pitch)
         player.onGround = packet.onGround
+
+        if(player.gameMode == GameMode.SURVIVAL) {
+            if(player.onGround) {
+                if(player.fallDistance > 3) {
+                    val damage = ((player.fallDistance - 3).coerceAtLeast(0.0)).toInt()
+                    player.status.health -= damage
+
+                    player.sendPacket(ServerUpdateHealthPacket(
+                        player.status.health.toFloat(),
+                        player.status.foodLevel,
+                        player.status.saturation
+                    ))
+                }
+
+                player.fallDistance = 0.0
+                player.lastOnGroundY = player.location.y
+            } else {
+                if(player.location.y < player.lastOnGroundY) {
+                    player.fallDistance += player.lastOnGroundY - player.location.y
+                    player.lastOnGroundY = player.location.y
+                } else {
+                    player.lastOnGroundY = player.location.y
+                }
+            }
+        }
 
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != player) {
