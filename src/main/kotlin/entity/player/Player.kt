@@ -43,6 +43,8 @@ class Player(
     var viewDistance: Int = 0
     var isSneaking: Boolean = false
     var ping: Int = 0
+    var lastOnGroundY: Double = 0.0
+    var fallDistance: Double = 0.0
     private var tabListHeader = Component.text()
     private var tabListFooter = Component.text()
 
