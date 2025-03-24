@@ -198,8 +198,6 @@ class ClientSession(
 
                     timeSinceHealthUpdate += 500
                     timeSinceHealthDecrease += 500
-
-                    Bullet.logger.info("Player is holding: " + Block.getBlockFromID(player.getHeldItem()))
                 }
             }, 0, 500)
         }
