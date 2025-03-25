@@ -8,14 +8,11 @@ import com.aznos.entity.player.data.GameMode
 import com.aznos.entity.player.data.Location
 import com.aznos.packets.Packet
 import com.aznos.entity.player.data.PlayerProperty
-import com.aznos.packets.data.BossBarColor
-import com.aznos.packets.data.BossBarDividers
 import com.aznos.packets.play.out.*
 import com.aznos.world.World
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
 import java.util.UUID
-import kotlin.experimental.or
 
 /**
  * Represents a player in the game
@@ -109,6 +106,10 @@ class Player(
     fun setGameMode(mode: GameMode) {
         gameMode = mode
         sendPacket(ServerChangeGameStatePacket(3, mode.id.toFloat()))
+
+        for(player in Bullet.players) {
+            player.sendPacket(ServerPlayerInfoPacket(1, this))
+        }
     }
 
     fun getHeldItem(): Int = inventory.getHeldItem(selectedSlot)
