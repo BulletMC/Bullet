@@ -29,11 +29,7 @@ import com.aznos.packets.play.`in`.movement.ClientPlayerPositionAndRotation
 import com.aznos.packets.play.`in`.movement.ClientPlayerPositionPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerRotation
 import com.aznos.packets.play.out.*
-import com.aznos.packets.play.out.movement.ServerEntityHeadLook
-import com.aznos.packets.play.out.movement.ServerEntityMovementPacket
-import com.aznos.packets.play.out.movement.ServerEntityPositionAndRotationPacket
-import com.aznos.packets.play.out.movement.ServerEntityPositionPacket
-import com.aznos.packets.play.out.movement.ServerEntityRotationPacket
+import com.aznos.packets.play.out.movement.*
 import com.aznos.world.data.BlockStatus
 import com.mojang.brigadier.CommandDispatcher
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -156,22 +152,11 @@ class PacketHandler(
                         val kbY = if(player.onGround) 0.4 else 0.0
                         val kbZ = (dz / distance) * kbStrength
 
-                        player.location = player.location.copy(
-                            player.location.x + kbX,
-                            player.location.y + kbY,
-                            player.location.z + kbZ
-                        )
-
-                        val deltaX = (kbX * 4096).toInt().coerceIn(-32768, 32767).toShort()
-                        val deltaY = (kbY * 4096).toInt().coerceIn(-32768, 32767).toShort()
-                        val deltaZ = (kbZ * 4096).toInt().coerceIn(-32768, 32767).toShort()
-
-                        player.sendPacket(ServerEntityPositionPacket(
+                        player.sendPacket(ServerEntityVelocityPacket(
                             player.entityID,
-                            deltaX,
-                            deltaY,
-                            deltaZ,
-                            player.onGround
+                            (kbX * 8000).toInt().toShort(),
+                            (kbY * 8000).toInt().toShort(),
+                            (kbZ * 8000).toInt().toShort()
                         ))
                     }
                 }
