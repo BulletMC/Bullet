@@ -149,7 +149,7 @@ class PacketHandler(
                         val kbStrength = 0.5
 
                         val kbX = (dx / distance) * kbStrength
-                        val kbY = if(player.onGround) 0.4 else 0.0
+                        val kbY = if(player.onGround) 0.3 else 0.125
                         val kbZ = (dz / distance) * kbStrength
 
                         player.sendPacket(ServerEntityVelocityPacket(
