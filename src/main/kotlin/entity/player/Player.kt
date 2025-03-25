@@ -45,6 +45,8 @@ class Player(
     var ping: Int = 0
     var lastOnGroundY: Double = 0.0
     var fallDistance: Double = 0.0
+    var isFlying: Boolean = false
+    var canFly: Boolean = false
     private var tabListHeader = Component.text()
     private var tabListFooter = Component.text()
 
