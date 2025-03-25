@@ -29,11 +29,7 @@ import com.aznos.packets.play.`in`.movement.ClientPlayerPositionAndRotation
 import com.aznos.packets.play.`in`.movement.ClientPlayerPositionPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerRotation
 import com.aznos.packets.play.out.*
-import com.aznos.packets.play.out.movement.ServerEntityHeadLook
-import com.aznos.packets.play.out.movement.ServerEntityMovementPacket
-import com.aznos.packets.play.out.movement.ServerEntityPositionAndRotationPacket
-import com.aznos.packets.play.out.movement.ServerEntityPositionPacket
-import com.aznos.packets.play.out.movement.ServerEntityRotationPacket
+import com.aznos.packets.play.out.movement.*
 import com.aznos.world.data.BlockStatus
 import com.mojang.brigadier.CommandDispatcher
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -121,7 +117,9 @@ class PacketHandler(
 
     @PacketReceiver
     fun onEntityInteract(packet: ClientInteractEntityPacket) {
-        val event = PlayerInteractEntityEvent(client.player, packet.entityID, packet.type)
+        val attacker = client.player
+
+        val event = PlayerInteractEntityEvent(attacker, packet.entityID, packet.type)
         EventManager.fire(event)
         if(event.isCancelled) return
 
@@ -142,6 +140,25 @@ class PacketHandler(
                     ))
 
                     player.status.exhaustion += 0.1f
+
+                    val dx = player.location.x - attacker.location.x
+                    val dy = player.location.y - attacker.location.y
+                    val dz = player.location.z - attacker.location.z
+                    val distance = sqrt(dx * dx + dy * dy + dz * dz)
+                    if(distance != 0.0) {
+                        val kbStrength = 0.5
+
+                        val kbX = (dx / distance) * kbStrength
+                        val kbY = if(player.onGround) 0.3 else 0.125
+                        val kbZ = (dz / distance) * kbStrength
+
+                        player.sendPacket(ServerEntityVelocityPacket(
+                            player.entityID,
+                            (kbX * 8000).toInt().toShort(),
+                            (kbY * 8000).toInt().toShort(),
+                            (kbZ * 8000).toInt().toShort()
+                        ))
+                    }
                 }
             }
         }
