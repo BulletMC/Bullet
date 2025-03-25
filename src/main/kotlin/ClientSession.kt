@@ -12,8 +12,8 @@ import com.aznos.packets.PacketRegistry
 import com.aznos.packets.login.out.ServerLoginDisconnectPacket
 import com.aznos.packets.play.out.*
 import com.aznos.packets.status.LegacyPingRequest
-import com.aznos.world.blocks.Block
 import com.aznos.world.data.Difficulty
+import kotlinx.coroutines.*
 import net.kyori.adventure.text.Component
 import java.io.BufferedInputStream
 import java.io.DataInputStream
@@ -21,7 +21,6 @@ import java.io.EOFException
 import java.io.IOException
 import java.net.Socket
 import java.net.SocketException
-import java.util.*
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.time.Duration.Companion.seconds
@@ -34,6 +33,7 @@ import kotlin.time.Duration.Companion.seconds
  * @property input The input stream to read packets from the client
  * @property handler The packet handler to handle incoming packets
  */
+@Suppress("TooManyFunctions")
 class ClientSession(
     private val socket: Socket,
 ) : AutoCloseable {
@@ -49,8 +49,7 @@ class ClientSession(
     /**
      * This timer will keep track of when to send the keep alive packet to the client
      */
-    private var keepAliveTimer: Timer? = null
-    private var halfSecondTimer: Timer? = null
+    private val coroutineScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var lastKeepAliveTimestamp: Long = 0
     var respondedToKeepAlive: Boolean = true
 
@@ -113,25 +112,20 @@ class ClientSession(
     }
 
     fun scheduleKeepAlive() {
-        keepAliveTimer = Timer(true).apply {
-            scheduleAtFixedRate(object : TimerTask() {
-                override fun run() {
-                    if(isClosed()) {
-                        cancel()
-                        return
-                    }
+        coroutineScope.launch {
+            while(isActive) {
+                delay(10.seconds)
 
-                    if(!respondedToKeepAlive) {
-                        disconnect(Component.text("Timed out"))
-                        cancel()
-                        return
-                    }
-
-                    lastKeepAliveTimestamp = System.currentTimeMillis()
-                    sendPacket(ServerKeepAlivePacket(lastKeepAliveTimestamp))
-                    respondedToKeepAlive = true
+                if(isClosed()) return@launch
+                if(!respondedToKeepAlive) {
+                    disconnect(Component.text("Timed out"))
+                    return@launch
                 }
-            }, 10.seconds.inWholeMilliseconds, 10.seconds.inWholeMilliseconds)
+
+                lastKeepAliveTimestamp = System.currentTimeMillis()
+                sendPacket(ServerKeepAlivePacket(lastKeepAliveTimestamp))
+                respondedToKeepAlive = false
+            }
         }
     }
 
@@ -139,67 +133,100 @@ class ClientSession(
      * Called every half second to update player information, like health, food, etc
      */
     fun scheduleHalfSecondUpdate() {
-        halfSecondTimer = Timer(true).apply {
+        coroutineScope.launch {
             var timeSinceHealthUpdate = 0
             var timeSinceHealthDecrease = 0
 
-            scheduleAtFixedRate(object : TimerTask() {
-                override fun run() {
-                    if(isClosed()) {
-                        cancel()
-                        return
-                    }
+            while(isActive) {
+                if(isClosed()) break
 
-                    if(player.status.exhaustion >= 4) {
-                        player.status.exhaustion -= 4
-                        if(player.status.saturation >= 1) player.status.saturation -= 1
-                        else player.status.foodLevel -= 1
-                    }
+                updatePlayerStatus()
+                val (newUpdate, newDecrease) = updatePlayerHealth(timeSinceHealthUpdate, timeSinceHealthDecrease)
 
-                    if(player.gameMode == GameMode.SURVIVAL) {
-                        if(
-                            player.status.foodLevel == 20 &&
-                            player.status.saturation > 0 &&
-                            player.status.health != 20
-                        ) {
-                            player.status.health = min(player.status.health + 1, 20)
-                            player.status.exhaustion += 6.0f
-                        } else if(player.status.foodLevel > 18 && player.status.health != 20) {
-                            if(timeSinceHealthUpdate == 4000) {
-                                player.status.health = min(player.status.health + 1, 20)
-                                timeSinceHealthUpdate = 0
-                                player.status.exhaustion += 6.0f
-                            }
-                        }
+                timeSinceHealthUpdate = newUpdate
+                timeSinceHealthDecrease = newDecrease
 
-                        if(player.status.foodLevel == 0 && player.status.health > 0) {
-                            if(timeSinceHealthDecrease == 4000) {
-                                when(Bullet.world.difficulty) {
-                                    Difficulty.PEACEFUL -> {}
-                                    Difficulty.EASY -> player.status.health = max(player.status.health - 1, 10)
-                                    Difficulty.NORMAL -> player.status.health = max(player.status.health - 1, 1)
-                                    Difficulty.HARD -> player.status.health -= 1
-                                }
+                delay(500)
+            }
+        }
+    }
 
-                                timeSinceHealthDecrease = 0
-                            }
-                        }
+    private fun updatePlayerStatus() {
+        with(player.status) {
+            if(exhaustion >= 4) {
+                exhaustion -= 4
+                if(saturation >= 1) saturation -= 1
+                else foodLevel -= 1
+            }
+        }
+    }
 
-                        if(player.world?.difficulty == Difficulty.PEACEFUL && player.status.foodLevel != 20) {
-                            player.status.foodLevel = min(player.status.foodLevel + 1, 20)
-                        }
-                    }
+    private fun updatePlayerHealth(
+        timeSinceHealthUpdate: Int,
+        timeSinceHealthDecrease: Int
+    ) : Pair<Int, Int> {
+        var newUpdate = timeSinceHealthUpdate
+        var newDecrease = timeSinceHealthDecrease
 
-                    player.sendPacket(ServerUpdateHealthPacket(
-                        player.status.health.toFloat(),
-                        player.status.foodLevel,
-                        player.status.saturation)
-                    )
+        with(player.status) {
+            if(player.gameMode == GameMode.SURVIVAL) {
+                newUpdate = handleHealthRegeneration(newUpdate)
+                newDecrease = handleHealthDecrease(newDecrease)
+                handlePeacefulMode()
+            }
 
-                    timeSinceHealthUpdate += 500
-                    timeSinceHealthDecrease += 500
+            player.sendPacket(
+                ServerUpdateHealthPacket(
+                    health.toFloat(), foodLevel, saturation
+                )
+            )
+        }
+
+        return newUpdate to newDecrease
+    }
+
+    private fun handleHealthRegeneration(time: Int): Int {
+        with(player.status) {
+            if(foodLevel == 20 && saturation > 0 && health != 20) {
+                health = min(health + 1, 20)
+                exhaustion += 6.0f
+                return time
+            } else if (foodLevel > 18 && health != 20) {
+                if(time == 4000) {
+                    health = min(health + 1, 20)
+                    exhaustion += 6.0f
+                    return 0
                 }
-            }, 0, 500)
+            }
+        }
+
+        return time
+    }
+
+    private fun handleHealthDecrease(time: Int): Int {
+        with(player.status) {
+            if(foodLevel == 0 && health > 0) {
+                if(time == 4000) {
+                    health -= when(Bullet.world.difficulty) {
+                        Difficulty.PEACEFUL -> 0
+                        Difficulty.EASY -> max(health - 1, 10)
+                        Difficulty.NORMAL -> max(health - 1, 1)
+                        Difficulty.HARD -> 1
+                    }
+
+                    return 0
+                }
+            }
+        }
+
+        return time
+    }
+
+    private fun handlePeacefulMode() {
+        with(player.status) {
+            if(player.world?.difficulty == Difficulty.PEACEFUL && foodLevel != 20) {
+                foodLevel = min(foodLevel + 1, 20)
+            }
         }
     }
 
@@ -215,12 +242,8 @@ class ClientSession(
             sendPacket(ServerLoginDisconnectPacket(message))
         }
 
+        coroutineScope.cancel()
         Bullet.players.remove(player)
-
-        keepAliveTimer?.cancel()
-        halfSecondTimer?.cancel()
-        keepAliveTimer = null
-        halfSecondTimer = null
 
         for(plr in Bullet.players) {
             plr.sendPacket(
@@ -337,12 +360,7 @@ class ClientSession(
      * Closes connection
      */
     override fun close() {
-        keepAliveTimer?.cancel()
-        halfSecondTimer?.cancel()
-
-        keepAliveTimer = null
-        halfSecondTimer = null
-
+        coroutineScope.cancel()
         Bullet.players.remove(player)
 
         socket.close()
