@@ -121,7 +121,9 @@ class PacketHandler(
 
     @PacketReceiver
     fun onEntityInteract(packet: ClientInteractEntityPacket) {
-        val event = PlayerInteractEntityEvent(client.player, packet.entityID, packet.type)
+        val attacker = client.player
+
+        val event = PlayerInteractEntityEvent(attacker, packet.entityID, packet.type)
         EventManager.fire(event)
         if(event.isCancelled) return
 
@@ -142,6 +144,36 @@ class PacketHandler(
                     ))
 
                     player.status.exhaustion += 0.1f
+
+                    val dx = player.location.x - attacker.location.x
+                    val dy = player.location.y - attacker.location.y
+                    val dz = player.location.z - attacker.location.z
+                    val distance = sqrt(dx * dx + dy * dy + dz * dz)
+                    if(distance != 0.0) {
+                        val kbStrength = 0.5
+
+                        val kbX = (dx / distance) * kbStrength
+                        val kbY = if(player.onGround) 0.4 else 0.0
+                        val kbZ = (dz / distance) * kbStrength
+
+                        player.location = player.location.copy(
+                            player.location.x + kbX,
+                            player.location.y + kbY,
+                            player.location.z + kbZ
+                        )
+
+                        val deltaX = (kbX * 4096).toInt().coerceIn(-32768, 32767).toShort()
+                        val deltaY = (kbY * 4096).toInt().coerceIn(-32768, 32767).toShort()
+                        val deltaZ = (kbZ * 4096).toInt().coerceIn(-32768, 32767).toShort()
+
+                        player.sendPacket(ServerEntityPositionPacket(
+                            player.entityID,
+                            deltaX,
+                            deltaY,
+                            deltaZ,
+                            player.onGround
+                        ))
+                    }
                 }
             }
         }
