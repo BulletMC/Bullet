@@ -50,6 +50,7 @@ import packets.status.out.ServerStatusResponsePacket
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.util.UUID
+import kotlin.experimental.and
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -62,6 +63,20 @@ import kotlin.math.sqrt
 class PacketHandler(
     private val client: ClientSession
 ) {
+    @PacketReceiver
+    fun onPlayerAbilities(packet: ClientPlayerAbilitiesPacket) {
+        if(client.player.canFly) {
+            val flying = (packet.flags and 0x02).toInt() == 0x02
+            client.player.isFlying = flying
+        } else {
+            client.player.isFlying = false
+            client.player.sendPacket(ServerPlayerAbilitiesPacket(
+                0,
+                0f,
+            ))
+        }
+    }
+
     @PacketReceiver
     fun onTabComplete(packet: ClientTabCompletePacket) {
         val dispatcher = CommandManager.dispatcher
@@ -791,6 +806,10 @@ class PacketHandler(
 
         player.location = Location(8.5, 2.0, 8.5, 0f, 0f)
         player.onGround = false
+
+        if(player.gameMode != GameMode.SURVIVAL || player.gameMode != GameMode.ADVENTURE) {
+            player.canFly = true
+        }
 
         client.player = player
         return player
