@@ -118,7 +118,7 @@ object Bullet : AutoCloseable {
         scope.launch {
             while(isActive) {
                 delay(10.seconds)
-                world.saveWorld()
+                world.saveWorld(world.difficulty, world.weather == 1, world.timeOfDay, VERSION)
             }
         }
     }

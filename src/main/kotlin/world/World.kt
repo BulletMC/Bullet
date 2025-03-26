@@ -1,5 +1,6 @@
 package com.aznos.world
 
+import com.aznos.Bullet
 import com.aznos.world.data.Difficulty
 import com.aznos.world.data.TimeOfDay
 import dev.dewy.nbt.Nbt
@@ -24,7 +25,12 @@ class World(val name: String) {
      *
      * @return Whether the operation was successful or not
      */
-    fun saveWorld(): Boolean {
+    fun saveWorld(
+        difficulty: Difficulty = this.difficulty,
+        raining: Boolean = false,
+        timeOfDay: Long = this.timeOfDay,
+        serverVersion: String = Bullet.VERSION
+    ): Boolean {
         createDirectoryIfNotExists(Paths.get("./$name"))
         createDirectoryIfNotExists(Paths.get("./$name/data"))
         createDirectoryIfNotExists(Paths.get("./$name/DIM-1"))
@@ -35,7 +41,7 @@ class World(val name: String) {
         createDirectoryIfNotExists(Paths.get("./$name/region"))
         createFileIfNotExists(Paths.get("./$name/level.dat"))
 
-        writeLevelDat()
+        writeLevelDat(difficulty, raining, timeOfDay, serverVersion)
 
         return true
     }
@@ -62,16 +68,21 @@ class World(val name: String) {
         }
     }
 
-    private fun writeLevelDat() {
+    private fun writeLevelDat(
+        difficulty: Difficulty,
+        raining: Boolean,
+        timeOfDay: Long,
+        serverVersion: String
+    ) {
         val root = CompoundTag("")
         val data = CompoundTag("Data")
 
         data.putInt("WanderingTraderSpawnChance", 25)
         data.putDouble("BorderCenterZ", 0.0)
-        data.putByte("Difficulty", 1)
+        data.putByte("Difficulty", difficulty.id.toByte())
         data.putLong("BorderSizeLerpTime", 0L)
-        data.putByte("raining", 0)
-        data.putLong("Time", 1637L)
+        data.putByte("raining", if(raining) 1 else 0)
+        data.putLong("Time", timeOfDay)
         data.putInt("GameType", 0)
 
         data.putString("ServerBrands", "vanilla")
@@ -129,10 +140,10 @@ class World(val name: String) {
         val version = CompoundTag("Version")
         version.putByte("SnapShot", 0)
         version.putInt("Id", 2586)
-        version.putString("Name", "1.16.5")
+        version.putString("Name", serverVersion)
         data.put<CompoundTag>(version)
 
-        data.putLong("DayTime", 1637L)
+        data.putLong("DayTime", timeOfDay)
         data.putByte("initialized", 1)
         data.putByte("WasModded", 0)
         data.putByte("allowCommands", 0)
