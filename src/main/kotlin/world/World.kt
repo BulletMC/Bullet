@@ -3,6 +3,8 @@ package com.aznos.world
 import com.aznos.Bullet
 import com.aznos.world.data.Difficulty
 import com.aznos.world.data.TimeOfDay
+import com.aznos.world.data.WorldData
+import kotlinx.serialization.json.Json
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -39,15 +41,15 @@ class World(val name: String) {
         raining: Boolean,
         timeOfDay: Long,
     ) {
-        val data = """
-            {
-                "difficulty": ${difficulty.id},
-                "raining": $raining,
-                "timeOfDay": $timeOfDay,
-            }
-        """.trimIndent()
+        val worldData = WorldData(difficulty.id, raining, timeOfDay)
+        val json = Json.encodeToString(worldData)
+        Files.write(Paths.get("./$name/data/world.json"), json.toByteArray())
+    }
 
-        Files.write(Paths.get("./$name/data/world.json"), data.toByteArray())
+    private fun readWorldData(): WorldData {
+        val path = Paths.get("./$name/data/world.json")
+        val json = Files.readString(path)
+        return Json.decodeFromString(json)
     }
 
     /**
