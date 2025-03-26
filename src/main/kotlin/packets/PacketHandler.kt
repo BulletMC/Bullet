@@ -2,7 +2,9 @@ package com.aznos.packets
 
 import com.aznos.Bullet
 import com.aznos.Bullet.breakingBlocks
+import com.aznos.Bullet.players
 import com.aznos.Bullet.sprinting
+import com.aznos.Bullet.world
 import com.aznos.ClientSession
 import com.aznos.GameState
 import com.aznos.commands.CommandCodes
@@ -733,12 +735,27 @@ class PacketHandler(
         client.sendPlayerSpawnPacket()
         client.scheduleKeepAlive()
         client.scheduleHalfSecondUpdate()
+        client.scheduleSaving()
 
         client.sendPacket(ServerChunkPacket(0, 0))
         sendSpawnPlayerPackets(player)
 
         client.sendPacket(ServerUpdateViewPositionPacket(player.chunkX, player.chunkZ))
         client.updatePlayerChunks(player.chunkX, player.chunkZ)
+
+        world.writePlayerData(
+            player.username,
+            player.uuid,
+            player.location,
+            player.status.health,
+            player.status.foodLevel,
+            player.status.saturation,
+            player.status.exhaustion
+        )
+
+        player.setTimeOfDay(world.timeOfDay)
+        if(world.weather == 1) player.sendPacket(ServerChangeGameStatePacket(2, 0f))
+        else player.sendPacket(ServerChangeGameStatePacket(1, 0f))
 
         val (nodes, rootIndex) = buildCommandGraphFromDispatcher(CommandManager.dispatcher)
         client.sendPacket(ServerDeclareCommandsPacket(nodes, rootIndex))

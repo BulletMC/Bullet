@@ -151,6 +151,24 @@ class ClientSession(
         }
     }
 
+    fun scheduleSaving() {
+        coroutineScope.launch {
+            while(isActive) {
+                delay(5.seconds)
+
+                Bullet.world.writePlayerData(
+                    player.username,
+                    player.uuid,
+                    player.location,
+                    player.status.health,
+                    player.status.foodLevel,
+                    player.status.saturation,
+                    player.status.exhaustion
+                )
+            }
+        }
+    }
+
     private fun updatePlayerStatus() {
         with(player.status) {
             if(exhaustion >= 4) {

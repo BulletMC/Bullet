@@ -89,6 +89,7 @@ object Bullet : AutoCloseable {
 
         scheduleTimeUpdate()
         scheduleSprintingParticles()
+        scheduleSaveUpdate()
 
         if(Files.exists(Paths.get("./${world.name}/data/world.json"))) {
             world.readWorldData().let { it ->
@@ -129,19 +130,15 @@ object Bullet : AutoCloseable {
 
                 world.timeOfDay = (world.timeOfDay + 20) % 24000
                 world.worldAge += 20
-
-                for(player in players) {
-                    player.setTimeOfDay(world.timeOfDay)
-                    if(world.weather == 1) player.sendPacket(ServerChangeGameStatePacket(2, 0f))
-                    else player.sendPacket(ServerChangeGameStatePacket(1, 0f))
-                }
             }
         }
+    }
 
+    private fun scheduleSaveUpdate() {
         scope.launch {
             while(isActive) {
                 delay(10.seconds)
-                world.saveWorld(world.difficulty, world.weather == 1, world.timeOfDay)
+                world.writeWorldData(world.difficulty, world.weather == 1, world.timeOfDay)
             }
         }
     }
