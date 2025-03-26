@@ -125,6 +125,90 @@ class World(val name: String) {
         data.put<CompoundTag>(dragonFight)
 
         data.putDouble("BorderSizeLerpTarget", 60000000.0)
+
+        val version = CompoundTag("Version")
+        version.putByte("SnapShot", 0)
+        version.putInt("Id", 2586)
+        version.putString("Name", "1.16.5")
+        data.put<CompoundTag>(version)
+
+        data.putLong("DayTime", 1637L)
+        data.putByte("initialized", 1)
+        data.putByte("WasModded", 0)
+        data.putByte("allowCommands", 0)
+        data.putInt("WanderingTraderSpawnDelay", 22800)
+        data.putByte("hardcore", 0)
+        data.putByte("DifficultyLocked", 0)
+        data.putInt("SpawnY", 81)
+        data.putInt("rainTime", 50831)
+        data.putInt("thunderTime", 165012)
+        data.putInt("SpawnZ", -96)
+        data.putInt("SpawnX", -240)
+        data.putInt("clearWeatherTime", 0)
+        data.putByte("thundering", 0)
+        data.putFloat("SpawnAngle", 0.0f)
+        data.putInt("version", 19133)
+        data.putDouble("BorderSafeZone", 5.0)
+        data.putLong("LastPlayed", 1743016248982L)
+        data.putDouble("BorderWarningTime", 15.0)
+        data.putList("ScheduledEvents", emptyList<CompoundTag>())
+        data.putString("LevelName", "world")
+        data.putDouble("BorderSize", 60000000.0)
+        data.putInt("DataVersion", 2586)
+
+        data.put<CompoundTag>("CustomBossEvents", CompoundTag("CustomBossEvents"))
+        val gameRules = CompoundTag("GameRules")
+        val rules = mapOf(
+            "doFireTick" to "true",
+            "maxCommandChainLength" to "65536",
+            "fireDamage" to "true",
+            "reducedDebugInfo" to "false",
+            "disableElytraMovementCheck" to "false",
+            "announceAdvancements" to "true",
+            "drowningDamage" to "true",
+            "commandBlockOutput" to "true",
+            "forgiveDeadPlayers" to "true",
+            "doMobSpawning" to "true",
+            "maxEntityCramming" to "24",
+            "disableRaids" to "false",
+            "doWeatherCycle" to "true",
+            "doDaylightCycle" to "true",
+            "showDeathMessages" to "true",
+            "doTileDrops" to "true",
+            "universalAnger" to "false",
+            "doInsomnia" to "true",
+            "doImmediateRespawn" to "false",
+            "naturalRegeneration" to "true",
+            "doMobLoot" to "true",
+            "fallDamage" to "true",
+            "keepInventory" to "false",
+            "doEntityDrops" to "true",
+            "doLimitedCrafting" to "false",
+            "mobGriefing" to "true",
+            "randomTickSpeed" to "3",
+            "spawnRadius" to "10",
+            "doTraderSpawning" to "true",
+            "logAdminCommands" to "true",
+            "spectatorsGenerateChunks" to "true",
+            "sendCommandFeedback" to "true",
+            "doPatrolSpawning" to "true"
+        )
+
+        for((key, value) in rules) {
+            gameRules.putString(key, value)
+        }
+
+        data.put<CompoundTag>("GameRules", gameRules)
+
+        val dataPacks = CompoundTag("DataPacks")
+        val enabled = ListTag<StringTag>("Enabled")
+        enabled.add(StringTag("vanilla"))
+        dataPacks.put<CompoundTag>("Enabled", enabled)
+
+        val disabled = ListTag<StringTag>("Disabled")
+        dataPacks.put<CompoundTag>("Disabled", disabled)
+
+        data.put<CompoundTag>("DataPacks", dataPacks)
         root.put<CompoundTag>(data)
 
         val nbt = Nbt()
