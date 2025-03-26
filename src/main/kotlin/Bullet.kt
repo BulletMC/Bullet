@@ -114,6 +114,13 @@ object Bullet : AutoCloseable {
                 }
             }
         }
+
+        scope.launch {
+            while(isActive) {
+                delay(10.seconds)
+                world.saveWorld()
+            }
+        }
     }
 
     private fun scheduleSprintingParticles() {
