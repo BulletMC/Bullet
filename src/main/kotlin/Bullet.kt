@@ -239,7 +239,10 @@ object Bullet : AutoCloseable {
      * Shuts down the server
      */
     override fun close() {
+        world.writeWorldData(world.difficulty, world.weather == 1, world.timeOfDay)
+
         for(player in players) {
+            world.writePlayerData(player.username, player.uuid, player.location, player.status.health, player.status.foodLevel, player.status.saturation, player.status.exhaustion)
             player.disconnect(Component.text("Server is shutting down"))
         }
 
