@@ -8,6 +8,7 @@ import com.aznos.entity.player.data.Position
 import com.aznos.packets.play.out.ServerParticlePacket
 import com.aznos.packets.play.out.ServerPlayerListHeaderAndFooterPacket
 import com.aznos.world.World
+import com.aznos.world.data.Difficulty
 import com.aznos.world.data.Particles
 import com.google.gson.JsonParser
 import dev.dewy.nbt.api.registry.TagTypeRegistry
@@ -18,11 +19,14 @@ import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
+import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
 import java.net.BindException
 import java.net.InetSocketAddress
 import java.net.ServerSocket
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.util.Base64
 import java.util.concurrent.Executors
 import kotlin.time.Duration.Companion.milliseconds
@@ -85,6 +89,22 @@ object Bullet : AutoCloseable {
         scheduleTimeUpdate()
         scheduleSprintingParticles()
 
+        if(Files.exists(Paths.get("./${world.name}/data/world.json"))) {
+            world.readWorldData().let { it ->
+                var difficulty = Difficulty.NORMAL
+                for(diff in Difficulty.entries) {
+                    if(diff.id == it.difficulty) {
+                        difficulty = diff
+                        break
+                    }
+                }
+
+                world.difficulty = difficulty
+                world.weather = if(it.raining) 1 else 0
+                world.timeOfDay = it.timeOfDay
+            }
+        }
+
         logger.info("Bullet server started at $host:$port")
 
         while(!isClosed()) {
@@ -118,7 +138,7 @@ object Bullet : AutoCloseable {
         scope.launch {
             while(isActive) {
                 delay(10.seconds)
-                world.saveWorld(world.difficulty, world.weather == 1, world.timeOfDay, VERSION)
+                world.saveWorld(world.difficulty, world.weather == 1, world.timeOfDay)
             }
         }
     }

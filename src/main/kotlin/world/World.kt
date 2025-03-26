@@ -46,7 +46,7 @@ class World(val name: String) {
         Files.write(Paths.get("./$name/data/world.json"), json.toByteArray())
     }
 
-    private fun readWorldData(): WorldData {
+    fun readWorldData(): WorldData {
         val path = Paths.get("./$name/data/world.json")
         val json = Files.readString(path)
         return Json.decodeFromString(json)
