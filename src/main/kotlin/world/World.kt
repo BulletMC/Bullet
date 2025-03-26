@@ -17,6 +17,9 @@ class World(val name: String) {
     var worldAge = 0L
     var timeOfDay: Long = TimeOfDay.SUNRISE.time
     var difficulty: Difficulty = Difficulty.NORMAL
+    var modifiedBlocks: MutableMap<Position, Int> = mutableMapOf()
+
+    private val json = Json { allowStructuredMapKeys = true }
 
     /**
      * Saves the current world state
@@ -29,6 +32,7 @@ class World(val name: String) {
         createDirectoryIfNotExists(Paths.get("./$name/players"))
 
         createFileIfNotExists(Paths.get("./$name/data/world.json"))
+        createFileIfNotExists(Paths.get("./$name/data/blocks.json"))
 
         return true
     }
@@ -71,6 +75,19 @@ class World(val name: String) {
         val path = Paths.get("./$name/players/$uuid.json")
         val json = Files.readString(path)
         return Json.decodeFromString(json)
+    }
+
+    fun writeBlockData(modifiedBlocks: MutableMap<Position, Int>) {
+        createFiles()
+
+        val jsonData = json.encodeToString(modifiedBlocks)
+        Files.write(Paths.get("./$name/data/blocks.json"), jsonData.toByteArray())
+    }
+
+    fun readBlockData(): MutableMap<Position, Int> {
+        val path = Paths.get("./$name/data/blocks.json")
+        val jsonData = Files.readString(path)
+        return json.decodeFromString(jsonData)
     }
 
     /**

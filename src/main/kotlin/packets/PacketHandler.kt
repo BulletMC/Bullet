@@ -318,6 +318,7 @@ class PacketHandler(
                         event.location,
                         0
                     ))
+                    world.modifiedBlocks.remove(event.location)
                 }
             }
         } else if(client.player.gameMode == GameMode.SURVIVAL) {
@@ -334,6 +335,7 @@ class PacketHandler(
                 BlockStatus.FINISHED_DIGGING.id -> {
                     client.player.status.exhaustion += 0.005f
                     stopBlockBreak(event.location)
+                    world.modifiedBlocks.remove(event.location)
                 }
             }
         }
@@ -380,7 +382,7 @@ class PacketHandler(
         }
 
         val heldItem = client.player.getHeldItem()
-        Bullet.logger.info("Player placed block: $heldItem")
+        world.modifiedBlocks[event.location] = heldItem
 
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {

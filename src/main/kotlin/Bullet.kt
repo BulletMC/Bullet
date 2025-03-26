@@ -139,6 +139,7 @@ object Bullet : AutoCloseable {
             while(isActive) {
                 delay(10.seconds)
                 world.writeWorldData(world.difficulty, world.weather == 1, world.timeOfDay)
+                world.writeBlockData(world.modifiedBlocks)
             }
         }
     }
@@ -240,6 +241,7 @@ object Bullet : AutoCloseable {
      */
     override fun close() {
         world.writeWorldData(world.difficulty, world.weather == 1, world.timeOfDay)
+        world.writeBlockData(world.modifiedBlocks)
 
         for(player in players) {
             world.writePlayerData(player.username, player.uuid, player.location, player.status.health, player.status.foodLevel, player.status.saturation, player.status.exhaustion)
