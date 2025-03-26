@@ -749,7 +749,7 @@ class PacketHandler(
         client.updatePlayerChunks(player.chunkX, player.chunkZ)
 
         if(Files.exists(Paths.get("./${world.name}/players/${player.uuid}.json"))) {
-            world.readPlayerData(player.uuid).let { it ->
+            world.readPlayerData(player.uuid).let {
                 player.status.health = it.health
                 player.status.foodLevel = it.foodLevel
                 player.status.saturation = it.saturation
@@ -763,6 +763,14 @@ class PacketHandler(
                 ))
 
                 player.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
+            }
+        }
+
+        if(Files.exists(Paths.get("./${world.name}/data/blocks.json"))) {
+            world.readBlockData().let {
+                for((position, blockID) in it) {
+                    player.sendPacket(ServerBlockChangePacket(position, blockID))
+                }
             }
         }
 

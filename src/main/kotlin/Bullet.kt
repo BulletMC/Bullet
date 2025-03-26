@@ -107,6 +107,10 @@ object Bullet : AutoCloseable {
             }
         }
 
+        if(Files.exists(Paths.get("./${world.name}/data/blocks.json"))) {
+            world.modifiedBlocks = world.readBlockData()
+        }
+
         logger.info("Bullet server started at $host:$port")
 
         while(!isClosed()) {
