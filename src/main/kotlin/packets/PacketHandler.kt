@@ -33,6 +33,7 @@ import com.aznos.packets.play.`in`.movement.ClientPlayerRotation
 import com.aznos.packets.play.out.*
 import com.aznos.packets.play.out.movement.*
 import com.aznos.world.data.BlockStatus
+import com.aznos.world.data.Difficulty
 import com.mojang.brigadier.CommandDispatcher
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -47,6 +48,8 @@ import packets.handshake.HandshakePacket
 import packets.status.out.ServerStatusResponsePacket
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.util.UUID
 import kotlin.experimental.and
 import kotlin.math.pow
@@ -742,6 +745,24 @@ class PacketHandler(
 
         client.sendPacket(ServerUpdateViewPositionPacket(player.chunkX, player.chunkZ))
         client.updatePlayerChunks(player.chunkX, player.chunkZ)
+
+        if(Files.exists(Paths.get("./${world.name}/players/${player.uuid}.json"))) {
+            world.readPlayerData(player.uuid).let { it ->
+                player.status.health = it.health
+                player.status.foodLevel = it.foodLevel
+                player.status.saturation = it.saturation
+                player.status.exhaustion = it.exhaustionLevel
+                player.location = it.location
+
+                player.sendPacket(ServerUpdateHealthPacket(
+                    player.status.health.toFloat(),
+                    player.status.foodLevel,
+                    player.status.saturation
+                ))
+
+                player.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
+            }
+        }
 
         world.writePlayerData(
             player.username,
