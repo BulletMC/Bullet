@@ -5,6 +5,7 @@ import com.aznos.entity.Entity
 import com.aznos.entity.livingentity.LivingEntity
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.Position
+import com.aznos.packets.play.out.ServerChangeGameStatePacket
 import com.aznos.packets.play.out.ServerParticlePacket
 import com.aznos.packets.play.out.ServerPlayerListHeaderAndFooterPacket
 import com.aznos.world.World
@@ -131,6 +132,8 @@ object Bullet : AutoCloseable {
 
                 for(player in players) {
                     player.setTimeOfDay(world.timeOfDay)
+                    if(world.weather == 1) player.sendPacket(ServerChangeGameStatePacket(2, 0f))
+                    else player.sendPacket(ServerChangeGameStatePacket(1, 0f))
                 }
             }
         }
