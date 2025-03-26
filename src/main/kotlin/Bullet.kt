@@ -44,6 +44,7 @@ object Bullet : AutoCloseable {
 
     private val pool = Executors.newCachedThreadPool()
     private var server: ServerSocket? = null
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
     val players = mutableListOf<Player>()
     val livingEntities = mutableListOf<LivingEntity>()
@@ -100,54 +101,48 @@ object Bullet : AutoCloseable {
     /**
      * Schedules a coroutine to update the time of day every second
      */
-    @OptIn(DelicateCoroutinesApi::class)
     private fun scheduleTimeUpdate() {
-        GlobalScope.launch {
-            coroutineScope {
-                while(isActive) {
-                    delay(1.seconds)
+        scope.launch {
+            while(isActive) {
+                delay(1.seconds)
 
-                    world.timeOfDay = (world.timeOfDay + 20) % 24000
-                    world.worldAge += 20
+                world.timeOfDay = (world.timeOfDay + 20) % 24000
+                world.worldAge += 20
 
-                    for(player in players) {
-                        player.setTimeOfDay(world.timeOfDay)
-                    }
+                for(player in players) {
+                    player.setTimeOfDay(world.timeOfDay)
                 }
             }
         }
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     private fun scheduleSprintingParticles() {
-        GlobalScope.launch {
-            coroutineScope {
-                while(isActive) {
-                    for(entityID in sprinting) {
-                        val player = players.find { it.entityID == entityID } ?: continue
+        scope.launch {
+            while(isActive) {
+                for(entityID in sprinting) {
+                    val player = players.find { it.entityID == entityID } ?: continue
 
-                        val x = player.location.x
-                        val y = player.location.y + 0.1f
-                        val z = player.location.z
+                    val x = player.location.x
+                    val y = player.location.y + 0.1f
+                    val z = player.location.z
 
-                        for(otherPlayer in players) {
-                            if(otherPlayer != player) {
-                                otherPlayer.clientSession.sendPacket(ServerParticlePacket(
-                                    Particles.Block(1),
-                                    false,
-                                    Position(x, y, z),
-                                    0.001f,
-                                    0.0005f,
-                                    0.001f,
-                                    0.0f,
-                                    5
-                                ))
-                            }
+                    for(otherPlayer in players) {
+                        if(otherPlayer != player) {
+                            otherPlayer.clientSession.sendPacket(ServerParticlePacket(
+                                Particles.Block(1),
+                                false,
+                                Position(x, y, z),
+                                0.001f,
+                                0.0005f,
+                                0.001f,
+                                0.0f,
+                                5
+                            ))
                         }
                     }
-
-                    delay(200.milliseconds)
                 }
+
+                delay(200.milliseconds)
             }
         }
     }
@@ -221,6 +216,7 @@ object Bullet : AutoCloseable {
             player.disconnect(Component.text("Server is shutting down"))
         }
 
+        scope.cancel()
         server?.close()
         pool.shutdown()
     }
