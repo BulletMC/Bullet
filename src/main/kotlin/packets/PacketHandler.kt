@@ -28,6 +28,7 @@ import com.aznos.packets.status.`in`.ClientStatusPingPacket
 import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
 import com.aznos.world.data.BlockStatus
+import com.mojang.brigadier.exceptions.CommandSyntaxException
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -609,23 +610,31 @@ class PacketHandler(
             val command = message.substring(1)
             val commandSource = client.player
 
-            val result = CommandManager.dispatcher.execute(command, commandSource)
-            if(result != CommandCodes.SUCCESS.id) {
-                when(result) {
-                    CommandCodes.UNKNOWN.id ->
-                        commandSource.sendMessage(Component.text("Unknown command")
-                            .color(NamedTextColor.RED))
-
-                    CommandCodes.ILLEGAL_ARGUMENT.id ->
-                        commandSource.sendMessage(Component.text("Invalid command syntax, try typing /help")
-                            .color(NamedTextColor.RED))
-
-                    CommandCodes.INVALID_PERMISSIONS.id ->
-                        commandSource.sendMessage(Component.text("You don't have permission to use this command")
-                            .color(NamedTextColor.RED))
-                }
+            val result: Int = try {
+                CommandManager.dispatcher.execute(command, commandSource)
+            } catch (e: CommandSyntaxException){
+                CommandCodes.ILLEGAL_SYNTAX.id
+            } catch (e: Exception) {
+                Bullet.logger.warn("Error running command `$message`:", e)
+                return
             }
 
+            if(result == CommandCodes.SUCCESS.id) return
+
+            when(result) {
+                CommandCodes.UNKNOWN.id ->
+                    commandSource.sendMessage(Component.text("Unknown command")
+                        .color(NamedTextColor.RED))
+
+                CommandCodes.ILLEGAL_ARGUMENT.id,
+                CommandCodes.ILLEGAL_SYNTAX.id ->
+                    commandSource.sendMessage(Component.text("Invalid command syntax, try typing /help")
+                        .color(NamedTextColor.RED))
+
+                CommandCodes.INVALID_PERMISSIONS.id ->
+                    commandSource.sendMessage(Component.text("You don't have permission to use this command")
+                        .color(NamedTextColor.RED))
+            }
             return
         }
 
@@ -794,13 +803,17 @@ class PacketHandler(
      * @param packet The packet to handle
      */
     fun handle(packet: Packet) {
-        for(method in javaClass.methods) {
-            if(method.isAnnotationPresent(PacketReceiver::class.java)) {
-                val params: Array<Class<*>> = method.parameterTypes
-                if(params.size == 1 && params[0] == packet.javaClass) {
-                    method.invoke(this, packet)
+        try {
+            for(method in javaClass.methods) {
+                if(method.isAnnotationPresent(PacketReceiver::class.java)) {
+                    val params: Array<Class<*>> = method.parameterTypes
+                    if(params.size == 1 && params[0] == packet.javaClass) {
+                        method.invoke(this, packet)
+                    }
                 }
             }
+        } catch (e: Exception){
+            Bullet.logger.error("Could not handle packet ${packet.javaClass.name}", e)
         }
     }
 
