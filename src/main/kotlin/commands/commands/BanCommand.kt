@@ -9,10 +9,10 @@ import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.builder.RequiredArgumentBuilder
+import com.mojang.brigadier.context.CommandContext
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import java.time.Instant
-import kotlin.math.exp
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
@@ -27,6 +27,11 @@ class BanCommand {
                 .then(
                     RequiredArgumentBuilder.argument<Player, String>("player", StringArgumentType.word())
                         .suggests(PlayerSuggestions.playerNameSuggestions())
+                        .executes { context ->
+                            val username = StringArgumentType.getString(context, "player")
+                            banPlayer(username, "No reason specified", null, context)
+                            CommandCodes.SUCCESS.id
+                        }
                         .then(
                             RequiredArgumentBuilder.argument<Player, String>(
                                 "reason",
@@ -34,51 +39,59 @@ class BanCommand {
                             )
                                 .executes { context ->
                                     val username = StringArgumentType.getString(context, "player")
-                                    val input = StringArgumentType.getString(context, "reason")
-
-                                    val parts = input.split(" ")
-                                    val reason = parts.dropLast(1).joinToString(" ").ifBlank {
-                                        "No reason specified"
-                                    }
-                                    val lastPart = parts.lastOrNull()
-
-                                    val timeStr = if(lastPart != null && isTimeInput(lastPart)) lastPart else null
-                                    val player = Bullet.players.find {
-                                        it.username.equals(username, ignoreCase = true)
-                                    }
-
-                                    if(player == null) {
-                                        context.source.sendMessage(
-                                            Component.text("Player not found", NamedTextColor.RED)
-                                        )
-
-                                        return@executes CommandCodes.ILLEGAL_ARGUMENT.id
-                                    }
-
-                                    val expirationDuration: Duration? = timeStr?.let {
-                                        parseTime(it)
-                                    }
-
-                                    sendBanMessage(player, getReadableDuration(expirationDuration), reason)
-                                    sendConfirmMessage(
-                                        context.source,
-                                        player,
-                                        getReadableDuration(expirationDuration),
-                                        reason
-                                    )
-
+                                    val reason = StringArgumentType.getString(context, "reason")
+                                    banPlayer(username, reason, null, context)
                                     CommandCodes.SUCCESS.id
                                 }
+                                .then(
+                                    LiteralArgumentBuilder.literal<Player>("time")
+                                        .then(
+                                            RequiredArgumentBuilder.argument<Player, String>(
+                                                "duration",
+                                                StringArgumentType.word()
+                                            )
+                                                .executes { context ->
+                                                    val username = StringArgumentType.getString(context, "player")
+                                                    val reason = StringArgumentType.getString(context, "reason")
+                                                    val durationStr = StringArgumentType.getString(context, "duration")
+
+                                                    banPlayer(username, reason, durationStr, context)
+                                                    CommandCodes.SUCCESS.id
+                                                }
+                                        )
+                                )
                         )
                 )
         )
     }
 
-    private fun sendBanMessage(player: Player, expirationTime: String, reason: String) {
+    private fun banPlayer(
+        username: String,
+        reason: String,
+        durationStr: String?,
+        context: CommandContext<Player>
+    ) {
+        val player = Bullet.players.find { it.username.equals(username, ignoreCase = true) }
+        if(player == null) {
+            context.source.sendMessage(
+                Component.text("Player not found", NamedTextColor.RED)
+            )
+
+            return
+        }
+
+        val expirationDuration: Duration? = durationStr?.let { parseTime(it) }
+        val readableDuration = getReadableDuration(expirationDuration)
+
+        sendBanMessage(player, readableDuration, reason)
+        sendConfirmMessage(context.source, player, readableDuration, reason)
+    }
+
+    private fun sendBanMessage(player: Player, expirationText: String, reason: String) {
         player.disconnect(
             Component.text()
                 .append(Component.text("You have been banned ", NamedTextColor.RED))
-                .append(Component.text(expirationTime, NamedTextColor.RED))
+                .append(Component.text(expirationText, NamedTextColor.RED))
                 .append(Component.text("!\n\n", NamedTextColor.RED))
                 .append(Component.text("Reason: ", NamedTextColor.RED))
                 .append(Component.text(reason, NamedTextColor.GRAY))
@@ -86,7 +99,7 @@ class BanCommand {
         )
     }
 
-    private fun sendConfirmMessage(source: Player, player: Player, expirationTime: String, reason: String) {
+    private fun sendConfirmMessage(source: Player, player: Player, expirationText: String, reason: String) {
         source.sendMessage(
             Component.text()
                 .append(Component.text("Banned ", NamedTextColor.GRAY))
@@ -94,35 +107,28 @@ class BanCommand {
                 .append(Component.text(" for ", NamedTextColor.GRAY))
                 .append(Component.text(reason, NamedTextColor.GRAY))
                 .append(Component.text(" ", NamedTextColor.GRAY))
-                .append(Component.text(expirationTime, NamedTextColor.GRAY))
+                .append(Component.text(expirationText, NamedTextColor.GRAY))
                 .build()
         )
     }
 
-    private fun isTimeInput(str: String): Boolean {
-        return str.matches(Regex("^[0-9]+[dhms]$")) ||
-                str.equals("perm", ignoreCase = true) ||
-                str.equals("permanent", ignoreCase = true) ||
-                str.equals("forever", ignoreCase = true)
-    }
-
     private fun parseTime(input: String): Duration? {
-        if(input.equals("perm", true) || input.equals("permanent", true) || input.equals("forever", true)) {
-            return null
-        }
+        if(
+            input.equals("perm", true) ||
+            input.equals("permanent", true) ||
+            input.equals("forever", true)
+        ) return null
 
         val regex = Regex("^([0-9]+)([dhms])$")
         val match = regex.matchEntire(input) ?: return null
-
         val amount = match.groupValues[1].toLong()
         val unit = match.groupValues[2]
-
         return when(unit) {
             "d" -> amount.days
             "h" -> amount.hours
             "m" -> amount.minutes
             "s" -> amount.seconds
-            else -> return null
+            else -> null
         }
     }
 }
