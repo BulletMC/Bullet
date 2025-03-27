@@ -442,7 +442,10 @@ class ClientSession(
      */
     override fun close() {
         coroutineScope.cancel()
-        Bullet.players.remove(player)
+        // player not yet init on HANDSHAKE or STATUS
+        if (state != GameState.HANDSHAKE && state != GameState.STATUS) {
+            Bullet.players.remove(player)
+        }
 
         socket.close()
     }
