@@ -50,6 +50,7 @@ object Bullet : AutoCloseable {
     private val pool = Executors.newCachedThreadPool()
     private var server: ServerSocket? = null
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    var shouldPersist = true
 
     val players = mutableListOf<Player>()
     val livingEntities = mutableListOf<LivingEntity>()
@@ -67,6 +68,8 @@ object Bullet : AutoCloseable {
      *
      * @param host - The IP address of the server, for local development set this to 0.0.0.0
      * @param port - The port the server will run on, this defaults at 25565
+     * @param shouldPersist - Whether the server should save world data and block data to disk
+     * if set to false, nothing will save when the server is restarted
      */
     fun createServer(host: String, port: Int = 25565) {
         try {
@@ -89,9 +92,27 @@ object Bullet : AutoCloseable {
 
         scheduleTimeUpdate()
         scheduleSprintingParticles()
-        scheduleSaveUpdate()
+        if(shouldPersist) scheduleSaveUpdate()
+        loadPersistentData()
 
-        if(Files.exists(Paths.get("./${world.name}/data/world.json"))) {
+        logger.info("Bullet server started at $host:$port")
+
+        while(!isClosed()) {
+            val client = server?.accept()
+
+            pool.submit {
+                client?.let {
+                    ClientSession(it).handle()
+                }
+            }
+        }
+    }
+
+    /**
+     * Helper function that loads the world data and block data from disk if it exists
+     */
+    private fun loadPersistentData() {
+        if(Files.exists(Paths.get("./${world.name}/data/world.json")) && shouldPersist) {
             world.readWorldData().let {
                 var difficulty = Difficulty.NORMAL
                 for(diff in Difficulty.entries) {
@@ -107,20 +128,8 @@ object Bullet : AutoCloseable {
             }
         }
 
-        if(Files.exists(Paths.get("./${world.name}/data/blocks.json"))) {
+        if(Files.exists(Paths.get("./${world.name}/data/blocks.json")) && shouldPersist) {
             world.modifiedBlocks = world.readBlockData()
-        }
-
-        logger.info("Bullet server started at $host:$port")
-
-        while(!isClosed()) {
-            val client = server?.accept()
-
-            pool.submit {
-                client?.let {
-                    ClientSession(it).handle()
-                }
-            }
         }
     }
 
@@ -142,11 +151,13 @@ object Bullet : AutoCloseable {
      * Every 5 seconds the server will save the world data and block data to disk for persistent storage
      */
     private fun scheduleSaveUpdate() {
-        scope.launch {
-            while(isActive) {
-                delay(5.seconds)
-                world.writeWorldData(world.difficulty, world.weather == 1, world.timeOfDay)
-                world.writeBlockData(world.modifiedBlocks)
+        if(shouldPersist) {
+            scope.launch {
+                while(isActive) {
+                    delay(5.seconds)
+                    world.writeWorldData(world.difficulty, world.weather == 1, world.timeOfDay)
+                    world.writeBlockData(world.modifiedBlocks)
+                }
             }
         }
     }

@@ -384,7 +384,7 @@ class PacketHandler(
         }
 
         val heldItem = client.player.getHeldItem()
-        world.modifiedBlocks[event.location] = heldItem
+        if(Bullet.shouldPersist) world.modifiedBlocks[event.location] = heldItem
 
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {
@@ -1003,12 +1003,14 @@ class PacketHandler(
     }
 
     private fun removeBlock(location: Position) {
-        if(world.modifiedBlocks.keys.find {
-            it.x == location.x && it.y == location.y && it.z == location.z
-        } != null) {
-            world.modifiedBlocks.remove(location)
-        } else {
-            world.modifiedBlocks[location] = 0
+        if(Bullet.shouldPersist) {
+            if(world.modifiedBlocks.keys.find {
+                    it.x == location.x && it.y == location.y && it.z == location.z
+                } != null) {
+                world.modifiedBlocks.remove(location)
+            } else {
+                world.modifiedBlocks[location] = 0
+            }
         }
     }
 
@@ -1041,13 +1043,14 @@ class PacketHandler(
         client.sendPlayerSpawnPacket()
         client.scheduleKeepAlive()
         client.scheduleHalfSecondUpdate()
-        client.scheduleSaving()
+
+        if(Bullet.shouldPersist) client.scheduleSaving()
     }
 
     private fun addPlayerToPersistantData() {
         val player = client.player
 
-        if(Files.exists(Paths.get("./${world.name}/players/${player.uuid}.json"))) {
+        if(Files.exists(Paths.get("./${world.name}/players/${player.uuid}.json")) && Bullet.shouldPersist) {
             world.readPlayerData(player.uuid).let {
                 player.status.health = it.health
                 player.status.foodLevel = it.foodLevel
@@ -1067,7 +1070,7 @@ class PacketHandler(
     }
 
     private fun sendBlockChanges() {
-        if(Files.exists(Paths.get("./${world.name}/data/blocks.json"))) {
+        if(Files.exists(Paths.get("./${world.name}/data/blocks.json")) && Bullet.shouldPersist) {
             world.readBlockData().let {
                 for((position, blockID) in it) {
                     client.player.sendPacket(ServerBlockChangePacket(position, blockID))

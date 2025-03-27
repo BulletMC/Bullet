@@ -168,19 +168,21 @@ class ClientSession(
      * This is so that it can save things like player location, health, etc
      */
     fun scheduleSaving() {
-        coroutineScope.launch {
-            while(isActive) {
-                delay(5.seconds)
+        if(Bullet.shouldPersist) {
+            coroutineScope.launch {
+                while(isActive) {
+                    delay(5.seconds)
 
-                Bullet.world.writePlayerData(
-                    player.username,
-                    player.uuid,
-                    player.location,
-                    player.status.health,
-                    player.status.foodLevel,
-                    player.status.saturation,
-                    player.status.exhaustion
-                )
+                    Bullet.world.writePlayerData(
+                        player.username,
+                        player.uuid,
+                        player.location,
+                        player.status.health,
+                        player.status.foodLevel,
+                        player.status.saturation,
+                        player.status.exhaustion
+                    )
+                }
             }
         }
     }
