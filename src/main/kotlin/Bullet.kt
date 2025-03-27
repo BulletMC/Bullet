@@ -92,7 +92,7 @@ object Bullet : AutoCloseable {
         scheduleSaveUpdate()
 
         if(Files.exists(Paths.get("./${world.name}/data/world.json"))) {
-            world.readWorldData().let { it ->
+            world.readWorldData().let {
                 var difficulty = Difficulty.NORMAL
                 for(diff in Difficulty.entries) {
                     if(diff.id == it.difficulty) {
@@ -141,7 +141,7 @@ object Bullet : AutoCloseable {
     private fun scheduleSaveUpdate() {
         scope.launch {
             while(isActive) {
-                delay(10.seconds)
+                delay(5.seconds)
                 world.writeWorldData(world.difficulty, world.weather == 1, world.timeOfDay)
                 world.writeBlockData(world.modifiedBlocks)
             }
@@ -248,7 +248,16 @@ object Bullet : AutoCloseable {
         world.writeBlockData(world.modifiedBlocks)
 
         for(player in players) {
-            world.writePlayerData(player.username, player.uuid, player.location, player.status.health, player.status.foodLevel, player.status.saturation, player.status.exhaustion)
+            world.writePlayerData(
+                player.username,
+                player.uuid,
+                player.location,
+                player.status.health,
+                player.status.foodLevel,
+                player.status.saturation,
+                player.status.exhaustion
+            )
+
             player.disconnect(Component.text("Server is shutting down"))
         }
 

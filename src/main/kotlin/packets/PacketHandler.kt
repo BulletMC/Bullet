@@ -321,13 +321,7 @@ class PacketHandler(
                 }
             }
 
-            if(world.modifiedBlocks.keys.find {
-                it.x == event.location.x && it.y == event.location.y && it.z == event.location.z
-            } != null) {
-                world.modifiedBlocks.remove(event.location)
-            } else {
-                world.modifiedBlocks[event.location] = 0
-            }
+            removeBlock(event.location)
         } else if(client.player.gameMode == GameMode.SURVIVAL) {
             when(event.status) {
                 BlockStatus.STARTED_DIGGING.id -> {
@@ -343,13 +337,7 @@ class PacketHandler(
                     client.player.status.exhaustion += 0.005f
                     stopBlockBreak(event.location)
 
-                    if(world.modifiedBlocks.keys.find {
-                        it.x == event.location.x && it.y == event.location.y && it.z == event.location.z
-                    } != null) {
-                        world.modifiedBlocks.remove(event.location)
-                    } else {
-                        world.modifiedBlocks[event.location] = 0
-                    }
+                    removeBlock(event.location)
                 }
             }
         }
@@ -698,31 +686,11 @@ class PacketHandler(
         EventManager.fire(preJoinEvent)
         if(preJoinEvent.isCancelled) return
 
-        if(client.protocol > Bullet.PROTOCOL) {
-            client.disconnect(Component.text()
-                .append(Component.text("Your client is outdated, please downgrade to minecraft version"))
-                .append(Component.text(" " + Bullet.VERSION).color(NamedTextColor.GOLD))
-                .build()
-            )
-
-            return
-        } else if(client.protocol < Bullet.PROTOCOL) {
-            client.disconnect(Component.text()
-                .append(Component.text("Your client is outdated, please upgrade to minecraft version"))
-                .append(Component.text(" " + Bullet.VERSION).color(NamedTextColor.GOLD))
-                .build()
-            )
-
-            return
-        }
-
         val username = packet.username
-        if(!username.matches(Regex("^[a-zA-Z0-9]{3,16}$"))) {
-            client.disconnect(Component.text("Invalid username"))
-            return
-        }
-
         val uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:$username").toByteArray())
+
+        checkLoginValidity(username)
+
         val player = initializePlayer(username, uuid)
 
         client.sendPacket(ServerLoginSuccessPacket(uuid, username))
@@ -751,10 +719,7 @@ class PacketHandler(
         if(joinEvent.isCancelled) return
 
         Bullet.players.add(player)
-        client.sendPlayerSpawnPacket()
-        client.scheduleKeepAlive()
-        client.scheduleHalfSecondUpdate()
-        client.scheduleSaving()
+        scheduleTimers()
 
         client.sendPacket(ServerChunkPacket(0, 0))
         sendSpawnPlayerPackets(player)
@@ -762,31 +727,8 @@ class PacketHandler(
         client.sendPacket(ServerUpdateViewPositionPacket(player.chunkX, player.chunkZ))
         client.updatePlayerChunks(player.chunkX, player.chunkZ)
 
-        if(Files.exists(Paths.get("./${world.name}/players/${player.uuid}.json"))) {
-            world.readPlayerData(player.uuid).let {
-                player.status.health = it.health
-                player.status.foodLevel = it.foodLevel
-                player.status.saturation = it.saturation
-                player.status.exhaustion = it.exhaustionLevel
-                player.location = it.location
-
-                player.sendPacket(ServerUpdateHealthPacket(
-                    player.status.health.toFloat(),
-                    player.status.foodLevel,
-                    player.status.saturation
-                ))
-
-                player.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
-            }
-        }
-
-        if(Files.exists(Paths.get("./${world.name}/data/blocks.json"))) {
-            world.readBlockData().let {
-                for((position, blockID) in it) {
-                    player.sendPacket(ServerBlockChangePacket(position, blockID))
-                }
-            }
-        }
+        addPlayerToPersistantData()
+        sendBlockChanges()
 
         world.writePlayerData(
             player.username,
@@ -1055,6 +997,80 @@ class PacketHandler(
                     player.lastOnGroundY = player.location.y
                 } else {
                     player.lastOnGroundY = player.location.y
+                }
+            }
+        }
+    }
+
+    private fun removeBlock(location: Position) {
+        if(world.modifiedBlocks.keys.find {
+            it.x == location.x && it.y == location.y && it.z == location.z
+        } != null) {
+            world.modifiedBlocks.remove(location)
+        } else {
+            world.modifiedBlocks[location] = 0
+        }
+    }
+
+    private fun checkLoginValidity(username: String) {
+        if(client.protocol > Bullet.PROTOCOL) {
+            client.disconnect(Component.text()
+                .append(Component.text("Your client is outdated, please downgrade to minecraft version"))
+                .append(Component.text(" " + Bullet.VERSION).color(NamedTextColor.GOLD))
+                .build()
+            )
+
+            return
+        } else if(client.protocol < Bullet.PROTOCOL) {
+            client.disconnect(Component.text()
+                .append(Component.text("Your client is outdated, please upgrade to minecraft version"))
+                .append(Component.text(" " + Bullet.VERSION).color(NamedTextColor.GOLD))
+                .build()
+            )
+
+            return
+        }
+
+        if(!username.matches(Regex("^[a-zA-Z0-9]{3,16}$"))) {
+            client.disconnect(Component.text("Invalid username"))
+            return
+        }
+    }
+
+    private fun scheduleTimers() {
+        client.sendPlayerSpawnPacket()
+        client.scheduleKeepAlive()
+        client.scheduleHalfSecondUpdate()
+        client.scheduleSaving()
+    }
+
+    private fun addPlayerToPersistantData() {
+        val player = client.player
+
+        if(Files.exists(Paths.get("./${world.name}/players/${player.uuid}.json"))) {
+            world.readPlayerData(player.uuid).let {
+                player.status.health = it.health
+                player.status.foodLevel = it.foodLevel
+                player.status.saturation = it.saturation
+                player.status.exhaustion = it.exhaustionLevel
+                player.location = it.location
+
+                player.sendPacket(ServerUpdateHealthPacket(
+                    player.status.health.toFloat(),
+                    player.status.foodLevel,
+                    player.status.saturation
+                ))
+
+                player.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
+            }
+        }
+    }
+
+    private fun sendBlockChanges() {
+        if(Files.exists(Paths.get("./${world.name}/data/blocks.json"))) {
+            world.readBlockData().let {
+                for((position, blockID) in it) {
+                    client.player.sendPacket(ServerBlockChangePacket(position, blockID))
                 }
             }
         }

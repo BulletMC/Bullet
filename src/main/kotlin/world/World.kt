@@ -78,7 +78,6 @@ class World(val name: String) {
     }
 
     fun writeBlockData(modifiedBlocks: MutableMap<Position, Int>) {
-        println(modifiedBlocks)
         createFiles()
 
         val jsonData = json.encodeToString(modifiedBlocks)
