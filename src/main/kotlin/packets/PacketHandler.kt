@@ -318,8 +318,15 @@ class PacketHandler(
                         event.location,
                         0
                     ))
-                    world.modifiedBlocks.remove(event.location)
                 }
+            }
+
+            if(world.modifiedBlocks.keys.find {
+                it.x == event.location.x && it.y == event.location.y && it.z == event.location.z
+            } != null) {
+                world.modifiedBlocks.remove(event.location)
+            } else {
+                world.modifiedBlocks[event.location] = 0
             }
         } else if(client.player.gameMode == GameMode.SURVIVAL) {
             when(event.status) {
@@ -335,7 +342,14 @@ class PacketHandler(
                 BlockStatus.FINISHED_DIGGING.id -> {
                     client.player.status.exhaustion += 0.005f
                     stopBlockBreak(event.location)
-                    world.modifiedBlocks.remove(event.location)
+
+                    if(world.modifiedBlocks.keys.find {
+                        it.x == event.location.x && it.y == event.location.y && it.z == event.location.z
+                    } != null) {
+                        world.modifiedBlocks.remove(event.location)
+                    } else {
+                        world.modifiedBlocks[event.location] = 0
+                    }
                 }
             }
         }
