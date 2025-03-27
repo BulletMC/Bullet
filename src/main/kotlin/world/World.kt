@@ -1,5 +1,7 @@
 package com.aznos.world
 
+import com.aznos.Bullet
+import com.aznos.entity.player.data.BanData
 import com.aznos.entity.player.data.Location
 import com.aznos.entity.player.data.Position
 import com.aznos.world.data.Difficulty
@@ -11,6 +13,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
+import kotlin.time.Duration
 
 /**
  * Represents a world in the game
@@ -24,6 +27,7 @@ import java.util.*
  * @property modifiedBlocks A map of all the blocks that have been modified in the world
  * besides the default grass chunks that spawn in
  */
+@Suppress("TooManyFunctions")
 class World(val name: String) {
     var weather = 0
     var worldAge = 0L
@@ -45,6 +49,7 @@ class World(val name: String) {
 
         createFileIfNotExists(Paths.get("./$name/data/world.json"))
         createFileIfNotExists(Paths.get("./$name/data/blocks.json"))
+        createFileIfNotExists(Paths.get("./${Bullet.world.name}/data/banned_players.json"))
 
         return true
     }
@@ -142,12 +147,31 @@ class World(val name: String) {
         return json.decodeFromString(jsonData)
     }
 
+    fun writeBannedPlayer(
+        player: UUID,
+        reason: String,
+        duration: Duration,
+        moderator: UUID
+    ) {
+        createFiles()
+
+        val banData = BanData(player, reason, duration, moderator)
+        val jsonData = json.encodeToString(banData)
+        Files.write(Paths.get("./$name/data/banned_players.json"), jsonData.toByteArray())
+    }
+
+    fun readBannedPlayers(): List<BanData> {
+        val path = Paths.get("./$name/data/banned_players.json")
+        val jsonData = Files.readString(path)
+        return json.decodeFromString(jsonData)
+    }
+
     /**
      * Creates a directory if it does not already exist
      *
      * @param path The path of the directory to create
      */
-    private fun createDirectoryIfNotExists(path: Path) {
+    fun createDirectoryIfNotExists(path: Path) {
         if(!Files.exists(path)) {
             Files.createDirectory(path)
         }
@@ -158,7 +182,7 @@ class World(val name: String) {
      *
      * @param path The path of the file to create
      */
-    private fun createFileIfNotExists(path: Path) {
+    fun createFileIfNotExists(path: Path) {
         if(!Files.exists(path)) {
             Files.createFile(path)
         }
