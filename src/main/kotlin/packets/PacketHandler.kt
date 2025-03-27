@@ -51,6 +51,9 @@ import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 import kotlin.experimental.and
 import kotlin.math.pow
@@ -1092,17 +1095,33 @@ class PacketHandler(
                     val ban = bans.find { it.uuid == client.player.uuid }
 
                     if(ban != null) {
-                        val expiration = if(ban.duration.inWholeMilliseconds == 0L) {
+                        val banEnd = ban.currentTime + ban.duration.inWholeMilliseconds
+                        val now = System.currentTimeMillis()
+
+                        if(ban.duration.inWholeSeconds != 0L && now >= banEnd) {
+                            Bullet.world.unbanPlayer(client.player.uuid)
+                            return false
+                        }
+
+                        val expirationText = if(ban.duration.inWholeMilliseconds == 0L) {
                             "permanently"
                         } else {
-                            DurationFormat.getReadableDuration(ban.duration)
+                            val expirationMillis = ban.currentTime + ban.duration.inWholeMilliseconds
+                            val expirationTime = Instant.ofEpochMilli(expirationMillis)
+                                .atZone(ZoneId.systemDefault())
+
+                            val dayOfMonth = expirationTime.dayOfMonth
+                            val daySuffix = DurationFormat.getDaySuffix(dayOfMonth)
+
+                            val formattedDate = expirationTime.format(DateTimeFormatter.ofPattern("MMMM d'$daySuffix' yyyy 'at' H:mm"))
+                            "Expires $formattedDate"
                         }
 
                         client.disconnect(
                             Component.text()
-                                .append(Component.text("You have been banned ", NamedTextColor.RED))
-                                .append(Component.text(expiration, NamedTextColor.RED))
-                                .append(Component.text("!\n\n", NamedTextColor.RED))
+                                .append(Component.text("You have been banned!\n", NamedTextColor.RED))
+                                .append(Component.text(expirationText, NamedTextColor.RED))
+                                .append(Component.text("\n\n", NamedTextColor.RED))
                                 .append(Component.text("Reason: ", NamedTextColor.RED))
                                 .append(Component.text(ban.reason, NamedTextColor.GRAY))
                                 .build()

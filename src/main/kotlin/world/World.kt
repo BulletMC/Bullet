@@ -171,7 +171,7 @@ class World(val name: String) {
         } else mutableListOf()
 
         currentBans.removeIf { it.uuid == player }
-        currentBans.add(BanData(player, reason, duration, moderator))
+        currentBans.add(BanData(player, reason, duration, System.currentTimeMillis(), moderator))
 
         val newJson = Json.encodeToString(currentBans)
         Files.write(path, newJson.toByteArray())

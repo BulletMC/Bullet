@@ -49,4 +49,17 @@ object DurationFormat {
     private fun appendZeroSeconds(length: Int): String {
         return if(length == 3) "0 seconds" else ""
     }
+
+    fun getDaySuffix(day: Int): String {
+        return if (day in 11..13) {
+            "th"
+        } else {
+            when (day % 10) {
+                1 -> "st"
+                2 -> "nd"
+                3 -> "rd"
+                else -> "th"
+            }
+        }
+    }
 }
