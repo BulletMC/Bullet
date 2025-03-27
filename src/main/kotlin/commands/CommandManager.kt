@@ -43,6 +43,7 @@ object CommandManager {
         SpawnCommand().register(dispatcher)
         KickCommand().register(dispatcher)
         BanCommand().register(dispatcher)
+        UnbanCommand().register(dispatcher)
     }
 
     /**
