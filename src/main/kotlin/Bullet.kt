@@ -5,9 +5,11 @@ import com.aznos.entity.Entity
 import com.aznos.entity.livingentity.LivingEntity
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.Position
+import com.aznos.packets.play.out.ServerChangeGameStatePacket
 import com.aznos.packets.play.out.ServerParticlePacket
 import com.aznos.packets.play.out.ServerPlayerListHeaderAndFooterPacket
 import com.aznos.world.World
+import com.aznos.world.data.Difficulty
 import com.aznos.world.data.Particles
 import com.google.gson.JsonParser
 import dev.dewy.nbt.api.registry.TagTypeRegistry
@@ -18,18 +20,21 @@ import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
+import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
 import java.net.BindException
 import java.net.InetSocketAddress
 import java.net.ServerSocket
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.util.Base64
 import java.util.concurrent.Executors
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * This is where the core of the bullet server logic will be housed
+ * This is where the core of the bullet server logic is housed
  */
 object Bullet : AutoCloseable {
     const val PROTOCOL: Int = 754 // Protocol version 769 = Minecraft version 1.16.5
@@ -45,6 +50,7 @@ object Bullet : AutoCloseable {
     private val pool = Executors.newCachedThreadPool()
     private var server: ServerSocket? = null
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    var shouldPersist = true
 
     val players = mutableListOf<Player>()
     val livingEntities = mutableListOf<LivingEntity>()
@@ -62,6 +68,8 @@ object Bullet : AutoCloseable {
      *
      * @param host - The IP address of the server, for local development set this to 0.0.0.0
      * @param port - The port the server will run on, this defaults at 25565
+     * @param shouldPersist - Whether the server should save world data and block data to disk
+     * if set to false, nothing will save when the server is restarted
      */
     fun createServer(host: String, port: Int = 25565) {
         try {
@@ -84,6 +92,8 @@ object Bullet : AutoCloseable {
 
         scheduleTimeUpdate()
         scheduleSprintingParticles()
+        if(shouldPersist) scheduleSaveUpdate()
+        loadPersistentData()
 
         logger.info("Bullet server started at $host:$port")
 
@@ -99,6 +109,31 @@ object Bullet : AutoCloseable {
     }
 
     /**
+     * Helper function that loads the world data and block data from disk if it exists
+     */
+    private fun loadPersistentData() {
+        if(Files.exists(Paths.get("./${world.name}/data/world.json")) && shouldPersist) {
+            world.readWorldData().let {
+                var difficulty = Difficulty.NORMAL
+                for(diff in Difficulty.entries) {
+                    if(diff.id == it.difficulty) {
+                        difficulty = diff
+                        break
+                    }
+                }
+
+                world.difficulty = difficulty
+                world.weather = if(it.raining) 1 else 0
+                world.timeOfDay = it.timeOfDay
+            }
+        }
+
+        if(Files.exists(Paths.get("./${world.name}/data/blocks.json")) && shouldPersist) {
+            world.modifiedBlocks = world.readBlockData()
+        }
+    }
+
+    /**
      * Schedules a coroutine to update the time of day every second
      */
     private fun scheduleTimeUpdate() {
@@ -108,14 +143,28 @@ object Bullet : AutoCloseable {
 
                 world.timeOfDay = (world.timeOfDay + 20) % 24000
                 world.worldAge += 20
+            }
+        }
+    }
 
-                for(player in players) {
-                    player.setTimeOfDay(world.timeOfDay)
+    /**
+     * Every 5 seconds the server will save the world data and block data to disk for persistent storage
+     */
+    private fun scheduleSaveUpdate() {
+        if(shouldPersist) {
+            scope.launch {
+                while(isActive) {
+                    delay(5.seconds)
+                    world.writeWorldData(world.difficulty, world.weather == 1, world.timeOfDay)
+                    world.writeBlockData(world.modifiedBlocks)
                 }
             }
         }
     }
 
+    /**
+     * Schedules a coroutine to send particles to players who are sprinting so that other players can see them
+     */
     private fun scheduleSprintingParticles() {
         scope.launch {
             while(isActive) {
@@ -212,7 +261,20 @@ object Bullet : AutoCloseable {
      * Shuts down the server
      */
     override fun close() {
+        world.writeWorldData(world.difficulty, world.weather == 1, world.timeOfDay)
+        world.writeBlockData(world.modifiedBlocks)
+
         for(player in players) {
+            world.writePlayerData(
+                player.username,
+                player.uuid,
+                player.location,
+                player.status.health,
+                player.status.foodLevel,
+                player.status.saturation,
+                player.status.exhaustion
+            )
+
             player.disconnect(Component.text("Server is shutting down"))
         }
 

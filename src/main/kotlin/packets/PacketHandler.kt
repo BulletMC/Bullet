@@ -2,7 +2,9 @@ package com.aznos.packets
 
 import com.aznos.Bullet
 import com.aznos.Bullet.breakingBlocks
+import com.aznos.Bullet.players
 import com.aznos.Bullet.sprinting
+import com.aznos.Bullet.world
 import com.aznos.ClientSession
 import com.aznos.GameState
 import com.aznos.commands.CommandCodes
@@ -31,6 +33,7 @@ import com.aznos.packets.play.`in`.movement.ClientPlayerRotation
 import com.aznos.packets.play.out.*
 import com.aznos.packets.play.out.movement.*
 import com.aznos.world.data.BlockStatus
+import com.aznos.world.data.Difficulty
 import com.mojang.brigadier.CommandDispatcher
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -45,6 +48,8 @@ import packets.handshake.HandshakePacket
 import packets.status.out.ServerStatusResponsePacket
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.util.UUID
 import kotlin.experimental.and
 import kotlin.math.pow
@@ -315,6 +320,8 @@ class PacketHandler(
                     ))
                 }
             }
+
+            removeBlock(event.location)
         } else if(client.player.gameMode == GameMode.SURVIVAL) {
             when(event.status) {
                 BlockStatus.STARTED_DIGGING.id -> {
@@ -329,6 +336,8 @@ class PacketHandler(
                 BlockStatus.FINISHED_DIGGING.id -> {
                     client.player.status.exhaustion += 0.005f
                     stopBlockBreak(event.location)
+
+                    removeBlock(event.location)
                 }
             }
         }
@@ -375,7 +384,7 @@ class PacketHandler(
         }
 
         val heldItem = client.player.getHeldItem()
-        Bullet.logger.info("Player placed block: $heldItem")
+        if(Bullet.shouldPersist) world.modifiedBlocks[event.location] = heldItem
 
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {
@@ -677,31 +686,11 @@ class PacketHandler(
         EventManager.fire(preJoinEvent)
         if(preJoinEvent.isCancelled) return
 
-        if(client.protocol > Bullet.PROTOCOL) {
-            client.disconnect(Component.text()
-                .append(Component.text("Your client is outdated, please downgrade to minecraft version"))
-                .append(Component.text(" " + Bullet.VERSION).color(NamedTextColor.GOLD))
-                .build()
-            )
-
-            return
-        } else if(client.protocol < Bullet.PROTOCOL) {
-            client.disconnect(Component.text()
-                .append(Component.text("Your client is outdated, please upgrade to minecraft version"))
-                .append(Component.text(" " + Bullet.VERSION).color(NamedTextColor.GOLD))
-                .build()
-            )
-
-            return
-        }
-
         val username = packet.username
-        if(!username.matches(Regex("^[a-zA-Z0-9]{3,16}$"))) {
-            client.disconnect(Component.text("Invalid username"))
-            return
-        }
-
         val uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:$username").toByteArray())
+
+        checkLoginValidity(username)
+
         val player = initializePlayer(username, uuid)
 
         client.sendPacket(ServerLoginSuccessPacket(uuid, username))
@@ -730,15 +719,30 @@ class PacketHandler(
         if(joinEvent.isCancelled) return
 
         Bullet.players.add(player)
-        client.sendPlayerSpawnPacket()
-        client.scheduleKeepAlive()
-        client.scheduleHalfSecondUpdate()
+        scheduleTimers()
 
         client.sendPacket(ServerChunkPacket(0, 0))
         sendSpawnPlayerPackets(player)
 
         client.sendPacket(ServerUpdateViewPositionPacket(player.chunkX, player.chunkZ))
         client.updatePlayerChunks(player.chunkX, player.chunkZ)
+
+        addPlayerToPersistantData()
+        sendBlockChanges()
+
+        world.writePlayerData(
+            player.username,
+            player.uuid,
+            player.location,
+            player.status.health,
+            player.status.foodLevel,
+            player.status.saturation,
+            player.status.exhaustion
+        )
+
+        player.setTimeOfDay(world.timeOfDay)
+        if(world.weather == 1) player.sendPacket(ServerChangeGameStatePacket(2, 0f))
+        else player.sendPacket(ServerChangeGameStatePacket(1, 0f))
 
         val (nodes, rootIndex) = buildCommandGraphFromDispatcher(CommandManager.dispatcher)
         client.sendPacket(ServerDeclareCommandsPacket(nodes, rootIndex))
@@ -993,6 +997,83 @@ class PacketHandler(
                     player.lastOnGroundY = player.location.y
                 } else {
                     player.lastOnGroundY = player.location.y
+                }
+            }
+        }
+    }
+
+    private fun removeBlock(location: Position) {
+        if(Bullet.shouldPersist) {
+            if(world.modifiedBlocks.keys.find {
+                    it.x == location.x && it.y == location.y && it.z == location.z
+                } != null) {
+                world.modifiedBlocks.remove(location)
+            } else {
+                world.modifiedBlocks[location] = 0
+            }
+        }
+    }
+
+    private fun checkLoginValidity(username: String) {
+        if(client.protocol > Bullet.PROTOCOL) {
+            client.disconnect(Component.text()
+                .append(Component.text("Your client is outdated, please downgrade to minecraft version"))
+                .append(Component.text(" " + Bullet.VERSION).color(NamedTextColor.GOLD))
+                .build()
+            )
+
+            return
+        } else if(client.protocol < Bullet.PROTOCOL) {
+            client.disconnect(Component.text()
+                .append(Component.text("Your client is outdated, please upgrade to minecraft version"))
+                .append(Component.text(" " + Bullet.VERSION).color(NamedTextColor.GOLD))
+                .build()
+            )
+
+            return
+        }
+
+        if(!username.matches(Regex("^[a-zA-Z0-9]{3,16}$"))) {
+            client.disconnect(Component.text("Invalid username"))
+            return
+        }
+    }
+
+    private fun scheduleTimers() {
+        client.sendPlayerSpawnPacket()
+        client.scheduleKeepAlive()
+        client.scheduleHalfSecondUpdate()
+
+        if(Bullet.shouldPersist) client.scheduleSaving()
+    }
+
+    private fun addPlayerToPersistantData() {
+        val player = client.player
+
+        if(Files.exists(Paths.get("./${world.name}/players/${player.uuid}.json")) && Bullet.shouldPersist) {
+            world.readPlayerData(player.uuid).let {
+                player.status.health = it.health
+                player.status.foodLevel = it.foodLevel
+                player.status.saturation = it.saturation
+                player.status.exhaustion = it.exhaustionLevel
+                player.location = it.location
+
+                player.sendPacket(ServerUpdateHealthPacket(
+                    player.status.health.toFloat(),
+                    player.status.foodLevel,
+                    player.status.saturation
+                ))
+
+                player.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
+            }
+        }
+    }
+
+    private fun sendBlockChanges() {
+        if(Files.exists(Paths.get("./${world.name}/data/blocks.json")) && Bullet.shouldPersist) {
+            world.readBlockData().let {
+                for((position, blockID) in it) {
+                    client.player.sendPacket(ServerBlockChangePacket(position, blockID))
                 }
             }
         }
