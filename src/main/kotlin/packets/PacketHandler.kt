@@ -610,6 +610,7 @@ class PacketHandler(
             val command = message.substring(1)
             val commandSource = client.player
 
+            @Suppress("TooGenericExceptionCaught")
             val result: Int = try {
                 CommandManager.dispatcher.execute(command, commandSource)
             } catch (e: CommandSyntaxException){
@@ -803,6 +804,7 @@ class PacketHandler(
      * @param packet The packet to handle
      */
     fun handle(packet: Packet) {
+        @Suppress("TooGenericExceptionCaught")
         try {
             for(method in javaClass.methods) {
                 if(method.isAnnotationPresent(PacketReceiver::class.java)) {
