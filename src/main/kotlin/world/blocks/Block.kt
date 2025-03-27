@@ -1,5 +1,7 @@
 package com.aznos.world.blocks
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
+
 enum class Block(val id: Int) {
     ACACIA_BUTTON(309),
     ACACIA_DOOR(562),
@@ -549,8 +551,13 @@ enum class Block(val id: Int) {
     ZOMBIE_HEAD(839);
 
     companion object {
-        fun getBlockFromID(id: Int): Block? = entries.find {
-            it.id == id
+        private val idMap = Int2ObjectOpenHashMap<Block>(Block.entries.size)
+        init {
+            entries.associateByTo(idMap) { it.id }
+        }
+
+        fun getBlockFromID(id: Int): Block? {
+            return idMap.get(id)
         }
     }
 }
