@@ -29,9 +29,17 @@ import kotlin.time.Duration.Companion.seconds
  * Represents a session between a connected client and the server
  *
  * @param socket The clients socket connection
+ *
  * @property out The output stream to send packets to the client
  * @property input The input stream to read packets from the client
  * @property handler The packet handler to handle incoming packets
+ * @property state The current state of the game connection
+ * @property protocol The protocol version of the player
+ * @property player The player class associated with this session
+ *
+ * @property coroutineScope The coroutine scope to manage the coroutines
+ * @property lastKeepAliveTimestamp The last time a keep alive packet was sent
+ * @property respondedToKeepAlive If the client has responded to the last keep alive packet
  */
 @Suppress("TooManyFunctions")
 class ClientSession(
@@ -111,6 +119,10 @@ class ClientSession(
         }
     }
 
+    /**
+     * Schedules a keep alive session with the player, this is sent every 10 seconds to check
+     * if the player is still connected
+     */
     fun scheduleKeepAlive() {
         coroutineScope.launch {
             while(isActive) {
@@ -151,6 +163,10 @@ class ClientSession(
         }
     }
 
+    /**
+     * Schedules saving the player data every 5 seconds
+     * This is so that it can save things like player location, health, etc
+     */
     fun scheduleSaving() {
         coroutineScope.launch {
             while(isActive) {
@@ -169,6 +185,9 @@ class ClientSession(
         }
     }
 
+    /**
+     * Helper function to update the player exhaustion, saturation, and food level
+     */
     private fun updatePlayerStatus() {
         with(player.status) {
             if(exhaustion >= 4) {
@@ -179,6 +198,12 @@ class ClientSession(
         }
     }
 
+    /**
+     * Helper function to handle what happens when the food level is at a certain point
+     *
+     * @param timeSinceHealthUpdate The time since the last health update
+     * @param timeSinceHealthDecrease The time since the last health decrease
+     */
     private fun updatePlayerHealth(
         timeSinceHealthUpdate: Int,
         timeSinceHealthDecrease: Int
@@ -203,6 +228,11 @@ class ClientSession(
         return newUpdate to newDecrease
     }
 
+    /**
+     * Helper function to regenerate the players health
+     *
+     * @param time The time since the last health update
+     */
     private fun handleHealthRegeneration(time: Int): Int {
         with(player.status) {
             if(foodLevel == 20 && saturation > 0 && health != 20) {
@@ -221,6 +251,11 @@ class ClientSession(
         return time
     }
 
+    /**
+     * Helper function to decrease the players health if the food level is low
+     *
+     * @param time The time since the last health decrease
+     */
     private fun handleHealthDecrease(time: Int): Int {
         with(player.status) {
             if(foodLevel == 0 && health > 0) {
@@ -240,6 +275,10 @@ class ClientSession(
         return time
     }
 
+    /**
+     * Helper function to handle peaceful mode when the health bar isn't at full
+     * If it's not, it will increase the food level until it's full
+     */
     private fun handlePeacefulMode() {
         with(player.status) {
             if(player.world?.difficulty == Difficulty.PEACEFUL && foodLevel != 20) {
@@ -312,6 +351,10 @@ class ClientSession(
         }
     }
 
+    /**
+     * Sends the player spawn position information to the client when the player logs into the server
+     * This also sends the player information to all other players on the server
+     */
     fun sendPlayerSpawnPacket() {
         for(otherPlayer in Bullet.players) {
             if(otherPlayer.clientSession != this) {
@@ -348,6 +391,13 @@ class ClientSession(
         sendPacket(ServerPlayerInfoPacket(0, player))
     }
 
+    /**
+     * Updates the chunks visible to the player based on their position
+     * It will also unload chunks as needed
+     *
+     * @param chunkX The chunk X position of the player (position / 16)
+     * @param chunkZ The chunk Z position of the player (position / 16)
+     */
     fun updatePlayerChunks(chunkX: Int, chunkZ: Int) {
         val viewDistance = player.viewDistance
         val newChunks = mutableSetOf<Pair<Int, Int>>()

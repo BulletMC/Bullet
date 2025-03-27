@@ -34,7 +34,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * This is where the core of the bullet server logic will be housed
+ * This is where the core of the bullet server logic is housed
  */
 object Bullet : AutoCloseable {
     const val PROTOCOL: Int = 754 // Protocol version 769 = Minecraft version 1.16.5
@@ -138,6 +138,9 @@ object Bullet : AutoCloseable {
         }
     }
 
+    /**
+     * Every 5 seconds the server will save the world data and block data to disk for persistent storage
+     */
     private fun scheduleSaveUpdate() {
         scope.launch {
             while(isActive) {
@@ -148,6 +151,9 @@ object Bullet : AutoCloseable {
         }
     }
 
+    /**
+     * Schedules a coroutine to send particles to players who are sprinting so that other players can see them
+     */
     private fun scheduleSprintingParticles() {
         scope.launch {
             while(isActive) {
