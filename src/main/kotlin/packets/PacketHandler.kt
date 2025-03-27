@@ -735,6 +735,7 @@ class PacketHandler(
         if(joinEvent.isCancelled) return
 
         Bullet.players.add(player)
+        addPlayerToPersistantData()
         scheduleTimers()
 
         client.sendPacket(ServerChunkPacket(0, 0))
@@ -743,7 +744,6 @@ class PacketHandler(
         client.sendPacket(ServerUpdateViewPositionPacket(player.chunkX, player.chunkZ))
         client.updatePlayerChunks(player.chunkX, player.chunkZ)
 
-        addPlayerToPersistantData()
         sendBlockChanges()
 
         world.writePlayerData(
