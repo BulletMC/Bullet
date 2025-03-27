@@ -32,6 +32,7 @@ import com.aznos.packets.play.`in`.movement.ClientPlayerPositionPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerRotation
 import com.aznos.packets.play.out.*
 import com.aznos.packets.play.out.movement.*
+import com.aznos.util.DurationFormat
 import com.aznos.world.data.BlockStatus
 import com.aznos.world.data.Difficulty
 import com.mojang.brigadier.CommandDispatcher
@@ -54,6 +55,7 @@ import java.util.UUID
 import kotlin.experimental.and
 import kotlin.math.pow
 import kotlin.math.sqrt
+import kotlin.time.Duration
 
 /**
  * Handles all incoming packets by dispatching them to the appropriate handler methods
@@ -690,6 +692,7 @@ class PacketHandler(
         val uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:$username").toByteArray())
 
         checkLoginValidity(username)
+        checkForBan()
 
         val player = initializePlayer(username, uuid)
 
@@ -1074,6 +1077,36 @@ class PacketHandler(
             world.readBlockData().let {
                 for((position, blockID) in it) {
                     client.player.sendPacket(ServerBlockChangePacket(position, blockID))
+                }
+            }
+        }
+    }
+
+    private fun checkForBan() {
+        if(Bullet.shouldPersist) {
+            val bannedPath = Paths.get("./${world.name}/data/banned_players.json")
+            if(Files.exists(bannedPath)) {
+                val bans = world.readBannedPlayers()
+                val ban = bans.find { it.uuid == client.player.uuid }
+
+                if(ban != null) {
+                    val expiration = if(ban.duration.inWholeMilliseconds == 0L) {
+                        "permanently"
+                    } else {
+                        DurationFormat.getReadableDuration(ban.duration)
+                    }
+
+                    client.disconnect(
+                        Component.text()
+                            .append(Component.text("You have been banned ", NamedTextColor.RED))
+                            .append(Component.text(expiration, NamedTextColor.RED))
+                            .append(Component.text("!\n\n", NamedTextColor.RED))
+                            .append(Component.text("Reason: ", NamedTextColor.RED))
+                            .append(Component.text(ban.reason, NamedTextColor.GRAY))
+                            .build()
+                    )
+
+                    return
                 }
             }
         }
