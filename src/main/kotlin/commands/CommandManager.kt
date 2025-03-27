@@ -42,6 +42,7 @@ object CommandManager {
         DifficultyCommand().register(dispatcher)
         SpawnCommand().register(dispatcher)
         KickCommand().register(dispatcher)
+        BanCommand().register(dispatcher)
     }
 
     /**

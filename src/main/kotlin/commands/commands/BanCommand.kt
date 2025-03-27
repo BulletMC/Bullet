@@ -4,6 +4,7 @@ import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
 import com.aznos.commands.commands.suggestions.PlayerSuggestions
 import com.aznos.entity.player.Player
+import com.aznos.util.DurationFormat.getReadableDuration
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
@@ -57,12 +58,14 @@ class BanCommand {
                                     val expirationDuration: Duration? = timeStr?.let {
                                         parseTime(it)
                                     }
-                                    val expirationTime = expirationDuration?.let {
-                                        Instant.now().plus(it.toJavaDuration())
-                                    }
 
-                                    sendBanMessage(player, expirationTime, reason)
-                                    sendConfirmMessage(context.source, player, expirationTime, reason)
+                                    sendBanMessage(player, getReadableDuration(expirationDuration), reason)
+                                    sendConfirmMessage(
+                                        context.source,
+                                        player,
+                                        getReadableDuration(expirationDuration),
+                                        reason
+                                    )
 
                                     CommandCodes.SUCCESS.id
                                 }
@@ -71,14 +74,11 @@ class BanCommand {
         )
     }
 
-    private fun sendBanMessage(player: Player, expirationTime: Instant?, reason: String) {
+    private fun sendBanMessage(player: Player, expirationTime: String, reason: String) {
         player.disconnect(
             Component.text()
                 .append(Component.text("You have been banned ", NamedTextColor.RED))
-                .append(Component.text(
-                    if(expirationTime != null) "until $expirationTime" else "permanently",
-                    NamedTextColor.RED)
-                )
+                .append(Component.text(expirationTime, NamedTextColor.RED))
                 .append(Component.text("!\n\n", NamedTextColor.RED))
                 .append(Component.text("Reason: ", NamedTextColor.RED))
                 .append(Component.text(reason, NamedTextColor.GRAY))
@@ -86,17 +86,15 @@ class BanCommand {
         )
     }
 
-    private fun sendConfirmMessage(source: Player, player: Player, expirationTime: Instant?, reason: String) {
+    private fun sendConfirmMessage(source: Player, player: Player, expirationTime: String, reason: String) {
         source.sendMessage(
             Component.text()
                 .append(Component.text("Banned ", NamedTextColor.GRAY))
                 .append(Component.text(player.username, NamedTextColor.AQUA))
                 .append(Component.text(" for ", NamedTextColor.GRAY))
                 .append(Component.text(reason, NamedTextColor.GRAY))
-                .append(Component.text(
-                    if(expirationTime != null) " until $expirationTime" else " permanently",
-                    NamedTextColor.GRAY)
-                )
+                .append(Component.text(" ", NamedTextColor.GRAY))
+                .append(Component.text(expirationTime, NamedTextColor.GRAY))
                 .build()
         )
     }
