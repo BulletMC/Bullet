@@ -1,5 +1,7 @@
 package com.aznos.world
 
+import com.aznos.Bullet
+import com.aznos.entity.player.data.BanData
 import com.aznos.entity.player.data.Location
 import com.aznos.entity.player.data.Position
 import com.aznos.world.data.Difficulty
@@ -7,10 +9,12 @@ import com.aznos.world.data.PlayerData
 import com.aznos.world.data.TimeOfDay
 import com.aznos.world.data.WorldData
 import kotlinx.serialization.json.Json
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
+import kotlin.time.Duration
 
 /**
  * Represents a world in the game
@@ -24,6 +28,7 @@ import java.util.*
  * @property modifiedBlocks A map of all the blocks that have been modified in the world
  * besides the default grass chunks that spawn in
  */
+@Suppress("TooManyFunctions")
 class World(val name: String) {
     var weather = 0
     var worldAge = 0L
@@ -45,6 +50,12 @@ class World(val name: String) {
 
         createFileIfNotExists(Paths.get("./$name/data/world.json"))
         createFileIfNotExists(Paths.get("./$name/data/blocks.json"))
+
+        val banFile = Paths.get("./$name/data/banned_players.json")
+        createFileIfNotExists(banFile)
+        if(Files.size(banFile) == 0L) {
+            Files.write(banFile, "[]".toByteArray())
+        }
 
         return true
     }
@@ -138,6 +149,56 @@ class World(val name: String) {
      */
     fun readBlockData(): MutableMap<Position, Int> {
         val path = Paths.get("./$name/data/blocks.json")
+        val jsonData = Files.readString(path)
+        return json.decodeFromString(jsonData)
+    }
+
+    fun writeBannedPlayer(
+        player: UUID,
+        reason: String,
+        duration: Duration,
+        moderator: UUID
+    ) {
+        createFiles()
+
+        val path = Paths.get("./$name/data/banned_players.json")
+        val currentBans: MutableList<BanData> = if(Files.exists(path)) {
+            try {
+                val jsonData = Files.readString(path)
+                Json.decodeFromString(jsonData)
+            } catch(e: IOException) {
+                mutableListOf()
+            }
+        } else mutableListOf()
+
+        currentBans.removeIf { it.uuid == player }
+        currentBans.add(BanData(player, reason, duration, System.currentTimeMillis(), moderator))
+
+        val newJson = Json.encodeToString(currentBans)
+        Files.write(path, newJson.toByteArray())
+    }
+
+    fun unbanPlayer(player: UUID) {
+        createFiles()
+
+        val path = Paths.get("./$name/data/banned_players.json")
+        val currentBans: MutableList<BanData> = if(Files.exists(path)) {
+            try {
+                val jsonData = Files.readString(path)
+                Json.decodeFromString(jsonData)
+            } catch(e: IOException) {
+                mutableListOf()
+            }
+        } else mutableListOf()
+
+        currentBans.removeIf { it.uuid == player }
+
+        val newJson = Json.encodeToString(currentBans)
+        Files.write(path, newJson.toByteArray())
+    }
+
+    fun readBannedPlayers(): List<BanData> {
+        val path = Paths.get("./$name/data/banned_players.json")
         val jsonData = Files.readString(path)
         return json.decodeFromString(jsonData)
     }

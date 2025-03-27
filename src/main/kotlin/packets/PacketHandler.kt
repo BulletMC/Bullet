@@ -24,6 +24,7 @@ import com.aznos.packets.play.`in`.*
 import com.aznos.packets.play.`in`.movement.*
 import com.aznos.packets.play.out.*
 import com.aznos.packets.play.out.movement.*
+import com.aznos.util.DurationFormat
 import com.aznos.packets.status.`in`.ClientStatusPingPacket
 import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
@@ -44,10 +45,15 @@ import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.UUID
 import java.util.*
 import kotlin.experimental.and
 import kotlin.math.pow
 import kotlin.math.sqrt
+import kotlin.time.Duration
 
 /**
  * Handles all incoming packets by dispatching them to the appropriate handler methods
@@ -704,6 +710,8 @@ class PacketHandler(
         client.sendPacket(ServerLoginSuccessPacket(uuid, username))
         client.state = GameState.PLAY
 
+        if(checkForBan()) return
+
         client.sendPacket(
             ServerJoinGamePacket(
                 player.entityID,
@@ -1090,5 +1098,56 @@ class PacketHandler(
                 }
             }
         }
+    }
+
+    private fun checkForBan(): Boolean {
+        if(Bullet.shouldPersist) {
+            val bannedPath = Paths.get("./${world.name}/data/banned_players.json")
+            if(Files.exists(bannedPath)) {
+                val bans = world.readBannedPlayers()
+                val ban = bans.find { it.uuid == client.player.uuid }
+
+                if(ban != null) {
+                    val banEnd = ban.currentTime + ban.duration.inWholeMilliseconds
+                    val now = System.currentTimeMillis()
+
+                    if(ban.duration.inWholeSeconds != 0L && now >= banEnd) {
+                        Bullet.world.unbanPlayer(client.player.uuid)
+                        return false
+                    }
+
+                    val expirationText = if(ban.duration.inWholeMilliseconds == 0L) {
+                        "permanently"
+                    } else {
+                        val expirationMillis = ban.currentTime + ban.duration.inWholeMilliseconds
+                        val expirationTime = Instant.ofEpochMilli(expirationMillis)
+                            .atZone(ZoneId.systemDefault())
+
+                        val dayOfMonth = expirationTime.dayOfMonth
+                        val daySuffix = DurationFormat.getDaySuffix(dayOfMonth)
+
+                        val formattedDate = expirationTime.format(
+                            DateTimeFormatter.ofPattern("MMMM d'$daySuffix' yyyy 'at' H:mm")
+                        )
+
+                        "Expires $formattedDate"
+                    }
+
+                    client.disconnect(
+                        Component.text()
+                            .append(Component.text("You have been banned!\n", NamedTextColor.RED))
+                            .append(Component.text(expirationText, NamedTextColor.RED))
+                            .append(Component.text("\n\n", NamedTextColor.RED))
+                            .append(Component.text("Reason: ", NamedTextColor.RED))
+                            .append(Component.text(ban.reason, NamedTextColor.GRAY))
+                            .build()
+                    )
+
+                    return true
+                }
+            }
+        }
+
+        return false
     }
 }

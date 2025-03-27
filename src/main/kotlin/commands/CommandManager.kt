@@ -41,6 +41,9 @@ object CommandManager {
         MessageCommand().register(dispatcher)
         DifficultyCommand().register(dispatcher)
         SpawnCommand().register(dispatcher)
+        KickCommand().register(dispatcher)
+        BanCommand().register(dispatcher)
+        UnbanCommand().register(dispatcher)
     }
 
     /**
@@ -57,9 +60,11 @@ object CommandManager {
 
         traverseCommandNodes(dispatcher.root, visited, ordering)
 
-        if(ordering.size > 34) {
-            Bullet.logger.warn("Too many command nodes detected (${ordering.size}), trimming to 34")
-            ordering.retainAll(ordering.take(34))
+        if(!ordering.contains(dispatcher.root)) {
+            ordering.add(0, dispatcher.root)
+        } else if(ordering.indexOf(dispatcher.root) != 0) {
+            ordering.remove(dispatcher.root)
+            ordering.add(0, dispatcher.root)
         }
 
         val indexMap = ordering.withIndex().associate { it.value to it.index }
