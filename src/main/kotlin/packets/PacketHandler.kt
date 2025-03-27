@@ -698,7 +698,7 @@ class PacketHandler(
         client.sendPacket(ServerLoginSuccessPacket(uuid, username))
         client.state = GameState.PLAY
 
-        checkForBan()
+        if(checkForBan()) return
 
         client.sendPacket(
             ServerJoinGamePacket(
@@ -1083,33 +1083,39 @@ class PacketHandler(
         }
     }
 
-    private fun checkForBan() {
-        if(Bullet.shouldPersist) {
-            val bannedPath = Paths.get("./${world.name}/data/banned_players.json")
-            if(Files.exists(bannedPath)) {
-                val bans = world.readBannedPlayers()
-                val ban = bans.find { it.uuid == client.player.uuid }
+    private fun checkForBan(): Boolean {
+        try {
+            if(Bullet.shouldPersist) {
+                val bannedPath = Paths.get("./${world.name}/data/banned_players.json")
+                if(Files.exists(bannedPath)) {
+                    val bans = world.readBannedPlayers()
+                    val ban = bans.find { it.uuid == client.player.uuid }
 
-                if(ban != null) {
-                    val expiration = if(ban.duration.inWholeMilliseconds == 0L) {
-                        "permanently"
-                    } else {
-                        DurationFormat.getReadableDuration(ban.duration)
+                    if(ban != null) {
+                        val expiration = if(ban.duration.inWholeMilliseconds == 0L) {
+                            "permanently"
+                        } else {
+                            DurationFormat.getReadableDuration(ban.duration)
+                        }
+
+                        client.disconnect(
+                            Component.text()
+                                .append(Component.text("You have been banned ", NamedTextColor.RED))
+                                .append(Component.text(expiration, NamedTextColor.RED))
+                                .append(Component.text("!\n\n", NamedTextColor.RED))
+                                .append(Component.text("Reason: ", NamedTextColor.RED))
+                                .append(Component.text(ban.reason, NamedTextColor.GRAY))
+                                .build()
+                        )
+
+                        return true
                     }
-
-                    client.disconnect(
-                        Component.text()
-                            .append(Component.text("You have been banned ", NamedTextColor.RED))
-                            .append(Component.text(expiration, NamedTextColor.RED))
-                            .append(Component.text("!\n\n", NamedTextColor.RED))
-                            .append(Component.text("Reason: ", NamedTextColor.RED))
-                            .append(Component.text(ban.reason, NamedTextColor.GRAY))
-                            .build()
-                    )
-
-                    return
                 }
             }
+        } catch(e: Exception) {
+            Bullet.logger.error("Error checking for bans: ${e.message}")
         }
+
+        return false
     }
 }

@@ -49,7 +49,12 @@ class World(val name: String) {
 
         createFileIfNotExists(Paths.get("./$name/data/world.json"))
         createFileIfNotExists(Paths.get("./$name/data/blocks.json"))
-        createFileIfNotExists(Paths.get("./${Bullet.world.name}/data/banned_players.json"))
+
+        val banFile = Paths.get("./$name/data/banned_players.json")
+        createFileIfNotExists(banFile)
+        if(Files.size(banFile) == 0L) {
+            Files.write(banFile, "[]".toByteArray())
+        }
 
         return true
     }
@@ -183,7 +188,7 @@ class World(val name: String) {
      *
      * @param path The path of the directory to create
      */
-    fun createDirectoryIfNotExists(path: Path) {
+    private fun createDirectoryIfNotExists(path: Path) {
         if(!Files.exists(path)) {
             Files.createDirectory(path)
         }
@@ -194,7 +199,7 @@ class World(val name: String) {
      *
      * @param path The path of the file to create
      */
-    fun createFileIfNotExists(path: Path) {
+    private fun createFileIfNotExists(path: Path) {
         if(!Files.exists(path)) {
             Files.createFile(path)
         }

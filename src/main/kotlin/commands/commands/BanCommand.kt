@@ -115,7 +115,7 @@ class BanCommand {
                 .append(Component.text("Banned ", NamedTextColor.GRAY))
                 .append(Component.text(player.username, NamedTextColor.AQUA))
                 .append(Component.text(" for ", NamedTextColor.GRAY))
-                .append(Component.text(reason, NamedTextColor.GRAY))
+                .append(Component.text(reason, NamedTextColor.RED))
                 .append(Component.text(" ", NamedTextColor.GRAY))
                 .append(Component.text(expirationText, NamedTextColor.GRAY))
                 .build()
