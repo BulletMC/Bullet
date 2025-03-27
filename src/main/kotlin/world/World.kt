@@ -155,9 +155,21 @@ class World(val name: String) {
     ) {
         createFiles()
 
-        val banData = BanData(player, reason, duration, moderator)
-        val jsonData = json.encodeToString(banData)
-        Files.write(Paths.get("./$name/data/banned_players.json"), jsonData.toByteArray())
+        val path = Paths.get("./$name/data/banned_players.json")
+        val currentBans: MutableList<BanData> = if(Files.exists(path)) {
+            try {
+                val jsonData = Files.readString(path)
+                Json.decodeFromString(jsonData)
+            } catch(e: Exception) {
+                mutableListOf()
+            }
+        } else mutableListOf()
+
+        currentBans.removeIf { it.uuid == player }
+        currentBans.add(BanData(player, reason, duration, moderator))
+
+        val newJson = Json.encodeToString(currentBans)
+        Files.write(path, newJson.toByteArray())
     }
 
     fun readBannedPlayers(): List<BanData> {

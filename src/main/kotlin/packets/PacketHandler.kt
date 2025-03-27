@@ -692,12 +692,13 @@ class PacketHandler(
         val uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:$username").toByteArray())
 
         checkLoginValidity(username)
-        checkForBan()
 
         val player = initializePlayer(username, uuid)
 
         client.sendPacket(ServerLoginSuccessPacket(uuid, username))
         client.state = GameState.PLAY
+
+        checkForBan()
 
         client.sendPacket(
             ServerJoinGamePacket(

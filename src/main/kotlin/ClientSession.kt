@@ -295,39 +295,40 @@ class ClientSession(
      * @param message The message to be sent to the client
      */
     fun disconnect(message: Component) {
-        Bullet.world.writePlayerData(
-            player.username,
-            player.uuid,
-            player.location,
-            player.status.health,
-            player.status.foodLevel,
-            player.status.saturation,
-            player.status.exhaustion
-        )
-
         if(state == GameState.PLAY) {
+            Bullet.world.writePlayerData(
+                player.username,
+                player.uuid,
+                player.location,
+                player.status.health,
+                player.status.foodLevel,
+                player.status.saturation,
+                player.status.exhaustion
+            )
+
             sendPacket(ServerPlayDisconnectPacket(message))
+
+            Bullet.players.remove(player)
+
+            for(plr in Bullet.players) {
+                plr.sendPacket(
+                    ServerPlayerInfoPacket(
+                        4,
+                        plr
+                    )
+                )
+
+                plr.sendPacket(
+                    ServerDestroyEntitiesPacket(
+                        intArrayOf(player.entityID)
+                    )
+                )
+            }
         } else if(state == GameState.LOGIN) {
             sendPacket(ServerLoginDisconnectPacket(message))
         }
 
         coroutineScope.cancel()
-        Bullet.players.remove(player)
-
-        for(plr in Bullet.players) {
-            plr.sendPacket(
-                ServerPlayerInfoPacket(
-                    4,
-                    plr
-                )
-            )
-
-            plr.sendPacket(
-                ServerDestroyEntitiesPacket(
-                    intArrayOf(player.entityID)
-                )
-            )
-        }
 
         EventManager.fire(PlayerQuitEvent(player))
         close()
