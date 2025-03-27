@@ -2,6 +2,7 @@ package com.aznos.commands.commands
 
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
+import com.aznos.commands.commands.suggestions.PlayerSuggestions
 import com.aznos.entity.player.Player
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
@@ -16,6 +17,7 @@ class KickCommand {
             LiteralArgumentBuilder.literal<Player>("kick")
                 .then(
                     RequiredArgumentBuilder.argument<Player, String>("player", StringArgumentType.word())
+                        .suggests(PlayerSuggestions.playerNameSuggestions())
                         .then(
                             RequiredArgumentBuilder.argument<Player, String>(
                                 "reason",
@@ -30,8 +32,20 @@ class KickCommand {
                                     }
 
                                     if(player != null) {
+                                        if(player.username.equals(context.source.username, ignoreCase = true)) {
+                                            context.source.sendMessage(
+                                                Component.text("You can't kick yourself", NamedTextColor.RED)
+                                            )
+
+                                            return@executes CommandCodes.ILLEGAL_ARGUMENT.id
+                                        }
+
                                         player.disconnect(
-                                            Component.text("You have been kicked for: $reason", NamedTextColor.RED)
+                                            Component.text()
+                                                .append(Component.text("You have been kicked!\n\n", NamedTextColor.RED))
+                                                .append(Component.text("Reason: ", NamedTextColor.RED))
+                                                .append(Component.text(reason, NamedTextColor.GRAY))
+                                                .build()
                                         )
 
                                         CommandCodes.SUCCESS.id
