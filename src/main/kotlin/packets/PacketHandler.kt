@@ -2,7 +2,6 @@ package com.aznos.packets
 
 import com.aznos.Bullet
 import com.aznos.Bullet.breakingBlocks
-import com.aznos.Bullet.players
 import com.aznos.Bullet.sprinting
 import com.aznos.Bullet.world
 import com.aznos.ClientSession
@@ -11,30 +10,24 @@ import com.aznos.commands.CommandCodes
 import com.aznos.commands.CommandManager
 import com.aznos.commands.CommandManager.buildCommandGraphFromDispatcher
 import com.aznos.datatypes.MetadataType
+import com.aznos.datatypes.Slot
 import com.aznos.datatypes.VarInt.readVarInt
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.GameMode
+import com.aznos.entity.player.data.Location
+import com.aznos.entity.player.data.Position
 import com.aznos.events.*
 import com.aznos.packets.data.ServerStatusResponse
 import com.aznos.packets.login.`in`.ClientLoginStartPacket
 import com.aznos.packets.login.out.ServerLoginSuccessPacket
+import com.aznos.packets.play.`in`.*
+import com.aznos.packets.play.`in`.movement.*
+import com.aznos.packets.play.out.*
+import com.aznos.packets.play.out.movement.*
 import com.aznos.packets.status.`in`.ClientStatusPingPacket
 import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
-import com.aznos.entity.player.data.Location
-import com.aznos.entity.player.data.Position
-import com.aznos.datatypes.Slot
-import com.aznos.packets.play.`in`.*
-import com.aznos.packets.play.`in`.movement.ClientEntityActionPacket
-import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
-import com.aznos.packets.play.`in`.movement.ClientPlayerPositionAndRotation
-import com.aznos.packets.play.`in`.movement.ClientPlayerPositionPacket
-import com.aznos.packets.play.`in`.movement.ClientPlayerRotation
-import com.aznos.packets.play.out.*
-import com.aznos.packets.play.out.movement.*
 import com.aznos.world.data.BlockStatus
-import com.aznos.world.data.Difficulty
-import com.mojang.brigadier.CommandDispatcher
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -50,7 +43,7 @@ import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.util.UUID
+import java.util.*
 import kotlin.experimental.and
 import kotlin.math.pow
 import kotlin.math.sqrt
@@ -86,18 +79,23 @@ class PacketHandler(
 
         val parseResults = dispatcher.parse(input, client.player)
         dispatcher.getCompletionSuggestions(parseResults, input.length).thenAccept { suggestions ->
-            val matches = suggestions.list.map { it.text }
             val lastSpace = input.lastIndexOf(' ')
-            val start = if(lastSpace == -1) 0 else lastSpace + 1
+            val start = lastSpace + 1
             val length = input.length - start
 
+            val startStr = input.substring(start)
+
+            val matches = suggestions.list
+                .filter { it.text.startsWith(startStr, ignoreCase = true) }
+                .map { it.text }
+
             val formattedMatches = matches.map { match ->
-                if(lastSpace == -1) "/$match" else " $match"
+                if (lastSpace == -1) "/$match" else match
             }
 
             client.player.sendPacket(ServerTabCompletePacket(
                 packet.transactionID,
-                start = start,
+                start = start + 1,
                 length = length,
                 matches = formattedMatches
             ))
