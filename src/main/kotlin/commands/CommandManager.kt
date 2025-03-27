@@ -41,6 +41,7 @@ object CommandManager {
         MessageCommand().register(dispatcher)
         DifficultyCommand().register(dispatcher)
         SpawnCommand().register(dispatcher)
+        KickCommand().register(dispatcher)
     }
 
     /**
