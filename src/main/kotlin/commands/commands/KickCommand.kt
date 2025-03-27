@@ -48,6 +48,15 @@ class KickCommand {
                                                 .build()
                                         )
 
+                                        context.source.sendMessage(
+                                            Component.text()
+                                                .append(Component.text("Kicked ", NamedTextColor.GRAY))
+                                                .append(Component.text(player.username, NamedTextColor.AQUA))
+                                                .append(Component.text(" for ", NamedTextColor.GRAY))
+                                                .append(Component.text(reason, NamedTextColor.GRAY))
+                                                .build()
+                                        )
+
                                         CommandCodes.SUCCESS.id
                                     } else {
                                         context.source.sendMessage(
