@@ -12,13 +12,11 @@ import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import java.time.Instant
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.toJavaDuration
 
 class BanCommand {
     fun register(dispatcher: CommandDispatcher<Player>) {
@@ -27,11 +25,6 @@ class BanCommand {
                 .then(
                     RequiredArgumentBuilder.argument<Player, String>("player", StringArgumentType.word())
                         .suggests(PlayerSuggestions.playerNameSuggestions())
-                        .executes { context ->
-                            val username = StringArgumentType.getString(context, "player")
-                            banPlayer(username, "No reason specified", null, context)
-                            CommandCodes.SUCCESS.id
-                        }
                         .then(
                             RequiredArgumentBuilder.argument<Player, String>(
                                 "reason",
@@ -39,30 +32,38 @@ class BanCommand {
                             )
                                 .executes { context ->
                                     val username = StringArgumentType.getString(context, "player")
-                                    val reason = StringArgumentType.getString(context, "reason")
-                                    banPlayer(username, reason, null, context)
+                                    val fullReason = StringArgumentType.getString(context, "reason")
+                                    val (reason, durationStr) = parseReasonAndDuration(fullReason)
+
+                                    banPlayer(username, reason, durationStr, context)
                                     CommandCodes.SUCCESS.id
                                 }
-                                .then(
-                                    LiteralArgumentBuilder.literal<Player>("time")
-                                        .then(
-                                            RequiredArgumentBuilder.argument<Player, String>(
-                                                "duration",
-                                                StringArgumentType.word()
-                                            )
-                                                .executes { context ->
-                                                    val username = StringArgumentType.getString(context, "player")
-                                                    val reason = StringArgumentType.getString(context, "reason")
-                                                    val durationStr = StringArgumentType.getString(context, "duration")
-
-                                                    banPlayer(username, reason, durationStr, context)
-                                                    CommandCodes.SUCCESS.id
-                                                }
-                                        )
-                                )
                         )
+
+                        .executes { context ->
+                            val username = StringArgumentType.getString(context, "player")
+                            banPlayer(username, "No reason specified", null, context)
+                            CommandCodes.SUCCESS.id
+                        }
                 )
         )
+    }
+
+    private fun parseReasonAndDuration(fullReason: String): Pair<String, String?> {
+        val tokens = fullReason.trim().split(" ")
+        if(tokens.size >= 2) {
+            val potentialDuration = tokens.last()
+            val potentialLiteral = tokens[tokens.size - 2]
+
+            if(potentialLiteral.equals("time", true) && parseTime(potentialDuration) != null) {
+                val reasonTokens = tokens.dropLast(2)
+                val reason = reasonTokens.joinToString(" ").ifBlank { "No reason specified" }
+
+                return reason to potentialDuration
+            }
+        }
+
+        return fullReason to null
     }
 
     private fun banPlayer(
