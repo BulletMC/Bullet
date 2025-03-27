@@ -9,6 +9,7 @@ import com.aznos.world.data.PlayerData
 import com.aznos.world.data.TimeOfDay
 import com.aznos.world.data.WorldData
 import kotlinx.serialization.json.Json
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -165,7 +166,7 @@ class World(val name: String) {
             try {
                 val jsonData = Files.readString(path)
                 Json.decodeFromString(jsonData)
-            } catch(e: Exception) {
+            } catch(e: IOException) {
                 mutableListOf()
             }
         } else mutableListOf()
@@ -185,7 +186,7 @@ class World(val name: String) {
             try {
                 val jsonData = Files.readString(path)
                 Json.decodeFromString(jsonData)
-            } catch(e: Exception) {
+            } catch(e: IOException) {
                 mutableListOf()
             }
         } else mutableListOf()
