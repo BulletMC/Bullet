@@ -1,5 +1,6 @@
 package com.aznos.packets.play.out
 
+import com.aznos.datatypes.Angle.writeAngle
 import com.aznos.datatypes.LocationType
 import com.aznos.datatypes.LocationType.writeLocationAngle
 import com.aznos.datatypes.UUIDType.writeUUID
@@ -37,7 +38,7 @@ class ServerSpawnLivingEntityPacket(
         wrapper.writeVarInt(type)
 
         wrapper.writeLocationAngle(location)
-        wrapper.writeByte((headPitch * 256.0f / 360.0f).toInt())
+        wrapper.writeAngle(headPitch)
 
         wrapper.writeShort(velocityX.toInt())
         wrapper.writeShort(velocityY.toInt())
