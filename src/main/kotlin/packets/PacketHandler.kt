@@ -28,6 +28,7 @@ import com.aznos.util.DurationFormat
 import com.aznos.packets.status.`in`.ClientStatusPingPacket
 import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
+import com.aznos.world.blocks.Block
 import com.aznos.world.data.BlockStatus
 import com.mojang.brigadier.exceptions.CommandSyntaxException
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -391,6 +392,9 @@ class PacketHandler(
         val heldItem = client.player.getHeldItem()
         if(Bullet.shouldPersist) world.modifiedBlocks[event.location] = heldItem
 
+        val block = Block.getBlockFromID(heldItem) ?: Block.AIR
+        val stateBlock = Block.getStateID(block)
+
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {
                 otherPlayer.sendPacket(ServerBlockChangePacket(
@@ -399,7 +403,7 @@ class PacketHandler(
                         event.location.y,
                         event.location.z
                     ),
-                    heldItem
+                    stateBlock
                 ))
             }
         }
