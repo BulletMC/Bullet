@@ -1,7 +1,7 @@
 package com.aznos.packets.play.`in`
 
+import com.aznos.datatypes.BlockPositionType
 import com.aznos.datatypes.VarInt.readVarInt
-import com.aznos.entity.player.data.Position
 import com.aznos.packets.Packet
 
 /**
@@ -17,7 +17,7 @@ import com.aznos.packets.Packet
  */
 class ClientBlockPlacementPacket(data: ByteArray) : Packet(data) {
     val hand: Int
-    val location: Position
+    val blockPos: BlockPositionType.BlockPosition
     val face: Int
     val cursorPositionX: Float
     val cursorPositionY: Float
@@ -28,8 +28,7 @@ class ClientBlockPlacementPacket(data: ByteArray) : Packet(data) {
         val input = getIStream()
         hand = input.readVarInt()
 
-        location = Position(input.readLong())
-
+        blockPos = BlockPositionType.BlockPosition(input.readLong())
         face = input.readVarInt()
         cursorPositionX = input.readFloat()
         cursorPositionY = input.readFloat()

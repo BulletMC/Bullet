@@ -1,6 +1,6 @@
 package com.aznos.world.data
 
-import com.aznos.entity.player.data.Location
+import com.aznos.datatypes.LocationType
 import com.aznos.serialization.UUIDSerializer
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -10,7 +10,7 @@ import java.util.UUID
 data class PlayerData(
     val username: String,
     @Serializable(with = UUIDSerializer::class) val uuid: UUID,
-    @Contextual val location: Location,
+    @Contextual val location: LocationType.Location,
     val health: Int,
     val foodLevel: Int,
     val saturation: Float,

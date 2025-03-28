@@ -1,8 +1,10 @@
 package com.aznos.packets.play.out
 
+import com.aznos.datatypes.Angle.writeAngle
+import com.aznos.datatypes.LocationType
+import com.aznos.datatypes.LocationType.writeLocationAngle
 import com.aznos.datatypes.UUIDType.writeUUID
 import com.aznos.datatypes.VarInt.writeVarInt
-import com.aznos.entity.player.data.Location
 import com.aznos.packets.Packet
 import java.util.UUID
 
@@ -24,7 +26,7 @@ class ServerSpawnLivingEntityPacket(
     entityID: Int,
     entityUUID: UUID,
     type: Int,
-    location: Location,
+    location: LocationType.Location,
     headPitch: Float,
     velocityX: Short,
     velocityY: Short,
@@ -35,12 +37,8 @@ class ServerSpawnLivingEntityPacket(
         wrapper.writeUUID(entityUUID)
         wrapper.writeVarInt(type)
 
-        wrapper.writeDouble(location.x)
-        wrapper.writeDouble(location.y)
-        wrapper.writeDouble(location.z)
-        wrapper.writeByte((location.yaw * 256.0f / 360.0f).toInt())
-        wrapper.writeByte((location.pitch * 256.0f / 360.0f).toInt())
-        wrapper.writeByte((headPitch * 256.0f / 360.0f).toInt())
+        wrapper.writeLocationAngle(location)
+        wrapper.writeAngle(headPitch)
 
         wrapper.writeShort(velocityX.toInt())
         wrapper.writeShort(velocityY.toInt())

@@ -1,13 +1,11 @@
 package com.aznos
 
 import com.aznos.commands.CommandManager
+import com.aznos.datatypes.BlockPositionType
 import com.aznos.entity.Entity
 import com.aznos.entity.livingentity.LivingEntity
 import com.aznos.entity.player.Player
-import com.aznos.entity.player.data.Position
-import com.aznos.packets.play.out.ServerChangeGameStatePacket
 import com.aznos.packets.play.out.ServerParticlePacket
-import com.aznos.packets.play.out.ServerPlayerListHeaderAndFooterPacket
 import com.aznos.world.World
 import com.aznos.world.data.Difficulty
 import com.aznos.world.data.Particles
@@ -20,7 +18,6 @@ import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
-import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
 import java.net.BindException
@@ -58,7 +55,7 @@ object Bullet : AutoCloseable {
 
     val world = World("world")
 
-    val breakingBlocks = mutableMapOf<Position, Job>()
+    val breakingBlocks = mutableMapOf<BlockPositionType.BlockPosition, Job>()
     val sprinting = mutableSetOf<Int>()
 
     var dimensionCodec: CompoundTag? = null
@@ -180,7 +177,7 @@ object Bullet : AutoCloseable {
                             otherPlayer.clientSession.sendPacket(ServerParticlePacket(
                                 Particles.Block(1),
                                 false,
-                                Position(x, y, z),
+                                BlockPositionType.BlockPosition(x, y, z),
                                 0.001f,
                                 0.0005f,
                                 0.001f,

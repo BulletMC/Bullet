@@ -1,6 +1,7 @@
 package com.aznos.packets.play.out
 
-import com.aznos.entity.player.data.Location
+import com.aznos.datatypes.LocationType
+import com.aznos.datatypes.LocationType.writeLocation
 import com.aznos.packets.Packet
 
 /**
@@ -10,14 +11,10 @@ import com.aznos.packets.Packet
  * @param location The new location
  */
 class ServerPlayerPositionAndLookPacket(
-    location: Location
+    location: LocationType.Location
 ) : Packet(0x34) {
     init {
-        wrapper.writeDouble(location.x)
-        wrapper.writeDouble(location.y)
-        wrapper.writeDouble(location.z)
-        wrapper.writeFloat(location.yaw)
-        wrapper.writeFloat(location.pitch)
+        wrapper.writeLocation(location)
 
         wrapper.writeByte(0)
         wrapper.writeByte(0)
