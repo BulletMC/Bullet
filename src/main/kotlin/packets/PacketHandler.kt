@@ -32,6 +32,8 @@ import com.aznos.util.DurationFormat
 import com.aznos.world.data.BlockStatus
 import com.aznos.world.items.Item
 import com.mojang.brigadier.exceptions.CommandSyntaxException
+import dev.dewy.nbt.tags.collection.CompoundTag
+import dev.dewy.nbt.tags.primitive.StringTag
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -66,7 +68,26 @@ class PacketHandler(
 ) {
     @PacketReceiver
     fun onUpdateSign(packet: ClientUpdateSignPacket) {
-        
+        val data = CompoundTag("")
+        data.putString("id", "minecraft:sign")
+        data.putInt("x", packet.blockPos.x.toInt())
+        data.putInt("y", packet.blockPos.y.toInt())
+        data.putInt("z", packet.blockPos.z.toInt())
+
+        data.putString("Text1", "{\"text\":\"${packet.line1}\"}")
+        data.putString("Text2", "{\"text\":\"${packet.line2}\"}")
+        data.putString("Text3", "{\"text\":\"${packet.line3}\"}")
+        data.putString("Text4", "{\"text\":\"${packet.line4}\"}")
+
+        for(otherPlayer in Bullet.players) {
+            if(otherPlayer != client.player) {
+                otherPlayer.sendPacket(ServerBlockEntityDataPacket(
+                    packet.blockPos,
+                    9,
+                    data
+                ))
+            }
+        }
     }
 
     @PacketReceiver
@@ -421,19 +442,19 @@ class PacketHandler(
                         stateItem
                     ))
                 }
+            }
 
-                if(
-                    block == Item.OAK_SIGN ||
-                    block == Item.SPRUCE_SIGN ||
-                    block == Item.BIRCH_SIGN ||
-                    block == Item.JUNGLE_SIGN ||
-                    block == Item.ACACIA_SIGN ||
-                    block == Item.DARK_OAK_SIGN ||
-                    block == Item.CRIMSON_SIGN ||
-                    block == Item.WARPED_SIGN
-                ) {
-                    otherPlayer.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
-                }
+            if(
+                block == Item.OAK_SIGN ||
+                block == Item.SPRUCE_SIGN ||
+                block == Item.BIRCH_SIGN ||
+                block == Item.JUNGLE_SIGN ||
+                block == Item.ACACIA_SIGN ||
+                block == Item.DARK_OAK_SIGN ||
+                block == Item.CRIMSON_SIGN ||
+                block == Item.WARPED_SIGN
+            ) {
+                client.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
             }
         }
     }
