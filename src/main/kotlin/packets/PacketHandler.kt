@@ -29,6 +29,7 @@ import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
 import com.aznos.world.blocks.Block
 import com.aznos.util.DurationFormat
+import com.aznos.world.blocks.BlockTags
 import com.aznos.world.data.BlockStatus
 import com.aznos.world.items.Item
 import com.mojang.brigadier.exceptions.CommandSyntaxException
@@ -418,44 +419,9 @@ class PacketHandler(
 
         val block = Block.getBlockFromID(heldItem) ?: Item.getItemFromID(heldItem) ?: Block.AIR
         if(block is Block) {
-            val stateBlock = Block.getStateID(block)
-
-            if(Bullet.shouldPersist) world.modifiedBlocks[event.blockPos] = heldItem
-
-            for(otherPlayer in Bullet.players) {
-                if(otherPlayer != client.player) {
-                    otherPlayer.sendPacket(ServerBlockChangePacket(
-                        event.blockPos.copy(),
-                        stateBlock
-                    ))
-                }
-            }
+            handleBlockPlacement(block, event, heldItem)
         } else if(block is Item) {
-            val stateItem = Item.getStateID(block)
-
-            if(Bullet.shouldPersist) world.modifiedBlocks[event.blockPos] = heldItem
-
-            for(otherPlayer in Bullet.players) {
-                if(otherPlayer != client.player) {
-                    otherPlayer.sendPacket(ServerBlockChangePacket(
-                        event.blockPos.copy(),
-                        stateItem
-                    ))
-                }
-            }
-
-            if(
-                block == Item.OAK_SIGN ||
-                block == Item.SPRUCE_SIGN ||
-                block == Item.BIRCH_SIGN ||
-                block == Item.JUNGLE_SIGN ||
-                block == Item.ACACIA_SIGN ||
-                block == Item.DARK_OAK_SIGN ||
-                block == Item.CRIMSON_SIGN ||
-                block == Item.WARPED_SIGN
-            ) {
-                client.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
-            }
+            handleItemPlacement(block, event, heldItem)
         }
     }
 
@@ -1183,5 +1149,39 @@ class PacketHandler(
         }
 
         return false
+    }
+
+    private fun handleBlockPlacement(block: Block, event: BlockPlaceEvent, heldItem: Int) {
+        val stateBlock = Block.getStateID(block)
+
+        if(Bullet.shouldPersist) world.modifiedBlocks[event.blockPos] = heldItem
+
+        for(otherPlayer in Bullet.players) {
+            if(otherPlayer != client.player) {
+                otherPlayer.sendPacket(ServerBlockChangePacket(
+                    event.blockPos.copy(),
+                    stateBlock
+                ))
+            }
+        }
+    }
+
+    private fun handleItemPlacement(block: Item, event: BlockPlaceEvent, heldItem: Int) {
+        val stateItem = Item.getStateID(block)
+
+        if(Bullet.shouldPersist) world.modifiedBlocks[event.blockPos] = heldItem
+
+        for(otherPlayer in Bullet.players) {
+            if(otherPlayer != client.player) {
+                otherPlayer.sendPacket(ServerBlockChangePacket(
+                    event.blockPos.copy(),
+                    stateItem
+                ))
+            }
+        }
+
+        if(block in BlockTags.SIGNS) {
+            client.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
+        }
     }
 }

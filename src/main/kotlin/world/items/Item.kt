@@ -1004,8 +1004,10 @@ enum class Item(val id: Int) {
             val json = JsonParser.parseReader(reader).asJsonObject
             val blockKey = "minecraft:${item.name.lowercase()}"
 
-            val itemData = json[blockKey]?.asJsonObject ?: throw IllegalArgumentException("Block $blockKey not found")
-            val states = itemData["states"]?.asJsonArray ?: throw IllegalArgumentException("Block $blockKey has no states")
+            val itemData = json[blockKey]?.asJsonObject
+                ?: throw IllegalArgumentException("Block $blockKey not found")
+            val states = itemData["states"]?.asJsonArray
+                ?: throw IllegalArgumentException("Block $blockKey has no states")
 
             if(properties != null) {
                 for(element in states) {
