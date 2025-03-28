@@ -843,11 +843,7 @@ class PacketHandler(
                     ServerSpawnPlayerPacket(
                         player.entityID,
                         player.uuid,
-                        player.location.x,
-                        player.location.y,
-                        player.location.z,
-                        player.location.yaw,
-                        player.location.pitch
+                        player.location
                     )
                 )
             }
@@ -859,11 +855,7 @@ class PacketHandler(
                     ServerSpawnPlayerPacket(
                         existingPlayer.entityID,
                         existingPlayer.uuid,
-                        existingPlayer.location.x,
-                        existingPlayer.location.y,
-                        existingPlayer.location.z,
-                        existingPlayer.location.yaw,
-                        existingPlayer.location.pitch
+                        existingPlayer.location
                     )
                 )
             }

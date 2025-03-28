@@ -370,11 +370,7 @@ class ClientSession(
                     ServerSpawnPlayerPacket(
                         player.entityID,
                         player.uuid,
-                        player.location.x,
-                        player.location.y,
-                        player.location.z,
-                        player.location.yaw,
-                        player.location.pitch
+                        player.location
                     )
                 )
 
@@ -384,11 +380,7 @@ class ClientSession(
                     ServerSpawnPlayerPacket(
                         otherPlayer.entityID,
                         otherPlayer.uuid,
-                        otherPlayer.location.x,
-                        otherPlayer.location.y,
-                        otherPlayer.location.z,
-                        otherPlayer.location.yaw,
-                        otherPlayer.location.pitch
+                        otherPlayer.location
                     )
                 )
             }
