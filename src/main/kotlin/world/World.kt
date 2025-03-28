@@ -138,16 +138,8 @@ class World(val name: String) {
      */
     fun writeBlockData(modifiedBlocks: MutableMap<Position, Int>) {
         createFiles()
-        val newModified = mutableMapOf<Position, Int>()
 
-        for(block in modifiedBlocks) {
-            val blockObj = Block.getBlockFromID(block.value) ?: Block.AIR
-            val state = Block.getStateID(blockObj)
-
-            newModified[block.key] = state
-        }
-
-        val jsonData = json.encodeToString(newModified)
+        val jsonData = json.encodeToString(modifiedBlocks)
         Files.write(Paths.get("./$name/data/blocks.json"), jsonData.toByteArray())
     }
 
