@@ -5,7 +5,6 @@ import com.aznos.commands.CommandCodes
 import com.aznos.commands.commands.suggestions.PlayerSuggestions
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.Location
-import com.aznos.packets.play.`in`.movement.ClientPlayerPositionAndRotation
 import com.aznos.packets.play.out.ServerEntityTeleportPacket
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
@@ -51,7 +50,7 @@ class TeleportCommand {
             for(player in Bullet.players) {
                 player.sendPacket(ServerEntityTeleportPacket(
                     sender.entityID,
-                    Location(coords.x, coords.y, coords.z, coords.yaw, coords.pitch),
+                    coords.copy(),
                     true
                 ))
             }
@@ -98,7 +97,7 @@ class TeleportCommand {
             for(player in Bullet.players) {
                 player.sendPacket(ServerEntityTeleportPacket(
                     targetPlayer.entityID,
-                    Location(coords.x, coords.y, coords.z, coords.yaw, coords.pitch),
+                    coords.copy(),
                     true
                 ))
             }

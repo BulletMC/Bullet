@@ -24,10 +24,10 @@ import com.aznos.packets.play.`in`.*
 import com.aznos.packets.play.`in`.movement.*
 import com.aznos.packets.play.out.*
 import com.aznos.packets.play.out.movement.*
-import com.aznos.util.DurationFormat
 import com.aznos.packets.status.`in`.ClientStatusPingPacket
 import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
+import com.aznos.util.DurationFormat
 import com.aznos.world.data.BlockStatus
 import com.mojang.brigadier.exceptions.CommandSyntaxException
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -48,12 +48,10 @@ import java.nio.file.Paths
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.UUID
 import java.util.*
 import kotlin.experimental.and
 import kotlin.math.pow
 import kotlin.math.sqrt
-import kotlin.time.Duration
 
 /**
  * Handles all incoming packets by dispatching them to the appropriate handler methods
@@ -129,7 +127,7 @@ class PacketHandler(
 
                 client.player.sendPacket(
                     ServerPlayerPositionAndLookPacket(
-                        Location(8.5, 2.0, 8.5, 0f, 0f)
+                        Location(8.5, 2.0, 8.5)
                     )
                 )
             }
@@ -411,9 +409,9 @@ class PacketHandler(
         player.onGround = packet.onGround
 
         for(otherPlayer in Bullet.players) {
-            if(otherPlayer != player) {
-                otherPlayer.clientSession.sendPacket(ServerEntityMovementPacket(player.entityID))
-            }
+            if(otherPlayer == player) continue
+
+            otherPlayer.clientSession.sendPacket(ServerEntityMovementPacket(player.entityID))
         }
     }
 
@@ -422,41 +420,79 @@ class PacketHandler(
      */
     @PacketReceiver
     fun onPlayerRotation(packet: ClientPlayerRotation) {
+        val newLocation =  client.player.location.set(packet.yaw, packet.pitch)
+
         val event = PlayerMoveEvent(
             client.player,
-            Location(
-                client.player.location.x, client.player.location.y, client.player.location.z,
-                packet.yaw, packet.pitch
-            ),
-            Location(
-                client.player.location.x, client.player.location.y, client.player.location.z,
-                client.player.location.yaw, client.player.location.pitch
-            )
+            newLocation,
+            client.player.location.copy()
         )
         EventManager.fire(event)
         if(event.isCancelled) return
 
         val player = client.player
-        player.location = Location(player.location.x, player.location.y, player.location.z, packet.yaw, packet.pitch)
+        player.location = newLocation
         player.onGround = packet.onGround
 
-        for(otherPlayer in Bullet.players) {
-            if(otherPlayer != player) {
-                otherPlayer.clientSession.sendPacket(ServerEntityRotationPacket(
-                    player.entityID,
-                    player.location.yaw,
-                    player.location.pitch,
-                    player.onGround
-                ))
+        val rotPacket = ServerEntityRotationPacket(
+            player.entityID,
+            player.location.yaw,
+            player.location.pitch,
+            player.onGround
+        )
 
-                otherPlayer.clientSession.sendPacket(
-                    ServerEntityHeadLook(
-                        player.entityID,
-                        player.location.yaw
-                    )
-                )
-            }
+        val headLookPacket = ServerEntityHeadLook(
+            player.entityID,
+            player.location.yaw
+        )
+
+        for(otherPlayer in Bullet.players) {
+            if(otherPlayer == player) continue
+
+            otherPlayer.clientSession.sendPacket(rotPacket)
+            otherPlayer.clientSession.sendPacket(headLookPacket)
         }
+    }
+
+    /**
+     * Handle of a new position
+     */
+    private fun handleMove(
+        player: Player,
+        newLocation: Location,
+        onGround: Boolean,
+    ): Boolean {
+        val event = PlayerMoveEvent(
+            player,
+            newLocation,
+            player.location.copy()
+        )
+        EventManager.fire(event)
+        if (event.isCancelled) return false
+
+        val wasOnGround = player.onGround
+
+        val newChunkX = (newLocation.x / 16).toInt()
+        val newChunkZ = (newLocation.z / 16).toInt()
+
+        if (newChunkX != player.chunkX || newChunkZ != player.chunkZ) {
+            player.chunkX = newChunkX
+            player.chunkZ = newChunkZ
+            client.sendPacket(
+                ServerUpdateViewPositionPacket(
+                    newChunkX,
+                    newChunkZ
+                )
+            )
+            client.updatePlayerChunks(newChunkX, newChunkZ)
+        }
+        handleFoodLevel(player, newLocation.x, newLocation.z, onGround, wasOnGround)
+
+        player.location = newLocation
+        player.onGround = onGround
+        checkFallDamage()
+
+        return true
     }
 
     /**
@@ -464,69 +500,38 @@ class PacketHandler(
      */
     @PacketReceiver
     fun onPlayerPositionAndRotation(packet: ClientPlayerPositionAndRotation) {
-        val event = PlayerMoveEvent(
-            client.player,
-            Location(
-                packet.x, packet.feetY, packet.z,
-                packet.yaw, packet.pitch
-            ),
-            Location(
-                client.player.location.x, client.player.location.y, client.player.location.z,
-                client.player.location.yaw, client.player.location.pitch
-            )
-        )
-        EventManager.fire(event)
-        if(event.isCancelled) return
+        val newLocation = Location(packet.x, packet.feetY, packet.z, packet.yaw, packet.pitch)
 
         val player = client.player
         val lastLocation = player.location
-        val wasOnGround = player.onGround
 
-        val newChunkX = (packet.x / 16).toInt()
-        val newChunkZ = (packet.z / 16).toInt()
-
-        if(newChunkX != player.chunkX || newChunkZ != player.chunkZ) {
-            player.chunkX = newChunkX
-            player.chunkZ = newChunkZ
-            client.sendPacket(ServerUpdateViewPositionPacket(
-                newChunkX,
-                newChunkZ
-            ))
-            client.updatePlayerChunks(newChunkX, newChunkZ)
-        }
+        if(!handleMove(player, newLocation, packet.onGround)) return
 
         val (deltaX, deltaY, deltaZ) = calculateDeltas(
             packet.x, packet.feetY, packet.z,
             lastLocation.x, lastLocation.y, lastLocation.z
         )
 
-        handleFoodLevel(player, packet.x, packet.z, packet.onGround, wasOnGround)
+        val posAndRotPacket = ServerEntityPositionAndRotationPacket(
+            player.entityID,
+            deltaX,
+            deltaY,
+            deltaZ,
+            player.location.yaw,
+            player.location.pitch,
+            player.onGround
+        )
 
-        player.location = Location(packet.x, packet.feetY, packet.z, packet.yaw, packet.pitch)
-        player.onGround = packet.onGround
-        checkFallDamage()
+        val headLookPacket = ServerEntityHeadLook(
+            player.entityID,
+            player.location.yaw
+        )
 
         for(otherPlayer in Bullet.players) {
-            if(otherPlayer != player) {
-                otherPlayer.clientSession.sendPacket(
-                    ServerEntityPositionAndRotationPacket(
-                        player.entityID,
-                        deltaX,
-                        deltaY,
-                        deltaZ,
-                        player.location.yaw,
-                        player.location.pitch,
-                        player.onGround
-                    )
-                )
+            if(otherPlayer == player) continue
 
-                otherPlayer.clientSession.sendPacket(
-                    ServerEntityHeadLook(
-                        player.entityID,
-                        player.location.yaw
-                    )
-                )
-            }
+            otherPlayer.clientSession.sendPacket(posAndRotPacket)
+            otherPlayer.clientSession.sendPacket(headLookPacket)
         }
     }
 
@@ -535,60 +540,32 @@ class PacketHandler(
      */
     @PacketReceiver
     fun onPlayerPosition(packet: ClientPlayerPositionPacket) {
-        val event = PlayerMoveEvent(
-            client.player,
-            Location(
-                packet.x, packet.feetY, packet.z,
-                client.player.location.yaw, client.player.location.pitch
-            ),
-            Location(
-                client.player.location.x, client.player.location.y, client.player.location.z,
-                client.player.location.yaw, client.player.location.pitch
-            )
+        val newLocation = client.player.location.set(
+            packet.x, packet.feetY, packet.z
         )
-        EventManager.fire(event)
-        if(event.isCancelled) return
 
         val player = client.player
         val lastLocation = player.location
-        val wasOnGround = player.onGround
 
-        val newChunkX = (packet.x / 16).toInt()
-        val newChunkZ = (packet.z / 16).toInt()
-
-        if(newChunkX != player.chunkX || newChunkZ != player.chunkZ) {
-            player.chunkX = newChunkX
-            player.chunkZ = newChunkZ
-            client.sendPacket(ServerUpdateViewPositionPacket(
-                newChunkX,
-                newChunkZ
-            ))
-            client.updatePlayerChunks(newChunkX, newChunkZ)
-        }
+        if(!handleMove(player, newLocation, packet.onGround)) return
 
         val (deltaX, deltaY, deltaZ) = calculateDeltas(
             packet.x, packet.feetY, packet.z,
             lastLocation.x, lastLocation.y, lastLocation.z
         )
 
-        handleFoodLevel(player, packet.x, packet.z, packet.onGround, wasOnGround)
-
-        player.location = Location(packet.x, packet.feetY, packet.z, player.location.yaw, player.location.pitch)
-        player.onGround = packet.onGround
-        checkFallDamage()
+        val posPacket = ServerEntityPositionPacket(
+            player.entityID,
+            deltaX,
+            deltaY,
+            deltaZ,
+            player.onGround
+        )
 
         for(otherPlayer in Bullet.players) {
-            if(otherPlayer != player) {
-                otherPlayer.clientSession.sendPacket(
-                    ServerEntityPositionPacket(
-                        player.entityID,
-                        deltaX,
-                        deltaY,
-                        deltaZ,
-                        player.onGround
-                    )
-                )
-            }
+            if(otherPlayer == player) continue
+
+            otherPlayer.clientSession.sendPacket(posPacket)
         }
     }
 
@@ -842,7 +819,7 @@ class PacketHandler(
             player.inventory.items[i] = 0
         }
 
-        player.location = Location(8.5, 2.0, 8.5, 0f, 0f)
+        player.location = Location(8.5, 2.0, 8.5)
         player.onGround = false
 
         if(player.gameMode != GameMode.SURVIVAL || player.gameMode != GameMode.ADVENTURE) {
