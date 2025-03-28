@@ -3,6 +3,7 @@ package com.aznos.world
 import com.aznos.datatypes.BlockPositionType
 import com.aznos.datatypes.LocationType
 import com.aznos.entity.player.data.BanData
+import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.Difficulty
 import com.aznos.world.data.PlayerData
 import com.aznos.world.data.TimeOfDay
@@ -33,7 +34,7 @@ class World(val name: String) {
     var worldAge = 0L
     var timeOfDay: Long = TimeOfDay.SUNRISE.time
     var difficulty: Difficulty = Difficulty.NORMAL
-    var modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, Int> = mutableMapOf()
+    var modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata> = mutableMapOf()
 
     private val json = Json { allowStructuredMapKeys = true }
 
@@ -134,7 +135,7 @@ class World(val name: String) {
      *
      * @param modifiedBlocks A map of all the blocks that have been modified in the world
      */
-    fun writeBlockData(modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, Int>) {
+    fun writeBlockData(modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>) {
         createFiles()
 
         val jsonData = json.encodeToString(modifiedBlocks)
@@ -146,7 +147,7 @@ class World(val name: String) {
      *
      * @return A map of all the blocks that have been modified in the world
      */
-    fun readBlockData(): MutableMap<BlockPositionType.BlockPosition, Int> {
+    fun readBlockData(): MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata> {
         val path = Paths.get("./$name/data/blocks.json")
         val jsonData = Files.readString(path)
         return json.decodeFromString(jsonData)

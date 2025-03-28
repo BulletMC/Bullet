@@ -31,6 +31,7 @@ import com.aznos.world.blocks.Block
 import com.aznos.util.DurationFormat
 import com.aznos.world.blocks.BlockTags
 import com.aznos.world.data.BlockStatus
+import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.items.Item
 import com.mojang.brigadier.exceptions.CommandSyntaxException
 import dev.dewy.nbt.tags.collection.CompoundTag
@@ -88,6 +89,12 @@ class PacketHandler(
                     data
                 ))
             }
+        }
+
+        val lines = listOf(packet.line1, packet.line2, packet.line3, packet.line4)
+        val prev = world.modifiedBlocks[packet.blockPos]
+        if(prev != null) {
+            world.modifiedBlocks[packet.blockPos] = prev.copy(textLines = lines)
         }
     }
 
@@ -1022,7 +1029,7 @@ class PacketHandler(
                 } != null) {
                 world.modifiedBlocks.remove(blockPos)
             } else {
-                world.modifiedBlocks[blockPos] = 0
+                world.modifiedBlocks[blockPos] = BlockWithMetadata(0)
             }
         }
     }
@@ -1085,8 +1092,9 @@ class PacketHandler(
     private fun sendBlockChanges() {
         if(Files.exists(Paths.get("./${world.name}/data/blocks.json")) && Bullet.shouldPersist) {
             world.readBlockData().let {
-                for((position, blockID) in it) {
-                    val block = Block.getBlockFromID(blockID) ?: Item.getItemFromID(blockID) ?: Block.AIR
+                for((position, metadata) in it) {
+                    val block = Block.getBlockFromID(metadata.blockID)
+                        ?: Item.getItemFromID(metadata.blockID) ?: Block.AIR
 
                     if(block is Block) {
                         val state = Block.getStateID(block)
@@ -1094,6 +1102,23 @@ class PacketHandler(
                     } else if(block is Item) {
                         val state = Item.getStateID(block)
                         client.player.sendPacket(ServerBlockChangePacket(position, state))
+
+                        if(block in BlockTags.SIGNS && metadata.textLines != null) {
+                            val data = CompoundTag("")
+                            data.putString("id", "minecraft:sign")
+                            data.putInt("x", position.x.toInt())
+                            data.putInt("y", position.y.toInt())
+                            data.putInt("z", position.z.toInt())
+                            metadata.textLines.forEachIndexed { index, line ->
+                                data.putString("Text${index + 1}", "{\"text\":\"$line\"}")
+                            }
+
+                            client.sendPacket(ServerBlockEntityDataPacket(
+                                position,
+                                9,
+                                data
+                            ))
+                        }
                     }
                 }
             }
@@ -1154,7 +1179,7 @@ class PacketHandler(
     private fun handleBlockPlacement(block: Block, event: BlockPlaceEvent, heldItem: Int) {
         val stateBlock = Block.getStateID(block)
 
-        if(Bullet.shouldPersist) world.modifiedBlocks[event.blockPos] = heldItem
+        if(Bullet.shouldPersist) world.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
 
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {
@@ -1169,8 +1194,6 @@ class PacketHandler(
     private fun handleItemPlacement(block: Item, event: BlockPlaceEvent, heldItem: Int) {
         val stateItem = Item.getStateID(block)
 
-        if(Bullet.shouldPersist) world.modifiedBlocks[event.blockPos] = heldItem
-
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {
                 otherPlayer.sendPacket(ServerBlockChangePacket(
@@ -1182,6 +1205,10 @@ class PacketHandler(
 
         if(block in BlockTags.SIGNS) {
             client.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
+            if(Bullet.shouldPersist) world.modifiedBlocks[event.blockPos] =
+                BlockWithMetadata(heldItem, listOf("", "", "", ""))
+        } else {
+            if(Bullet.shouldPersist) world.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
         }
     }
 }
