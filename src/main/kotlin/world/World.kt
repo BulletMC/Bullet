@@ -4,6 +4,7 @@ import com.aznos.Bullet
 import com.aznos.entity.player.data.BanData
 import com.aznos.entity.player.data.Location
 import com.aznos.entity.player.data.Position
+import com.aznos.world.blocks.Block
 import com.aznos.world.data.Difficulty
 import com.aznos.world.data.PlayerData
 import com.aznos.world.data.TimeOfDay
@@ -137,8 +138,16 @@ class World(val name: String) {
      */
     fun writeBlockData(modifiedBlocks: MutableMap<Position, Int>) {
         createFiles()
+        val newModified = mutableMapOf<Position, Int>()
 
-        val jsonData = json.encodeToString(modifiedBlocks)
+        for(block in modifiedBlocks) {
+            val blockObj = Block.getBlockFromID(block.value) ?: Block.AIR
+            val state = Block.getStateID(blockObj)
+
+            newModified[block.key] = state
+        }
+
+        val jsonData = json.encodeToString(newModified)
         Files.write(Paths.get("./$name/data/blocks.json"), jsonData.toByteArray())
     }
 
