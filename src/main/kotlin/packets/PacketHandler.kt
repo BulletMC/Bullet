@@ -416,6 +416,10 @@ class PacketHandler(
                         stateItem
                     ))
                 }
+
+                if(block == Item.OAK_SIGN) {
+
+                }
             }
         }
     }
