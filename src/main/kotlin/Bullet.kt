@@ -264,7 +264,7 @@ object Bullet : AutoCloseable {
         world.writeWorldData(world.difficulty, world.weather == 1, world.timeOfDay)
         world.writeBlockData(world.modifiedBlocks)
 
-        for(player in players) {
+        for(player in ArrayList(players)) {
             world.writePlayerData(
                 player.username,
                 player.uuid,
