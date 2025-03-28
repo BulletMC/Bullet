@@ -295,6 +295,9 @@ class ClientSession(
      * @param message The message to be sent to the client
      */
     fun disconnect(message: Component) {
+        if(state == GameState.DISCONNECTED) return
+        state = GameState.DISCONNECTED
+
         if(state == GameState.PLAY) {
             Bullet.world.writePlayerData(
                 player.username,
