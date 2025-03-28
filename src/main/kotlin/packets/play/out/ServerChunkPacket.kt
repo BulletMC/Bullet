@@ -98,7 +98,7 @@ class ServerChunkPacket(
             baos.write(bitsPerBlock)
             baos.writeVarInt(2)
             baos.writeVarInt(0)
-            baos.writeVarInt(Block.DIRT.id)
+            baos.writeVarInt(Block.getStateID(Block.GRASS_BLOCK))
             baos.writeVarInt(packed.size)
 
             for(l in packed) {
