@@ -30,6 +30,7 @@ import com.aznos.packets.status.out.ServerStatusPongPacket
 import com.aznos.world.blocks.Block
 import com.aznos.util.DurationFormat
 import com.aznos.world.data.BlockStatus
+import com.aznos.world.items.Item
 import com.mojang.brigadier.exceptions.CommandSyntaxException
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -389,17 +390,32 @@ class PacketHandler(
 
         val heldItem = client.player.getHeldItem()
 
-        val block = Block.getBlockFromID(heldItem) ?: Block.AIR
-        val stateBlock = Block.getStateID(block)
+        val block = Block.getBlockFromID(heldItem) ?: Item.getItemFromID(heldItem) ?: Block.AIR
+        if(block is Block) {
+            val stateBlock = Block.getStateID(block)
 
-        if(Bullet.shouldPersist) world.modifiedBlocks[event.blockPos] = heldItem
+            if(Bullet.shouldPersist) world.modifiedBlocks[event.blockPos] = heldItem
 
-        for(otherPlayer in Bullet.players) {
-            if(otherPlayer != client.player) {
-                otherPlayer.sendPacket(ServerBlockChangePacket(
-                    event.blockPos.copy(),
-                    stateBlock
-                ))
+            for(otherPlayer in Bullet.players) {
+                if(otherPlayer != client.player) {
+                    otherPlayer.sendPacket(ServerBlockChangePacket(
+                        event.blockPos.copy(),
+                        stateBlock
+                    ))
+                }
+            }
+        } else if(block is Item) {
+            val stateItem = Item.getStateID(block)
+
+            if(Bullet.shouldPersist) world.modifiedBlocks[event.blockPos] = heldItem
+
+            for(otherPlayer in Bullet.players) {
+                if(otherPlayer != client.player) {
+                    otherPlayer.sendPacket(ServerBlockChangePacket(
+                        event.blockPos.copy(),
+                        stateItem
+                    ))
+                }
             }
         }
     }

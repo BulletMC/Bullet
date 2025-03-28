@@ -2,6 +2,7 @@ package com.aznos.packets.play.out
 
 import com.aznos.datatypes.LocationType
 import com.aznos.datatypes.LocationType.writeLocation
+import com.aznos.datatypes.LocationType.writeLocationAngle
 import com.aznos.datatypes.VarInt.writeVarInt
 import com.aznos.packets.Packet
 
@@ -16,7 +17,7 @@ class ServerEntityTeleportPacket(
 ) : Packet(0x56) {
     init {
         wrapper.writeVarInt(entityID)
-        wrapper.writeLocation(location)
+        wrapper.writeLocationAngle(location)
         wrapper.writeBoolean(onGround)
     }
 }

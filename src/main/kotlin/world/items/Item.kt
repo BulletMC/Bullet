@@ -1,6 +1,8 @@
 package com.aznos.world.items
 
 import com.aznos.world.blocks.Block
+import com.google.gson.JsonParser
+import java.io.InputStreamReader
 
 enum class Item(val id: Int) {
     ACACIA_BOAT(902),
@@ -983,6 +985,57 @@ enum class Item(val id: Int) {
     companion object {
         fun getItemFromID(id: Int): Item? = Item.entries.find {
             it.id == id
+        }
+
+        /**
+         * Converts a global palette item ID to a state palette item ID
+         *
+         * @param item The global block palette to get the state ID of
+         * @param properties Any optional properties to match against the item's states, for example the
+         * grass block has two properties, "snowy" and "default".
+         *
+         * @return The state ID of the state palette related to the block
+         */
+        fun getStateID(item: Item, properties: Map<String, String>? = null): Int {
+            val jsonStream = Item::class.java.getResourceAsStream("/blocks.json")
+                ?: throw IllegalArgumentException("blocks.json not found")
+
+            val reader = InputStreamReader(jsonStream)
+            val json = JsonParser.parseReader(reader).asJsonObject
+            val blockKey = "minecraft:${item.name.lowercase()}"
+
+            val itemData = json[blockKey]?.asJsonObject ?: throw IllegalArgumentException("Block $blockKey not found")
+            val states = itemData["states"]?.asJsonArray ?: throw IllegalArgumentException("Block $blockKey has no states")
+
+            if(properties != null) {
+                for(element in states) {
+                    val stateObj = element.asJsonObject
+                    val stateProps = stateObj["properties"]?.asJsonObject
+
+                    val matches = if(stateProps == null && properties.isEmpty()) {
+                        true
+                    } else if(stateProps != null) {
+                        properties.entries.all { (key, value) ->
+                            stateProps.has(key) && stateProps[key].asString == value
+                        }
+                    } else {
+                        false
+                    }
+
+                    if(matches) {
+                        return stateObj["id"].asInt
+                    }
+                }
+            }
+
+            for(element in states) {
+                val stateObj = element.asJsonObject
+                if(stateObj["default"]?.asBoolean == true) {
+                    return stateObj["id"].asInt
+                }
+            }
+
+            throw IllegalArgumentException("No matching or default state found for $blockKey")
         }
     }
 }
