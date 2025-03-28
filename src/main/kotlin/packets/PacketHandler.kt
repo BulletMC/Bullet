@@ -1094,8 +1094,15 @@ class PacketHandler(
         if(Files.exists(Paths.get("./${world.name}/data/blocks.json")) && Bullet.shouldPersist) {
             world.readBlockData().let {
                 for((position, blockID) in it) {
-                    val block = Block.getStateID(Block.getBlockFromID(blockID) ?: Block.AIR)
-                    client.player.sendPacket(ServerBlockChangePacket(position, block))
+                    val block = Block.getBlockFromID(blockID) ?: Item.getItemFromID(blockID) ?: Block.AIR
+
+                    if(block is Block) {
+                        val state = Block.getStateID(block)
+                        client.player.sendPacket(ServerBlockChangePacket(position, state))
+                    } else if(block is Item) {
+                        val state = Item.getStateID(block)
+                        client.player.sendPacket(ServerBlockChangePacket(position, state))
+                    }
                 }
             }
         }
