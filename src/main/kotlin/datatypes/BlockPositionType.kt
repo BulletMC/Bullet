@@ -31,7 +31,6 @@ object BlockPositionType {
         }
     }
 
-
     /**
      * Reads a block position from the [DataInputStream]
      *
@@ -40,6 +39,19 @@ object BlockPositionType {
      */
     @Throws(IOException::class)
     fun DataInputStream.readBlockPos(): BlockPosition {
+        val blockPosition = readLong()
+        return BlockPosition(blockPosition)
+    }
+
+    /**
+     * Reads a block position from the [DataInputStream], in the base
+     * X, Y, and Z positions
+     *
+     * @return Decoded block position
+     * @throws IOException If an I/O error occurs while reading the input stream
+     */
+    @Throws(IOException::class)
+    fun DataInputStream.readVanillaBlockPos(): BlockPosition {
         val x = readDouble()
         val y = readDouble()
         val z = readDouble()

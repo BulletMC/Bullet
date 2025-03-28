@@ -12,14 +12,18 @@ import com.aznos.packets.Packet
  */
 class ClientUpdateSignPacket(data: ByteArray) : Packet(data) {
     val blockPos: BlockPositionType.BlockPosition
-    val lines: Array<String> = Array(4) { "" }
+    val line1: String
+    val line2: String
+    val line3: String
+    val line4: String
 
     init {
         val input = getIStream()
 
         blockPos = input.readBlockPos()
-        for(i in 0 until 3) {
-            lines[i] = input.readString()
-        }
+        line1 = input.readString()
+        line2 = input.readString()
+        line3 = input.readString()
+        line4 = input.readString()
     }
 }
