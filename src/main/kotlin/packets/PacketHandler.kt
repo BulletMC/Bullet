@@ -369,7 +369,7 @@ class PacketHandler(
         val event = BlockPlaceEvent(
             client.player,
             packet.hand,
-            Position(packet.location.x, packet.location.y, packet.location.z),
+            packet.location.copy(),
             packet.face,
             packet.cursorPositionX,
             packet.cursorPositionY,
@@ -394,11 +394,7 @@ class PacketHandler(
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {
                 otherPlayer.sendPacket(ServerBlockChangePacket(
-                    Position(
-                        event.location.x,
-                        event.location.y,
-                        event.location.z
-                    ),
+                    event.location.copy(),
                     heldItem
                 ))
             }
