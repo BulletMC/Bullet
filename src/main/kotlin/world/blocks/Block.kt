@@ -554,6 +554,7 @@ enum class Block(val id: Int) {
 
     companion object {
         private val idMap = Int2ObjectOpenHashMap<Block>(Block.entries.size)
+
         init {
             entries.associateByTo(idMap) { it.id }
         }
@@ -572,9 +573,12 @@ enum class Block(val id: Int) {
          * Converts a global palette ID to a state palette ID
          *
          * @param block The global block palette to get the state ID of
+         * @param properties Any optional properties to match against the block's states, for example the
+         * grass block has two properties, "snowy" and "default".
+         *
          * @return The state ID of the state palette related to the block
          */
-        fun getStateID(block: Block): Int {
+        fun getStateID(block: Block, properties: Map<String, String>? = null): Int {
             val jsonStream = Block::class.java.getResourceAsStream("/blocks.json")
                 ?: throw IllegalArgumentException("blocks.json not found")
 
@@ -582,20 +586,38 @@ enum class Block(val id: Int) {
             val json = JsonParser.parseReader(reader).asJsonObject
             val blockKey = "minecraft:${block.name.lowercase()}"
 
-            val blockData = json[blockKey]?.asJsonObject
-                ?: throw IllegalArgumentException("Block $blockKey not found")
+            val blockData = json[blockKey]?.asJsonObject ?: throw IllegalArgumentException("Block $blockKey not found")
+            val states = blockData["states"]?.asJsonArray ?: throw IllegalArgumentException("Block $blockKey has no states")
 
-            val states = blockData["states"]?.asJsonArray
-                ?: throw IllegalArgumentException("Block $blockKey has no states")
+            if(properties != null) {
+                for(element in states) {
+                    val stateObj = element.asJsonObject
+                    val stateProps = stateObj["properties"]?.asJsonObject
 
-            for(state in states) {
-                val stateObj = state.asJsonObject
-                if (stateObj["default"]?.asBoolean == true) {
+                    val matches = if(stateProps == null && properties.isEmpty()) {
+                        true
+                    } else if(stateProps != null) {
+                        properties.entries.all { (key, value) ->
+                            stateProps.has(key) && stateProps[key].asString == value
+                        }
+                    } else {
+                        false
+                    }
+
+                    if(matches) {
+                        return stateObj["id"].asInt
+                    }
+                }
+            }
+
+            for(element in states) {
+                val stateObj = element.asJsonObject
+                if(stateObj["default"]?.asBoolean == true) {
                     return stateObj["id"].asInt
                 }
             }
 
-            throw IllegalArgumentException("No default state found for $blockKey")
+            throw IllegalArgumentException("No matching or default state found for $blockKey")
         }
     }
 }
