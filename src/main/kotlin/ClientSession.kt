@@ -173,15 +173,7 @@ class ClientSession(
                 while(isActive) {
                     delay(5.seconds)
 
-                    Bullet.world.writePlayerData(
-                        player.username,
-                        player.uuid,
-                        player.location,
-                        player.status.health,
-                        player.status.foodLevel,
-                        player.status.saturation,
-                        player.status.exhaustion
-                    )
+                    Bullet.storage.storage.writePlayerData(player)
                 }
             }
         }
@@ -299,15 +291,7 @@ class ClientSession(
         state = GameState.DISCONNECTED
 
         if(state == GameState.PLAY) {
-            Bullet.world.writePlayerData(
-                player.username,
-                player.uuid,
-                player.location,
-                player.status.health,
-                player.status.foodLevel,
-                player.status.saturation,
-                player.status.exhaustion
-            )
+            if(Bullet.shouldPersist) Bullet.storage.storage.writePlayerData(player)
 
             sendPacket(ServerPlayDisconnectPacket(message))
 

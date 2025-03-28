@@ -15,6 +15,7 @@ interface AbstractWorldStorage {
     /**
      * Writes world data to the storage, containing information like the difficulty of the world, time of day, etc
      * so that it can be loaded back in when the server restarts
+     * Note: this function has no guarantee that the player data is saved immediately
      *
      * @param data The world data to write to storage
      * @return A world storage instance from this server storage
@@ -24,6 +25,7 @@ interface AbstractWorldStorage {
     /**
      * Writes world data to the storage, containing information like the difficulty of the world, time of day, etc
      * so that it can be loaded back in when the server restarts
+     * Note: this function has no guarantee that the player data is saved immediately
      *
      * @param world The world to write to storage
      * @return A world storage instance from this server storage
@@ -35,19 +37,12 @@ interface AbstractWorldStorage {
     }
 
     /**
-     * Reads world data from the storage
+     * Reads world data from the storage if exist
      *
-     * @return The world data that was read from the storage
+     * @return The world data that was read from the storage. null if do not exist
      */
-    fun readWorldData(): WorldData
+    fun readWorldData(): WorldData?
 
     // todo block/chunk load & save
-
-    /**
-     * Inform the storage system that the server is closing and should try to save everything now
-     *
-     * @return A world storage instance from this server storage
-     */
-    fun notifyClose(): Boolean
 
 }

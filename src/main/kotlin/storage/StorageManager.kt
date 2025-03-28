@@ -1,9 +1,11 @@
 package com.aznos.storage
 
 import com.aznos.world.World
+import java.util.concurrent.locks.ReentrantReadWriteLock
 
 class StorageManager(val storage: AbstractServerStorage) {
 
+    private val worldsLock = ReentrantReadWriteLock()
     private val worlds = HashMap<String, World>()
 
     /**
@@ -13,7 +15,11 @@ class StorageManager(val storage: AbstractServerStorage) {
      * @return the world with that name. null if do not exist
      */
     fun getWorld(name: String): World? {
-        return worlds[name]
+        worldsLock.readLock().lock()
+        val world = worlds[name]
+        worldsLock.readLock().unlock()
+
+        return world
     }
 
     /**
@@ -24,14 +30,40 @@ class StorageManager(val storage: AbstractServerStorage) {
      * @return the world with that name
      */
     fun getOrLoadWorld(name: String): World {
-        if (worlds.containsKey(name)) return worlds[name]!!
+        // We assume world present and should not lock write
+        worldsLock.readLock().lock()
+        var world = worlds[name]
+        if (world != null) {
+            worldsLock.readLock().unlock()
+            return world
+        }
 
+        worldsLock.readLock().unlock()
+        worldsLock.writeLock().lock()
+
+        // As we just acquired the write lock, we check again the map in case there was a race condition
+        world = worlds[name]
+        if (world != null) {
+            worldsLock.writeLock().unlock()
+            return world
+        }
+
+        // Now instanciate/create the world
         val worldStorage = storage.prepareWorldStorage(name)
-        val data = worldStorage.readWorldData()
 
-        // TODO create world from data
-        return World(name)
+        world = World(name, worldStorage)
+        worlds[name] = world
+
+        worldsLock.writeLock().unlock()
+        return world
     }
 
+    fun getWorlds(): List<World> {
+        worldsLock.readLock().lock()
+        val worlds = ArrayList<World>(worlds.values)
+        worldsLock.readLock().unlock()
+
+        return worlds
+    }
 
 }

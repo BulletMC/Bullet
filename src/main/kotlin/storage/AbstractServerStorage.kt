@@ -16,12 +16,12 @@ interface AbstractServerStorage {
     fun prepareWorldStorage(name: String): AbstractWorldStorage
 
     /**
-     * Reads player data from the storage
+     * Reads player data from the storage. null if absent
      *
      * @param uuid The UUID of the player to read data for
-     * @return The player data that was read from the storage
+     * @return The player data that was read from the storage or null if absent
      */
-    fun readPlayerData(uuid: UUID): PlayerData
+    fun readPlayerData(uuid: UUID): PlayerData?
 
     /**
      * Writes player data to the storage, containing information like the player's location, health, food level, etc
@@ -50,12 +50,5 @@ interface AbstractServerStorage {
             )
         )
     }
-
-    /**
-     * Inform the storage system that the server is closing and should try to save everything now
-     *
-     * @return If the operation was successful
-     */
-    fun notifyClose(): Boolean
 
 }

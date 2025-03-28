@@ -1,13 +1,14 @@
 package com.aznos.world
 
+import com.aznos.Bullet.shouldPersist
+import com.aznos.Bullet.world
 import com.aznos.datatypes.BlockPositionType
 import com.aznos.datatypes.LocationType
 import com.aznos.entity.player.data.BanData
+import com.aznos.storage.world.AbstractWorldStorage
 import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.Difficulty
-import com.aznos.world.data.PlayerData
 import com.aznos.world.data.TimeOfDay
-import com.aznos.world.data.WorldData
 import kotlinx.serialization.json.Json
 import java.io.IOException
 import java.nio.file.Files
@@ -29,7 +30,10 @@ import kotlin.time.Duration
  * besides the default grass chunks that spawn in
  */
 @Suppress("TooManyFunctions")
-class World(val name: String) {
+class World(
+    val name: String,
+    private val storage: AbstractWorldStorage
+) {
     var weather = 0
     var worldAge = 0L
     var timeOfDay: Long = TimeOfDay.SUNRISE.time
@@ -37,6 +41,25 @@ class World(val name: String) {
     var modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata> = mutableMapOf()
 
     private val json = Json { allowStructuredMapKeys = true }
+
+    init {
+        loadWorldsData()
+    }
+
+    private fun loadWorldsData(){
+        if(!shouldPersist) return
+        val data = storage.readWorldData() ?: return
+
+        val difficulty = Difficulty.getDifficultyFromID(data.difficulty)
+
+        this.difficulty = difficulty
+        this.weather = if(data.raining) 1 else 0
+        this.timeOfDay = data.timeOfDay
+
+        if(Files.exists(Paths.get("./${name}/data/blocks.json"))) {
+            this.modifiedBlocks = readBlockData()
+        }
+    }
 
     /**
      * Saves the current world state
@@ -46,9 +69,7 @@ class World(val name: String) {
     private fun createFiles(): Boolean {
         createDirectoryIfNotExists(Paths.get("./$name"))
         createDirectoryIfNotExists(Paths.get("./$name/data"))
-        createDirectoryIfNotExists(Paths.get("./$name/players"))
 
-        createFileIfNotExists(Paths.get("./$name/data/world.json"))
         createFileIfNotExists(Paths.get("./$name/data/blocks.json"))
 
         val banFile = Paths.get("./$name/data/banned_players.json")
@@ -58,76 +79,6 @@ class World(val name: String) {
         }
 
         return true
-    }
-
-    /**
-     * Writes world data to the disk, containing information like the difficulty of the world, time of day, etc
-     * so that it can be loaded back in when the server restarts
-     *
-     * @param difficulty The difficulty of the world
-     * @param raining Whether it is raining in the world or not
-     * @param timeOfDay The time of day in the world
-     */
-    fun writeWorldData(
-        difficulty: Difficulty,
-        raining: Boolean,
-        timeOfDay: Long,
-    ) {
-        createFiles()
-
-        val worldData = WorldData(difficulty.id, raining, timeOfDay)
-        val json = Json.encodeToString(worldData)
-        Files.write(Paths.get("./$name/data/world.json"), json.toByteArray())
-    }
-
-    /**
-     * Reads world data from the disk
-     *
-     * @return The world data that was read from the disk
-     */
-    fun readWorldData(): WorldData {
-        val path = Paths.get("./$name/data/world.json")
-        val json = Files.readString(path)
-        return Json.decodeFromString(json)
-    }
-
-    /**
-     * Writes player data to the disk, containing information like the player's location, health, food level, etc
-     *
-     * @param username The username of the player
-     * @param uuid The UUID of the player
-     * @param location The location of the player
-     * @param health The health of the player
-     * @param foodLevel The food level of the player
-     * @param saturation The saturation level of the player
-     * @param exhaustionLevel The exhaustion level of the player
-     */
-    fun writePlayerData(
-        username: String,
-        uuid: UUID,
-        location: LocationType.Location,
-        health: Int,
-        foodLevel: Int,
-        saturation: Float,
-        exhaustionLevel: Float,
-    ) {
-        createFiles()
-
-        val playerData = PlayerData(username, uuid, location, health, foodLevel, saturation, exhaustionLevel)
-        val json = Json.encodeToString(playerData)
-        Files.write(Paths.get("./$name/players/$uuid.json"), json.toByteArray())
-    }
-
-    /**
-     * Reads player data from the disk
-     *
-     * @param uuid The UUID of the player to read data for
-     * @return The player data that was read from the disk
-     */
-    fun readPlayerData(uuid: UUID): PlayerData {
-        val path = Paths.get("./$name/players/$uuid.json")
-        val json = Files.readString(path)
-        return Json.decodeFromString(json)
     }
 
     /**
@@ -223,5 +174,10 @@ class World(val name: String) {
         if(!Files.exists(path)) {
             Files.createFile(path)
         }
+    }
+
+    fun save() {
+        storage.writeWorldData(this)
+        world.writeBlockData(world.modifiedBlocks)
     }
 }

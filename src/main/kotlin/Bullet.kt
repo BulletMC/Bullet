@@ -6,8 +6,9 @@ import com.aznos.entity.Entity
 import com.aznos.entity.livingentity.LivingEntity
 import com.aznos.entity.player.Player
 import com.aznos.packets.play.out.ServerParticlePacket
+import com.aznos.storage.StorageManager
+import com.aznos.storage.disk.DiskServerStorage
 import com.aznos.world.World
-import com.aznos.world.data.Difficulty
 import com.aznos.world.data.Particles
 import com.google.gson.JsonParser
 import dev.dewy.nbt.api.registry.TagTypeRegistry
@@ -23,8 +24,6 @@ import java.io.InputStreamReader
 import java.net.BindException
 import java.net.InetSocketAddress
 import java.net.ServerSocket
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.util.Base64
 import java.util.concurrent.Executors
 import kotlin.time.Duration.Companion.milliseconds
@@ -53,7 +52,8 @@ object Bullet : AutoCloseable {
     val livingEntities = mutableListOf<LivingEntity>()
     val entities = mutableListOf<Entity>()
 
-    val world = World("world")
+    lateinit var storage: StorageManager
+    lateinit var world: World
 
     val breakingBlocks = mutableMapOf<BlockPositionType.BlockPosition, Job>()
     val sprinting = mutableSetOf<Int>()
@@ -69,6 +69,8 @@ object Bullet : AutoCloseable {
      * if set to false, nothing will save when the server is restarted
      */
     fun createServer(host: String, port: Int = 25565) {
+        storage = StorageManager(DiskServerStorage())
+
         try {
             server = ServerSocket().apply {
                 bind(InetSocketAddress(host, port))
@@ -87,10 +89,14 @@ object Bullet : AutoCloseable {
 
         CommandManager.registerCommands()
 
+        // Load world(s)
+        world = storage.getOrLoadWorld("world")
+
         scheduleTimeUpdate()
         scheduleSprintingParticles()
-        if(shouldPersist) scheduleSaveUpdate()
-        loadPersistentData()
+        if(shouldPersist) {
+            scheduleSaveUpdate()
+        }
 
         logger.info("Bullet server started at $host:$port")
 
@@ -102,31 +108,6 @@ object Bullet : AutoCloseable {
                     ClientSession(it).handle()
                 }
             }
-        }
-    }
-
-    /**
-     * Helper function that loads the world data and block data from disk if it exists
-     */
-    private fun loadPersistentData() {
-        if(Files.exists(Paths.get("./${world.name}/data/world.json")) && shouldPersist) {
-            world.readWorldData().let {
-                var difficulty = Difficulty.NORMAL
-                for(diff in Difficulty.entries) {
-                    if(diff.id == it.difficulty) {
-                        difficulty = diff
-                        break
-                    }
-                }
-
-                world.difficulty = difficulty
-                world.weather = if(it.raining) 1 else 0
-                world.timeOfDay = it.timeOfDay
-            }
-        }
-
-        if(Files.exists(Paths.get("./${world.name}/data/blocks.json")) && shouldPersist) {
-            world.modifiedBlocks = world.readBlockData()
         }
     }
 
@@ -152,8 +133,7 @@ object Bullet : AutoCloseable {
             scope.launch {
                 while(isActive) {
                     delay(5.seconds)
-                    world.writeWorldData(world.difficulty, world.weather == 1, world.timeOfDay)
-                    world.writeBlockData(world.modifiedBlocks)
+                    world.save()
                 }
             }
         }
@@ -258,20 +238,11 @@ object Bullet : AutoCloseable {
      * Shuts down the server
      */
     override fun close() {
-        world.writeWorldData(world.difficulty, world.weather == 1, world.timeOfDay)
-        world.writeBlockData(world.modifiedBlocks)
+        for (world in storage.getWorlds()) {
+            world.save()
+        }
 
         for(player in ArrayList(players)) {
-            world.writePlayerData(
-                player.username,
-                player.uuid,
-                player.location,
-                player.status.health,
-                player.status.foodLevel,
-                player.status.saturation,
-                player.status.exhaustion
-            )
-
             player.disconnect(Component.text("Server is shutting down"))
         }
 

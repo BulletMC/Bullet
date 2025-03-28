@@ -46,3 +46,5 @@ bin/
 
 ### runtime world folder ###
 /world/
+/worlds/
+/players/

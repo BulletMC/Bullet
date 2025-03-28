@@ -742,7 +742,7 @@ class PacketHandler(
         if(joinEvent.isCancelled) return
 
         Bullet.players.add(player)
-        addPlayerToPersistantData()
+        readPlayerPersistentData()
         scheduleTimers()
 
         client.sendPacket(ServerChunkPacket(0, 0))
@@ -753,15 +753,7 @@ class PacketHandler(
 
         sendBlockChanges()
 
-        world.writePlayerData(
-            player.username,
-            player.uuid,
-            player.location,
-            player.status.health,
-            player.status.foodLevel,
-            player.status.saturation,
-            player.status.exhaustion
-        )
+        if(Bullet.shouldPersist) Bullet.storage.storage.writePlayerData(player)
 
         player.setTimeOfDay(world.timeOfDay)
         if(world.weather == 1) player.sendPacket(ServerChangeGameStatePacket(2, 0f))
@@ -1067,26 +1059,24 @@ class PacketHandler(
         if(Bullet.shouldPersist) client.scheduleSaving()
     }
 
-    private fun addPlayerToPersistantData() {
+    private fun readPlayerPersistentData() {
         val player = client.player
 
-        if(Files.exists(Paths.get("./${world.name}/players/${player.uuid}.json")) && Bullet.shouldPersist) {
-            world.readPlayerData(player.uuid).let {
-                player.status.health = it.health
-                player.status.foodLevel = it.foodLevel
-                player.status.saturation = it.saturation
-                player.status.exhaustion = it.exhaustionLevel
-                player.location = it.location
+        val data = Bullet.storage.storage.readPlayerData(player.uuid) ?: return
 
-                player.sendPacket(ServerUpdateHealthPacket(
-                    player.status.health.toFloat(),
-                    player.status.foodLevel,
-                    player.status.saturation
-                ))
+        player.status.health = data.health
+        player.status.foodLevel = data.foodLevel
+        player.status.saturation = data.saturation
+        player.status.exhaustion = data.exhaustionLevel
+        player.location = data.location
 
-                player.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
-            }
-        }
+        player.sendPacket(ServerUpdateHealthPacket(
+            player.status.health.toFloat(),
+            player.status.foodLevel,
+            player.status.saturation
+        ))
+
+        player.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
     }
 
     private fun sendBlockChanges() {
