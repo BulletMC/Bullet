@@ -3,8 +3,8 @@ package com.aznos.commands.commands
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
 import com.aznos.commands.commands.suggestions.PlayerSuggestions
+import com.aznos.datatypes.LocationType
 import com.aznos.entity.player.Player
-import com.aznos.entity.player.data.Location
 import com.aznos.packets.play.out.ServerEntityTeleportPacket
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
@@ -132,7 +132,7 @@ class TeleportCommand {
      * @param input The input string containing coordinates
      * @return A Location object or null if the input is invalid
      */
-    private fun parseCoordinates(input: String, currentLocation: Location): Location? {
+    private fun parseCoordinates(input: String, currentLocation: LocationType.Location): LocationType.Location? {
         val parts = input.trim().split("\\s+".toRegex())
         return try {
             if (parts.size >= 3) {
@@ -141,7 +141,7 @@ class TeleportCommand {
                 val z = parts[2].toDouble()
                 val yaw = if (parts.size >= 4) parts[3].toFloat() else currentLocation.yaw
                 val pitch = if (parts.size >= 5) parts[4].toFloat() else currentLocation.pitch
-                Location(x, y, z, yaw, pitch)
+                LocationType.Location(x, y, z, yaw, pitch)
             } else null
         } catch (e: NumberFormatException) {
             null

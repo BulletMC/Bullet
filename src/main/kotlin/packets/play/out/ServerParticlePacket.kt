@@ -1,7 +1,8 @@
 package com.aznos.packets.play.out
 
+import com.aznos.datatypes.BlockPositionType
+import com.aznos.datatypes.BlockPositionType.writeVanillaBlockPos
 import com.aznos.datatypes.VarInt.writeVarInt
-import com.aznos.entity.player.data.Position
 import com.aznos.packets.Packet
 import com.aznos.world.data.Particles
 
@@ -20,7 +21,7 @@ import com.aznos.world.data.Particles
 class ServerParticlePacket(
     particle: Particles,
     longDistance: Boolean,
-    position: Position,
+    position: BlockPositionType.BlockPosition,
     offsetX: Float,
     offsetY: Float,
     offsetZ: Float,
@@ -30,9 +31,7 @@ class ServerParticlePacket(
     init {
         wrapper.writeInt(particle.id)
         wrapper.writeBoolean(longDistance)
-        wrapper.writeDouble(position.x)
-        wrapper.writeDouble(position.y)
-        wrapper.writeDouble(position.z)
+        wrapper.writeVanillaBlockPos(position)
         wrapper.writeFloat(offsetX)
         wrapper.writeFloat(offsetY)
         wrapper.writeFloat(offsetZ)

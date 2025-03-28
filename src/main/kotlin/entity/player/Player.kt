@@ -2,10 +2,10 @@ package com.aznos.entity.player
 
 import com.aznos.Bullet
 import com.aznos.ClientSession
+import com.aznos.datatypes.LocationType
 import com.aznos.entity.Entity
 import com.aznos.entity.player.data.ChatPosition
 import com.aznos.entity.player.data.GameMode
-import com.aznos.entity.player.data.Location
 import com.aznos.packets.Packet
 import com.aznos.entity.player.data.PlayerProperty
 import com.aznos.packets.play.out.*
@@ -24,7 +24,7 @@ class Player(
 ) : Entity() {
     lateinit var username: String
     override lateinit var uuid: UUID
-    lateinit var location: Location
+    lateinit var location: LocationType.Location
     lateinit var locale: String
     lateinit var brand: String
     var world: World? = Bullet.world
@@ -51,7 +51,7 @@ class Player(
     var onGround: Boolean = true
     var chunkX: Int = 0
     var chunkZ: Int = 0
-    var lastSprintLocation: Location? = null
+    var lastSprintLocation: LocationType.Location? = null
     val loadedChunks = mutableSetOf<Pair<Int, Int>>()
 
     //Combat and status

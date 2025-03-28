@@ -1,6 +1,7 @@
 package com.aznos.packets.play.out
 
-import com.aznos.entity.player.data.Position
+import com.aznos.datatypes.BlockPositionType
+import com.aznos.datatypes.BlockPositionType.writeBlockPos
 import com.aznos.packets.Packet
 
 /**
@@ -11,11 +12,9 @@ import com.aznos.packets.Packet
  * @param blockPos The position of the sign
  */
 class ServerOpenSignEditorPacket(
-    blockPos: Position
+    blockPos: BlockPositionType.BlockPosition
 ) : Packet(0x2E) {
     init {
-        wrapper.writeDouble(blockPos.x)
-        wrapper.writeDouble(blockPos.y)
-        wrapper.writeDouble(blockPos.z)
+        wrapper.writeBlockPos(blockPos)
     }
 }

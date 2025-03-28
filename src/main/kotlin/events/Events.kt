@@ -1,9 +1,9 @@
 package com.aznos.events
 
 import com.aznos.GameState
+import com.aznos.datatypes.BlockPositionType
+import com.aznos.datatypes.LocationType
 import com.aznos.entity.player.Player
-import com.aznos.entity.player.data.Location
-import com.aznos.entity.player.data.Position
 
 /**
  * Called right when the server receives that the client is ready to play and
@@ -82,7 +82,11 @@ data class PlayerBrandEvent(val player: Player, var brand: String) : Event()
  * @param location The new location of the player
  * @param prevLocation The previous location of the player
  */
-data class PlayerMoveEvent(val player: Player, var location: Location, var prevLocation: Location) : Event()
+data class PlayerMoveEvent(
+    val player: Player,
+    var location: LocationType.Location,
+    var prevLocation: LocationType.Location
+) : Event()
 
 /**
  * Called when a player interacts with an entity
@@ -143,13 +147,13 @@ data class StatusRequestEvent(var maxPlayers: Int, var onlinePlayers: Int, var m
  *
  * @param player The player that is breaking the block
  * @param status (0-9) The progress of the block break, if it is anything but 0-9 the block can be considered broken
- * @param location The position of the block
+ * @param blockPos The position of the block
  * @param face The face of the block being hit
  */
 data class BlockBreakEvent(
     val player: Player,
     var status: Int,
-    var location: Position,
+    var blockPos: BlockPositionType.BlockPosition,
     val face: Int
 ) : Event()
 
@@ -158,7 +162,7 @@ data class BlockBreakEvent(
  *
  * @param player The player that is placing the block
  * @param hand Which hand the block was placed with
- * @param location The position of the block being placed
+ * @param blockPos The position of the block being placed
  * @param face The face of the block being placed
  * @param cursorPosX The X position of the crosshair on the block, 0-1
  * @param cursorPosY The Y position of the crosshair on the block, 0-1
@@ -168,7 +172,7 @@ data class BlockBreakEvent(
 data class BlockPlaceEvent(
     val player: Player,
     var hand: Int,
-    var location: Position,
+    var blockPos: BlockPositionType.BlockPosition,
     var face: Int,
     var cursorPosX: Float,
     var cursorPosY: Float,
