@@ -1,6 +1,8 @@
 package com.aznos.world.blocks
 
+import com.google.gson.JsonParser
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
+import java.io.InputStreamReader
 
 enum class Block(val id: Int) {
     ACACIA_BUTTON(309),
@@ -556,8 +558,44 @@ enum class Block(val id: Int) {
             entries.associateByTo(idMap) { it.id }
         }
 
+        /**
+         * Gets a block from its ID
+         *
+         * @param id The ID of the block to get
+         * @return The block with the given ID, or null if no block with that ID exists
+         */
         fun getBlockFromID(id: Int): Block? {
             return idMap.get(id)
+        }
+
+        /**
+         * Converts a global palette ID to a state palette ID
+         *
+         * @param block The global block palette to get the state ID of
+         * @return The state ID of the state palette related to the block
+         */
+        fun getStateID(block: Block): Int {
+            val jsonStream = Block::class.java.getResourceAsStream("/blocks.json")
+                ?: throw IllegalArgumentException("blocks.json not found")
+
+            val reader = InputStreamReader(jsonStream)
+            val json = JsonParser.parseReader(reader).asJsonObject
+            val blockKey = "minecraft:${block.name.lowercase()}"
+
+            val blockData = json[blockKey]?.asJsonObject
+                ?: throw IllegalArgumentException("Block $blockKey not found")
+
+            val states = blockData["states"]?.asJsonArray
+                ?: throw IllegalArgumentException("Block $blockKey has no states")
+
+            for(state in states) {
+                val stateObj = state.asJsonObject
+                if (stateObj["default"]?.asBoolean == true) {
+                    return stateObj["id"].asInt
+                }
+            }
+
+            throw IllegalArgumentException("No default state found for $blockKey")
         }
     }
 }

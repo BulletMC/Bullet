@@ -4,6 +4,7 @@ import com.aznos.Bullet
 import com.aznos.entity.player.data.BanData
 import com.aznos.entity.player.data.Location
 import com.aznos.entity.player.data.Position
+import com.aznos.world.blocks.Block
 import com.aznos.world.data.Difficulty
 import com.aznos.world.data.PlayerData
 import com.aznos.world.data.TimeOfDay

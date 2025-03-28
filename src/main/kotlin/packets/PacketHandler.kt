@@ -27,6 +27,7 @@ import com.aznos.packets.play.out.movement.*
 import com.aznos.packets.status.`in`.ClientStatusPingPacket
 import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
+import com.aznos.world.blocks.Block
 import com.aznos.util.DurationFormat
 import com.aznos.world.data.BlockStatus
 import com.mojang.brigadier.exceptions.CommandSyntaxException
@@ -387,13 +388,17 @@ class PacketHandler(
         }
 
         val heldItem = client.player.getHeldItem()
+
+        val block = Block.getBlockFromID(heldItem) ?: Block.AIR
+        val stateBlock = Block.getStateID(block)
+
         if(Bullet.shouldPersist) world.modifiedBlocks[event.location] = heldItem
 
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {
                 otherPlayer.sendPacket(ServerBlockChangePacket(
                     event.location.copy(),
-                    heldItem
+                    stateBlock
                 ))
             }
         }
@@ -1067,7 +1072,8 @@ class PacketHandler(
         if(Files.exists(Paths.get("./${world.name}/data/blocks.json")) && Bullet.shouldPersist) {
             world.readBlockData().let {
                 for((position, blockID) in it) {
-                    client.player.sendPacket(ServerBlockChangePacket(position, blockID))
+                    val block = Block.getStateID(Block.getBlockFromID(blockID) ?: Block.AIR)
+                    client.player.sendPacket(ServerBlockChangePacket(position, block))
                 }
             }
         }
