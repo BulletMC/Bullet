@@ -65,6 +65,11 @@ class PacketHandler(
     private val client: ClientSession
 ) {
     @PacketReceiver
+    fun onUpdateSign(packet: ClientUpdateSignPacket) {
+        
+    }
+
+    @PacketReceiver
     fun onPlayerAbilities(packet: ClientPlayerAbilitiesPacket) {
         if(client.player.canFly) {
             val flying = (packet.flags and 0x02).toInt() == 0x02
