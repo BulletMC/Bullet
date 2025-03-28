@@ -558,10 +558,22 @@ enum class Block(val id: Int) {
             entries.associateByTo(idMap) { it.id }
         }
 
+        /**
+         * Gets a block from its ID
+         *
+         * @param id The ID of the block to get
+         * @return The block with the given ID, or null if no block with that ID exists
+         */
         fun getBlockFromID(id: Int): Block? {
             return idMap.get(id)
         }
 
+        /**
+         * Converts a global palette ID to a state palette ID
+         *
+         * @param block The global block palette to get the state ID of
+         * @return The state ID of the state palette related to the block
+         */
         fun getStateID(block: Block): Int {
             val jsonStream = Block::class.java.getResourceAsStream("/blocks.json")
                 ?: throw IllegalArgumentException("blocks.json not found")
