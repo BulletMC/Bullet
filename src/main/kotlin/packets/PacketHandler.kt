@@ -417,8 +417,17 @@ class PacketHandler(
                     ))
                 }
 
-                if(block == Item.OAK_SIGN) {
-
+                if(
+                    block == Item.OAK_SIGN ||
+                    block == Item.SPRUCE_SIGN ||
+                    block == Item.BIRCH_SIGN ||
+                    block == Item.JUNGLE_SIGN ||
+                    block == Item.ACACIA_SIGN ||
+                    block == Item.DARK_OAK_SIGN ||
+                    block == Item.CRIMSON_SIGN ||
+                    block == Item.WARPED_SIGN
+                ) {
+                    otherPlayer.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
                 }
             }
         }
