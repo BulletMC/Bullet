@@ -1,12 +1,25 @@
 package com.aznos.storage
 
+import com.aznos.entity.player.Player
+import com.aznos.entity.player.data.BanData
 import com.aznos.world.World
+import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
+@Suppress("unused")
 class StorageManager(val storage: AbstractServerStorage) {
 
     private val worldsLock = ReentrantReadWriteLock()
     private val worlds = HashMap<String, World>()
+
+    private val banned = ConcurrentHashMap<UUID, BanData>()
+
+    init {
+        for (data in storage.readBannedList()) {
+            banned[data.uuid] = data;
+        }
+    }
 
     /**
      * Get world with by name if exist
@@ -58,12 +71,65 @@ class StorageManager(val storage: AbstractServerStorage) {
         return world
     }
 
+    /**
+     * Get the list of worlds
+     *
+     * @return A copy of the current list of worlds
+     */
     fun getWorlds(): List<World> {
         worldsLock.readLock().lock()
-        val worlds = ArrayList<World>(worlds.values)
+        val worlds = worlds.values.toList()
         worldsLock.readLock().unlock()
 
         return worlds
+    }
+
+    /**
+     * Test if the specified player is banned
+     *
+     * @return The player ban. null if not banned
+     */
+    fun getPlayerBan(player: UUID): BanData? {
+        return banned[player]
+    }
+
+    /**
+     * Ban a specific player
+     *
+     * @param data The ban data to add
+     * @return True if the ban data override already present ban data
+     */
+    fun writeBan(data: BanData): Boolean {
+        val hadPrevious = (banned.put(data.uuid, data)) != null
+
+        storage.writeBannedList(banned.values)
+        return hadPrevious
+    }
+
+    /**
+     * Unban a specific player
+     *
+     * @param player The uuid of the player to unban
+     * @return Return the previous ban data. null if was not banned
+     */
+    fun unbanPlayer(player: UUID): BanData? {
+        val data = banned.remove(player)
+        // If had changes
+        if (data != null) {
+            storage.writeBannedList(banned.values)
+        }
+
+        return data
+    }
+
+    /**
+     * Unban a specific player
+     *
+     * @param player The player to unban
+     * @return Return the previous ban data. null if was not banned
+     */
+    fun unbanPlayer(player: Player): BanData? {
+        return unbanPlayer(player.uuid)
     }
 
 }

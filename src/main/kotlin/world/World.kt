@@ -72,12 +72,6 @@ class World(
 
         createFileIfNotExists(Paths.get("./$name/data/blocks.json"))
 
-        val banFile = Paths.get("./$name/data/banned_players.json")
-        createFileIfNotExists(banFile)
-        if(Files.size(banFile) == 0L) {
-            Files.write(banFile, "[]".toByteArray())
-        }
-
         return true
     }
 
@@ -100,56 +94,6 @@ class World(
      */
     fun readBlockData(): MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata> {
         val path = Paths.get("./$name/data/blocks.json")
-        val jsonData = Files.readString(path)
-        return json.decodeFromString(jsonData)
-    }
-
-    fun writeBannedPlayer(
-        player: UUID,
-        reason: String,
-        duration: Duration,
-        moderator: UUID
-    ) {
-        createFiles()
-
-        val path = Paths.get("./$name/data/banned_players.json")
-        val currentBans: MutableList<BanData> = if(Files.exists(path)) {
-            try {
-                val jsonData = Files.readString(path)
-                Json.decodeFromString(jsonData)
-            } catch(e: IOException) {
-                mutableListOf()
-            }
-        } else mutableListOf()
-
-        currentBans.removeIf { it.uuid == player }
-        currentBans.add(BanData(player, reason, duration, System.currentTimeMillis(), moderator))
-
-        val newJson = Json.encodeToString(currentBans)
-        Files.write(path, newJson.toByteArray())
-    }
-
-    fun unbanPlayer(player: UUID) {
-        createFiles()
-
-        val path = Paths.get("./$name/data/banned_players.json")
-        val currentBans: MutableList<BanData> = if(Files.exists(path)) {
-            try {
-                val jsonData = Files.readString(path)
-                Json.decodeFromString(jsonData)
-            } catch(e: IOException) {
-                mutableListOf()
-            }
-        } else mutableListOf()
-
-        currentBans.removeIf { it.uuid == player }
-
-        val newJson = Json.encodeToString(currentBans)
-        Files.write(path, newJson.toByteArray())
-    }
-
-    fun readBannedPlayers(): List<BanData> {
-        val path = Paths.get("./$name/data/banned_players.json")
         val jsonData = Files.readString(path)
         return json.decodeFromString(jsonData)
     }

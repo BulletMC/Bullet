@@ -1,7 +1,6 @@
 package com.aznos.commands.commands
 
 import com.aznos.Bullet
-import com.aznos.Bullet.world
 import com.aznos.commands.CommandCodes
 import com.aznos.entity.player.Player
 import com.mojang.brigadier.CommandDispatcher
@@ -13,6 +12,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 import java.util.*
 
 class UnbanCommand {
+
     fun register(dispatcher: CommandDispatcher<Player>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<Player>("unban")
@@ -22,7 +22,7 @@ class UnbanCommand {
                             val username = StringArgumentType.getString(context, "player")
                             val uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:$username").toByteArray())
 
-                            if(username.equals(context.source.username, true)) {
+                            if (username.equals(context.source.username, true)) {
                                 context.source.sendMessage(
                                     Component.text("You can't unban yourself", NamedTextColor.RED)
                                 )
@@ -30,18 +30,14 @@ class UnbanCommand {
                                 return@executes CommandCodes.ILLEGAL_ARGUMENT.id
                             }
 
-                            val bans = world.readBannedPlayers()
-                            val ban = bans.find { it.uuid == uuid }
-
-                            if(ban == null) {
+                            val ban = Bullet.storage.unbanPlayer(uuid)
+                            if (ban == null) {
                                 context.source.sendMessage(
                                     Component.text("That player is not banned", NamedTextColor.RED)
                                 )
 
                                 return@executes CommandCodes.ILLEGAL_ARGUMENT.id
                             }
-
-                            Bullet.world.unbanPlayer(uuid)
 
                             context.source.sendMessage(
                                 Component.text()
@@ -52,8 +48,9 @@ class UnbanCommand {
                             )
 
                             CommandCodes.SUCCESS.id
-                    }
+                        }
                 )
         )
     }
+
 }

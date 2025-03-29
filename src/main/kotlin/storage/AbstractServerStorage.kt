@@ -1,8 +1,10 @@
 package com.aznos.storage
 
 import com.aznos.entity.player.Player
+import com.aznos.entity.player.data.BanData
 import com.aznos.storage.world.AbstractWorldStorage
 import com.aznos.world.data.PlayerData
+import org.jetbrains.annotations.Contract
 import java.util.*
 
 interface AbstractServerStorage {
@@ -13,6 +15,7 @@ interface AbstractServerStorage {
      * @param name The name of the world to load
      * @return A world storage instance from this server storage
      */
+    @Contract(pure = true)
     fun prepareWorldStorage(name: String): AbstractWorldStorage
 
     /**
@@ -21,6 +24,7 @@ interface AbstractServerStorage {
      * @param uuid The UUID of the player to read data for
      * @return The player data that was read from the storage or null if absent
      */
+    @Contract(pure = true)
     fun readPlayerData(uuid: UUID): PlayerData?
 
     /**
@@ -50,5 +54,22 @@ interface AbstractServerStorage {
             )
         )
     }
+
+    /**
+     * Read player ban list from the storage
+     *
+     * @return A set containing all the id of currently banned player
+     */
+    @Contract(pure = true)
+    fun readBannedList(): Collection<BanData>
+
+    /**
+     * Write player ban list to the storage
+     *
+     * @param banned A set of every banned players
+     * @return If the operation was successful
+     */
+    fun writeBannedList(banned: Collection<BanData>): Boolean
+
 
 }

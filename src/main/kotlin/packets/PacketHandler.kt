@@ -1116,54 +1116,47 @@ class PacketHandler(
     }
 
     private fun checkForBan(): Boolean {
-        if(Bullet.shouldPersist) {
-            val bannedPath = Paths.get("./${world.name}/data/banned_players.json")
-            if(Files.exists(bannedPath)) {
-                val bans = world.readBannedPlayers()
-                val ban = bans.find { it.uuid == client.player.uuid }
+        if(!Bullet.shouldPersist) return false
 
-                if(ban != null) {
-                    val banEnd = ban.currentTime + ban.duration.inWholeMilliseconds
-                    val now = System.currentTimeMillis()
+        // Get ban or return true i
+        val ban = Bullet.storage.getPlayerBan(client.player.uuid) ?: return false
 
-                    if(ban.duration.inWholeSeconds != 0L && now >= banEnd) {
-                        Bullet.world.unbanPlayer(client.player.uuid)
-                        return false
-                    }
+        val durationMillis = ban.duration.inWholeMilliseconds
+        val banEnd = ban.currentTime + durationMillis
+        val now = System.currentTimeMillis()
 
-                    val expirationText = if(ban.duration.inWholeMilliseconds == 0L) {
-                        "permanently"
-                    } else {
-                        val expirationMillis = ban.currentTime + ban.duration.inWholeMilliseconds
-                        val expirationTime = Instant.ofEpochMilli(expirationMillis)
-                            .atZone(ZoneId.systemDefault())
-
-                        val dayOfMonth = expirationTime.dayOfMonth
-                        val daySuffix = DurationFormat.getDaySuffix(dayOfMonth)
-
-                        val formattedDate = expirationTime.format(
-                            DateTimeFormatter.ofPattern("MMMM d'$daySuffix' yyyy 'at' H:mm")
-                        )
-
-                        "Expires $formattedDate"
-                    }
-
-                    client.disconnect(
-                        Component.text()
-                            .append(Component.text("You have been banned!\n", NamedTextColor.RED))
-                            .append(Component.text(expirationText, NamedTextColor.RED))
-                            .append(Component.text("\n\n", NamedTextColor.RED))
-                            .append(Component.text("Reason: ", NamedTextColor.RED))
-                            .append(Component.text(ban.reason, NamedTextColor.GRAY))
-                            .build()
-                    )
-
-                    return true
-                }
-            }
+        if(durationMillis > 0 && now >= banEnd) {
+            Bullet.storage.unbanPlayer(ban.uuid)
+            return false
         }
 
-        return false
+        val expirationText = if(durationMillis <= 0) {
+            "permanently"
+        } else {
+            val expirationTime = Instant.ofEpochMilli(banEnd)
+                .atZone(ZoneId.systemDefault())
+
+            val dayOfMonth = expirationTime.dayOfMonth
+            val daySuffix = DurationFormat.getDaySuffix(dayOfMonth)
+
+            val formattedDate = expirationTime.format(
+                DateTimeFormatter.ofPattern("MMMM d'$daySuffix' yyyy 'at' H:mm")
+            )
+
+            "Expires $formattedDate"
+        }
+
+        client.disconnect(
+            Component.text()
+                .append(Component.text("You have been banned!\n", NamedTextColor.RED))
+                .append(Component.text(expirationText, NamedTextColor.RED))
+                .append(Component.text("\n\n", NamedTextColor.RED))
+                .append(Component.text("Reason: ", NamedTextColor.RED))
+                .append(Component.text(ban.reason, NamedTextColor.GRAY))
+                .build()
+        )
+
+        return true
     }
 
     private fun handleBlockPlacement(block: Block, event: BlockPlaceEvent, heldItem: Int) {
