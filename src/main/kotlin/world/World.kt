@@ -7,9 +7,6 @@ import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.Difficulty
 import com.aznos.world.data.TimeOfDay
 import kotlinx.serialization.json.Json
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
 
 /**
  * Represents a world in the game
@@ -32,90 +29,27 @@ class World(
     var worldAge = 0L
     var timeOfDay: Long = TimeOfDay.SUNRISE.time
     var difficulty: Difficulty = Difficulty.NORMAL
-    var modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata> = mutableMapOf()
-
-    private val json = Json { allowStructuredMapKeys = true }
+    lateinit var modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>
 
     init {
         loadWorldsData()
     }
 
-    private fun loadWorldsData(){
-        if(!shouldPersist) return
+    private fun loadWorldsData() {
+        if (!shouldPersist) return
         val data = storage.readWorldData() ?: return
 
         val difficulty = Difficulty.getDifficultyFromID(data.difficulty)
 
         this.difficulty = difficulty
-        this.weather = if(data.raining) 1 else 0
+        this.weather = if (data.raining) 1 else 0
         this.timeOfDay = data.timeOfDay
 
-        if(Files.exists(Paths.get("./${name}/data/blocks.json"))) {
-            this.modifiedBlocks = readBlockData()
-        }
-    }
-
-    /**
-     * Saves the current world state
-     *
-     * @return Whether the operation was successful or not
-     */
-    private fun createFiles(): Boolean {
-        createDirectoryIfNotExists(Paths.get("./$name"))
-        createDirectoryIfNotExists(Paths.get("./$name/data"))
-
-        createFileIfNotExists(Paths.get("./$name/data/blocks.json"))
-
-        return true
-    }
-
-    /**
-     * Writes block data to the disk, containing information about all the blocks that have been modified in the world
-     *
-     * @param modifiedBlocks A map of all the blocks that have been modified in the world
-     */
-    fun writeBlockData(modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>) {
-        createFiles()
-
-        val jsonData = json.encodeToString(modifiedBlocks)
-        Files.write(Paths.get("./$name/data/blocks.json"), jsonData.toByteArray())
-    }
-
-    /**
-     * Reads block data from the disk
-     *
-     * @return A map of all the blocks that have been modified in the world
-     */
-    fun readBlockData(): MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata> {
-        val path = Paths.get("./$name/data/blocks.json")
-        val jsonData = Files.readString(path)
-        return json.decodeFromString(jsonData)
-    }
-
-    /**
-     * Creates a directory if it does not already exist
-     *
-     * @param path The path of the directory to create
-     */
-    private fun createDirectoryIfNotExists(path: Path) {
-        if(!Files.exists(path)) {
-            Files.createDirectory(path)
-        }
-    }
-
-    /**
-     * Creates a file if it does not already exist
-     *
-     * @param path The path of the file to create
-     */
-    private fun createFileIfNotExists(path: Path) {
-        if(!Files.exists(path)) {
-            Files.createFile(path)
-        }
+        this.modifiedBlocks = storage.readBlockData()
     }
 
     fun save() {
         storage.writeWorldData(this)
-        writeBlockData(modifiedBlocks)
+        storage.writeBlockData(modifiedBlocks)
     }
 }

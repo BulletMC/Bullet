@@ -31,7 +31,7 @@ interface AbstractServerStorage {
      * Writes player data to the storage, containing information like the player's location, health, food level, etc
      *
      * @param data The player data to save
-     * @return If the operation was successful
+     * @return Whether the operation was successful or not
      */
     fun writePlayerData(data: PlayerData): Boolean
 
@@ -39,7 +39,7 @@ interface AbstractServerStorage {
      * Writes player data to the disk, containing information like the player's location, health, food level, etc
      *
      * @param player The player to save its data
-     * @return If the operation was successful
+     * @return Whether the operation was successful or not
      */
     fun writePlayerData(player: Player): Boolean {
         return writePlayerData(
@@ -67,7 +67,7 @@ interface AbstractServerStorage {
      * Write player ban list to the storage
      *
      * @param banned A set of every banned players
-     * @return If the operation was successful
+     * @return Whether the operation was successful or not
      */
     fun writeBannedList(banned: Collection<BanData>): Boolean
 

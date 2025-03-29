@@ -1087,37 +1087,35 @@ class PacketHandler(
     }
 
     private fun sendBlockChanges() {
-        val world = world
-        if(Files.exists(Paths.get("./${world.name}/data/blocks.json")) && Bullet.shouldPersist) {
-            world.readBlockData().let {
-                for((position, metadata) in it) {
-                    val block = Block.getBlockFromID(metadata.blockID)
-                        ?: Item.getItemFromID(metadata.blockID) ?: Block.AIR
+        if(!Bullet.shouldPersist) return
+        val blocks = world.modifiedBlocks
 
-                    if(block is Block) {
-                        val state = Block.getStateID(block)
-                        client.player.sendPacket(ServerBlockChangePacket(position, state))
-                    } else if(block is Item) {
-                        val state = Item.getStateID(block)
-                        client.player.sendPacket(ServerBlockChangePacket(position, state))
+        for((position, metadata) in blocks) {
+            val block = Block.getBlockFromID(metadata.blockID)
+                ?: Item.getItemFromID(metadata.blockID) ?: Block.AIR
 
-                        if(block in BlockTags.SIGNS && metadata.textLines != null) {
-                            val data = CompoundTag("")
-                            data.putString("id", "minecraft:sign")
-                            data.putInt("x", position.x.toInt())
-                            data.putInt("y", position.y.toInt())
-                            data.putInt("z", position.z.toInt())
-                            metadata.textLines.forEachIndexed { index, line ->
-                                data.putString("Text${index + 1}", "{\"text\":\"$line\"}")
-                            }
+            if(block is Block) {
+                val state = Block.getStateID(block)
+                client.player.sendPacket(ServerBlockChangePacket(position, state))
+            } else if(block is Item) {
+                val state = Item.getStateID(block)
+                client.player.sendPacket(ServerBlockChangePacket(position, state))
 
-                            client.sendPacket(ServerBlockEntityDataPacket(
-                                position,
-                                9,
-                                data
-                            ))
-                        }
+                if(block in BlockTags.SIGNS && metadata.textLines != null) {
+                    val data = CompoundTag("")
+                    data.putString("id", "minecraft:sign")
+                    data.putInt("x", position.x.toInt())
+                    data.putInt("y", position.y.toInt())
+                    data.putInt("z", position.z.toInt())
+                    metadata.textLines.forEachIndexed { index, line ->
+                        data.putString("Text${index + 1}", "{\"text\":\"$line\"}")
                     }
+
+                    client.sendPacket(ServerBlockEntityDataPacket(
+                        position,
+                        9,
+                        data
+                    ))
                 }
             }
         }

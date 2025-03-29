@@ -1,6 +1,8 @@
 package com.aznos.storage.world
 
+import com.aznos.datatypes.BlockPositionType
 import com.aznos.world.World
+import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.WorldData
 
 interface AbstractWorldStorage {
@@ -18,7 +20,7 @@ interface AbstractWorldStorage {
      * Note: this function has no guarantee that the player data is saved immediately
      *
      * @param data The world data to write to storage
-     * @return A world storage instance from this server storage
+     * @return Whether the operation was successful or not
      */
     fun writeWorldData(data: WorldData): Boolean
 
@@ -28,7 +30,7 @@ interface AbstractWorldStorage {
      * Note: this function has no guarantee that the player data is saved immediately
      *
      * @param world The world to write to storage
-     * @return A world storage instance from this server storage
+     * @return Whether the operation was successful or not
      */
     fun writeWorldData(
         world: World
@@ -43,6 +45,19 @@ interface AbstractWorldStorage {
      */
     fun readWorldData(): WorldData?
 
-    // todo block/chunk load & save
+    /**
+     * Reads block data from the storage if exist
+     *
+     * @return A map of all the blocks that have been modified in the world
+     */
+    fun readBlockData(): MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>
+
+    /**
+     * Writes block data to the storage, containing information about all the blocks that have been modified in the world
+     *
+     * @param modifiedBlocks A map of all the blocks that have been modified in the world
+     * @return Whether the operation was successful or not
+     */
+    fun writeBlockData(modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>): Boolean
 
 }
