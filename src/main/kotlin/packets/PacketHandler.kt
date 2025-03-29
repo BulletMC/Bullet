@@ -14,6 +14,8 @@ import com.aznos.datatypes.LocationType
 import com.aznos.datatypes.MetadataType
 import com.aznos.datatypes.Slot
 import com.aznos.datatypes.VarInt.readVarInt
+import com.aznos.entity.livingentity.LivingEntities
+import com.aznos.entity.livingentity.LivingEntity
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.GameMode
 import com.aznos.events.*
@@ -181,6 +183,21 @@ class PacketHandler(
         val event = PlayerInteractEntityEvent(attacker, packet.entityID, packet.type)
         EventManager.fire(event)
         if(event.isCancelled) return
+        
+        if(packet.type == 0) {
+            for(livingEntity in Bullet.livingEntities) {
+                if(livingEntity.first.entityType == LivingEntities.HORSE.id) {
+                    for(player in Bullet.players) {
+                        player.sendPacket(ServerSetPassengersPacket(
+                            packet.entityID,
+                            listOf(attacker.entityID)
+                        ))
+                    }
+
+                    break
+                }
+            }
+        }
 
         if(packet.type == 1) {
             for(player in Bullet.players) {
