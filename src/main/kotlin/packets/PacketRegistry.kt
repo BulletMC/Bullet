@@ -3,11 +3,7 @@ package com.aznos.packets
 import com.aznos.GameState
 import com.aznos.packets.login.`in`.ClientLoginStartPacket
 import com.aznos.packets.play.`in`.*
-import com.aznos.packets.play.`in`.movement.ClientEntityActionPacket
-import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
-import com.aznos.packets.play.`in`.movement.ClientPlayerPositionAndRotation
-import com.aznos.packets.play.`in`.movement.ClientPlayerPositionPacket
-import com.aznos.packets.play.`in`.movement.ClientPlayerRotation
+import com.aznos.packets.play.`in`.movement.*
 import com.aznos.packets.status.`in`.ClientStatusPingPacket
 import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import packets.handshake.HandshakePacket
@@ -57,6 +53,7 @@ object PacketRegistry {
             this[0x13] = ClientPlayerPositionAndRotation::class.java
             this[0x14] = ClientPlayerRotation::class.java
             this[0x15] = ClientPlayerMovement::class.java
+            this[0x16] = ClientVehicleMovePacket::class.java
             this[0x25] = ClientHeldItemChangePacket::class.java
             this[0x28] = ClientCreativeInventoryActionPacket::class.java
             this[0x1A] = ClientPlayerAbilitiesPacket::class.java
