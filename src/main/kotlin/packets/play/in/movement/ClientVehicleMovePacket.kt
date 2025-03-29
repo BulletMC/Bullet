@@ -10,5 +10,19 @@ import com.aznos.packets.Packet
  * @property location The new location of the vehicle
  */
 class ClientVehicleMovePacket(data: ByteArray) : Packet(data) {
-    val location: LocationType.Location = getIStream().readLocation()
+    val x: Double
+    val y: Double
+    val z: Double
+    val yaw: Float
+    val pitch: Float
+
+    init {
+        val input = getIStream()
+
+        x = input.readDouble()
+        y = input.readDouble()
+        z = input.readDouble()
+        yaw = input.readFloat()
+        pitch = input.readFloat()
+    }
 }

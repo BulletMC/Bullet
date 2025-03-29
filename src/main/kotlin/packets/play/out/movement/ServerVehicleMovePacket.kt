@@ -9,9 +9,17 @@ import com.aznos.packets.Packet
  * Sent by the server when a vehicle moves
  */
 class ServerVehicleMovePacket(
-    location: LocationType.Location
+    x: Double,
+    y: Double,
+    z: Double,
+    yaw: Float,
+    pitch: Float,
 ) : Packet(0x2B) {
     init {
-        wrapper.writeLocation(location)
+        wrapper.writeDouble(x)
+        wrapper.writeDouble(y)
+        wrapper.writeDouble(z)
+        wrapper.writeFloat(yaw)
+        wrapper.writeFloat(pitch)
     }
 }

@@ -56,6 +56,8 @@ class SpawnCommand {
     private fun spawnEntity(player: Player, livingEntityType: LivingEntities?, nonLivingEntityType: Entities?) {
         if(livingEntityType != null) {
             val entity = LivingEntity()
+            entity.location = player.location
+
             Bullet.players.forEach {
                 it.sendPacket(
                     ServerSpawnLivingEntityPacket(

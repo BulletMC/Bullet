@@ -16,5 +16,6 @@ data class EntityData(
     val velocityX: Short = 0,
     val velocityY: Short = 0,
     val velocityZ: Short = 0,
+    val passengers: List<Int> = emptyList(),
     val isLiving: Boolean = true
 )

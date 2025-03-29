@@ -19,6 +19,7 @@ class ServerVehicleSteerPacket(
     flags: Byte
 ) : Packet(0x1D) {
     init {
+        println("sent vehicle steer packet")
         wrapper.writeFloat(sideways)
         wrapper.writeFloat(forward)
         wrapper.writeByte(flags.toInt())

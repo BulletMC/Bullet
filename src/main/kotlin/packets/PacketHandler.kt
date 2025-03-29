@@ -2,6 +2,7 @@ package com.aznos.packets
 
 import com.aznos.Bullet
 import com.aznos.Bullet.breakingBlocks
+import com.aznos.Bullet.players
 import com.aznos.Bullet.sprinting
 import com.aznos.Bullet.world
 import com.aznos.ClientSession
@@ -75,7 +76,8 @@ class PacketHandler(
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {
                 otherPlayer.sendPacket(ServerVehicleMovePacket(
-                    packet.location
+                    packet.x, packet.y, packet.z,
+                    packet.yaw, packet.pitch
                 ))
             }
         }
@@ -83,15 +85,36 @@ class PacketHandler(
 
     @PacketReceiver
     fun onVehicleSteer(packet: ClientSteerVehiclePacket) {
+        val horse = Bullet.livingEntities.find {
+            it.second.passengers.contains(client.player.entityID)
+        }?.second ?: return
+
+        val yawRadians = Math.toRadians(client.player.location.yaw.toDouble())
+        val speed = 0.3
+
+        val motionX = -packet.forward * speed * Math.sin(yawRadians)
+        val motionZ = packet.forward * speed * Math.cos(yawRadians)
+
+        horse.velocityX = motionX.toInt().toShort()
+        horse.velocityZ = motionZ.toInt().toShort()
+
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {
-                otherPlayer.sendPacket(
-                    ServerVehicleSteerPacket(
-                        packet.sideways, packet.forward, packet.flags
-                    )
-                )
+                otherPlayer.sendPacket(ServerVehicleMovePacket(
+                    horse.location.x + motionX,
+                    horse.location.y,
+                    horse.location.z + motionZ,
+                    horse.location.yaw,
+                    horse.location.pitch
+                ))
             }
         }
+
+        horse.location = horse.location.copy(
+            x = horse.location.x + motionX,
+            y = horse.location.y,
+            z = horse.location.z + motionZ
+        )
     }
 
     @PacketReceiver
@@ -211,6 +234,8 @@ class PacketHandler(
         if(packet.type == 0) {
             for(livingEntity in Bullet.livingEntities) {
                 if(livingEntity.first.entityType == LivingEntities.HORSE.id) {
+                    livingEntity.second.passengers.add(attacker.entityID)
+
                     for(player in Bullet.players) {
                         player.sendPacket(ServerSetPassengersPacket(
                             packet.entityID,
