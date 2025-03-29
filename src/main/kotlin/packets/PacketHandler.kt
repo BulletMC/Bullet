@@ -71,6 +71,30 @@ class PacketHandler(
     private val client: ClientSession
 ) {
     @PacketReceiver
+    fun onVehicleMove(packet: ClientVehicleMovePacket) {
+        for(otherPlayer in Bullet.players) {
+            if(otherPlayer != client.player) {
+                otherPlayer.sendPacket(ServerVehicleMovePacket(
+                    packet.location
+                ))
+            }
+        }
+    }
+
+    @PacketReceiver
+    fun onVehicleSteer(packet: ClientSteerVehiclePacket) {
+        for(otherPlayer in Bullet.players) {
+            if(otherPlayer != client.player) {
+                otherPlayer.sendPacket(
+                    ServerVehicleSteerPacket(
+                        packet.sideways, packet.forward, packet.flags
+                    )
+                )
+            }
+        }
+    }
+
+    @PacketReceiver
     fun onUpdateSign(packet: ClientUpdateSignPacket) {
         val data = CompoundTag("")
         data.putString("id", "minecraft:sign")
