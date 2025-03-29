@@ -38,7 +38,9 @@ class PerformanceCommand {
         val threadCount = threadMXBean.threadCount
         val peakThreadCount = threadMXBean.peakThreadCount
         val playerCount = Bullet.players.size
-        val uptime = formatUptime(Bullet.world.worldAge)
+        // TODO create a server wide uptime
+        val rawUptime = System.currentTimeMillis() - Bullet.startupTime
+        val uptime = formatUptime(rawUptime)
 
         return Component.text()
             .append(Component.text("⚡ Server Performance ⚡", NamedTextColor.GOLD, TextDecoration.BOLD))
@@ -67,8 +69,8 @@ class PerformanceCommand {
             .build()
     }
 
-    private fun formatUptime(ticks: Long): String {
-        val totalSeconds = ticks / 20
+    private fun formatUptime(millis: Long): String {
+        val totalSeconds = millis / 1000
         val days = totalSeconds / 86400
         val hours = totalSeconds / 3600
         val minutes = (totalSeconds % 3600) / 60

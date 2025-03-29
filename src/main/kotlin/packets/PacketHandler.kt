@@ -3,7 +3,6 @@ package com.aznos.packets
 import com.aznos.Bullet
 import com.aznos.Bullet.breakingBlocks
 import com.aznos.Bullet.sprinting
-import com.aznos.Bullet.world
 import com.aznos.ClientSession
 import com.aznos.GameState
 import com.aznos.commands.CommandCodes
@@ -29,13 +28,13 @@ import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
 import com.aznos.world.blocks.Block
 import com.aznos.util.DurationFormat
+import com.aznos.world.World
 import com.aznos.world.blocks.BlockTags
 import com.aznos.world.data.BlockStatus
 import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.items.Item
 import com.mojang.brigadier.exceptions.CommandSyntaxException
 import dev.dewy.nbt.tags.collection.CompoundTag
-import dev.dewy.nbt.tags.primitive.StringTag
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -49,8 +48,6 @@ import packets.handshake.HandshakePacket
 import packets.status.out.ServerStatusResponsePacket
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -68,6 +65,10 @@ import kotlin.math.sqrt
 class PacketHandler(
     private val client: ClientSession
 ) {
+
+    val world: World
+        get() = client.player.world!!
+
     @PacketReceiver
     fun onUpdateSign(packet: ClientUpdateSignPacket) {
         val data = CompoundTag("")
@@ -91,9 +92,10 @@ class PacketHandler(
             }
         }
 
-        val lines = listOf(packet.line1, packet.line2, packet.line3, packet.line4)
+        val world = world
         val prev = world.modifiedBlocks[packet.blockPos]
         if(prev != null) {
+            val lines = listOf(packet.line1, packet.line2, packet.line3, packet.line4)
             world.modifiedBlocks[packet.blockPos] = prev.copy(textLines = lines)
         }
     }
@@ -742,7 +744,7 @@ class PacketHandler(
         if(joinEvent.isCancelled) return
 
         Bullet.players.add(player)
-        addPlayerToPersistantData()
+        readPlayerPersistentData()
         scheduleTimers()
 
         client.sendPacket(ServerChunkPacket(0, 0))
@@ -753,16 +755,9 @@ class PacketHandler(
 
         sendBlockChanges()
 
-        world.writePlayerData(
-            player.username,
-            player.uuid,
-            player.location,
-            player.status.health,
-            player.status.foodLevel,
-            player.status.saturation,
-            player.status.exhaustion
-        )
+        Bullet.storage.storage.writePlayerData(player)
 
+        val world = player.world!!
         player.setTimeOfDay(world.timeOfDay)
         if(world.weather == 1) player.sendPacket(ServerChangeGameStatePacket(2, 0f))
         else player.sendPacket(ServerChangeGameStatePacket(1, 0f))
@@ -1023,15 +1018,15 @@ class PacketHandler(
     }
 
     private fun removeBlock(blockPos: BlockPositionType.BlockPosition) {
-        if(Bullet.shouldPersist) {
-            if(world.modifiedBlocks.keys.find {
-                    it.x == blockPos.x && it.y == blockPos.y && it.z == blockPos.z
-                } != null) {
-                world.modifiedBlocks.remove(blockPos)
-            } else {
-                world.modifiedBlocks[blockPos] = BlockWithMetadata(0)
-            }
+        val world = world
+        if(world.modifiedBlocks.keys.find {
+                it.x == blockPos.x && it.y == blockPos.y && it.z == blockPos.z
+            } != null) {
+            world.modifiedBlocks.remove(blockPos)
+        } else {
+            world.modifiedBlocks[blockPos] = BlockWithMetadata(0)
         }
+
     }
 
     private fun checkLoginValidity(username: String) {
@@ -1067,119 +1062,106 @@ class PacketHandler(
         if(Bullet.shouldPersist) client.scheduleSaving()
     }
 
-    private fun addPlayerToPersistantData() {
+    private fun readPlayerPersistentData() {
         val player = client.player
 
-        if(Files.exists(Paths.get("./${world.name}/players/${player.uuid}.json")) && Bullet.shouldPersist) {
-            world.readPlayerData(player.uuid).let {
-                player.status.health = it.health
-                player.status.foodLevel = it.foodLevel
-                player.status.saturation = it.saturation
-                player.status.exhaustion = it.exhaustionLevel
-                player.location = it.location
+        val data = Bullet.storage.storage.readPlayerData(player.uuid) ?: return
 
-                player.sendPacket(ServerUpdateHealthPacket(
-                    player.status.health.toFloat(),
-                    player.status.foodLevel,
-                    player.status.saturation
-                ))
+        player.status.health = data.health
+        player.status.foodLevel = data.foodLevel
+        player.status.saturation = data.saturation
+        player.status.exhaustion = data.exhaustionLevel
+        player.location = data.location
 
-                player.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
-            }
-        }
+        player.sendPacket(ServerUpdateHealthPacket(
+            player.status.health.toFloat(),
+            player.status.foodLevel,
+            player.status.saturation
+        ))
+
+        player.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
     }
 
     private fun sendBlockChanges() {
-        if(Files.exists(Paths.get("./${world.name}/data/blocks.json")) && Bullet.shouldPersist) {
-            world.readBlockData().let {
-                for((position, metadata) in it) {
-                    val block = Block.getBlockFromID(metadata.blockID)
-                        ?: Item.getItemFromID(metadata.blockID) ?: Block.AIR
+        val blocks = world.modifiedBlocks
 
-                    if(block is Block) {
-                        val state = Block.getStateID(block)
-                        client.player.sendPacket(ServerBlockChangePacket(position, state))
-                    } else if(block is Item) {
-                        val state = Item.getStateID(block)
-                        client.player.sendPacket(ServerBlockChangePacket(position, state))
+        for((position, metadata) in blocks) {
+            val block = Block.getBlockFromID(metadata.blockID)
+                ?: Item.getItemFromID(metadata.blockID) ?: Block.AIR
 
-                        if(block in BlockTags.SIGNS && metadata.textLines != null) {
-                            val data = CompoundTag("")
-                            data.putString("id", "minecraft:sign")
-                            data.putInt("x", position.x.toInt())
-                            data.putInt("y", position.y.toInt())
-                            data.putInt("z", position.z.toInt())
-                            metadata.textLines.forEachIndexed { index, line ->
-                                data.putString("Text${index + 1}", "{\"text\":\"$line\"}")
-                            }
+            if(block is Block) {
+                val state = Block.getStateID(block)
+                client.player.sendPacket(ServerBlockChangePacket(position, state))
+            } else if(block is Item) {
+                val state = Item.getStateID(block)
+                client.player.sendPacket(ServerBlockChangePacket(position, state))
 
-                            client.sendPacket(ServerBlockEntityDataPacket(
-                                position,
-                                9,
-                                data
-                            ))
-                        }
+                if(block in BlockTags.SIGNS && metadata.textLines != null) {
+                    val data = CompoundTag("")
+                    data.putString("id", "minecraft:sign")
+                    data.putInt("x", position.x.toInt())
+                    data.putInt("y", position.y.toInt())
+                    data.putInt("z", position.z.toInt())
+                    metadata.textLines.forEachIndexed { index, line ->
+                        data.putString("Text${index + 1}", "{\"text\":\"$line\"}")
                     }
+
+                    client.sendPacket(ServerBlockEntityDataPacket(
+                        position,
+                        9,
+                        data
+                    ))
                 }
             }
         }
     }
 
     private fun checkForBan(): Boolean {
-        if(Bullet.shouldPersist) {
-            val bannedPath = Paths.get("./${world.name}/data/banned_players.json")
-            if(Files.exists(bannedPath)) {
-                val bans = world.readBannedPlayers()
-                val ban = bans.find { it.uuid == client.player.uuid }
+        // Get ban or return true i
+        val ban = Bullet.storage.getPlayerBan(client.player.uuid) ?: return false
 
-                if(ban != null) {
-                    val banEnd = ban.currentTime + ban.duration.inWholeMilliseconds
-                    val now = System.currentTimeMillis()
+        val durationMillis = ban.duration.inWholeMilliseconds
+        val banEnd = ban.currentTime + durationMillis
+        val now = System.currentTimeMillis()
 
-                    if(ban.duration.inWholeSeconds != 0L && now >= banEnd) {
-                        Bullet.world.unbanPlayer(client.player.uuid)
-                        return false
-                    }
-
-                    val expirationText = if(ban.duration.inWholeMilliseconds == 0L) {
-                        "permanently"
-                    } else {
-                        val expirationMillis = ban.currentTime + ban.duration.inWholeMilliseconds
-                        val expirationTime = Instant.ofEpochMilli(expirationMillis)
-                            .atZone(ZoneId.systemDefault())
-
-                        val dayOfMonth = expirationTime.dayOfMonth
-                        val daySuffix = DurationFormat.getDaySuffix(dayOfMonth)
-
-                        val formattedDate = expirationTime.format(
-                            DateTimeFormatter.ofPattern("MMMM d'$daySuffix' yyyy 'at' H:mm")
-                        )
-
-                        "Expires $formattedDate"
-                    }
-
-                    client.disconnect(
-                        Component.text()
-                            .append(Component.text("You have been banned!\n", NamedTextColor.RED))
-                            .append(Component.text(expirationText, NamedTextColor.RED))
-                            .append(Component.text("\n\n", NamedTextColor.RED))
-                            .append(Component.text("Reason: ", NamedTextColor.RED))
-                            .append(Component.text(ban.reason, NamedTextColor.GRAY))
-                            .build()
-                    )
-
-                    return true
-                }
-            }
+        if(durationMillis > 0 && now >= banEnd) {
+            Bullet.storage.unbanPlayer(ban.uuid)
+            return false
         }
 
-        return false
+        val expirationText = if(durationMillis <= 0) {
+            "permanently"
+        } else {
+            val expirationTime = Instant.ofEpochMilli(banEnd)
+                .atZone(ZoneId.systemDefault())
+
+            val dayOfMonth = expirationTime.dayOfMonth
+            val daySuffix = DurationFormat.getDaySuffix(dayOfMonth)
+
+            val formattedDate = expirationTime.format(
+                DateTimeFormatter.ofPattern("MMMM d'$daySuffix' yyyy 'at' H:mm")
+            )
+
+            "Expires $formattedDate"
+        }
+
+        client.disconnect(
+            Component.text()
+                .append(Component.text("You have been banned!\n", NamedTextColor.RED))
+                .append(Component.text(expirationText, NamedTextColor.RED))
+                .append(Component.text("\n\n", NamedTextColor.RED))
+                .append(Component.text("Reason: ", NamedTextColor.RED))
+                .append(Component.text(ban.reason, NamedTextColor.GRAY))
+                .build()
+        )
+
+        return true
     }
 
     private fun handleBlockPlacement(block: Block, event: BlockPlaceEvent, heldItem: Int) {
         val stateBlock = Block.getStateID(block)
 
-        if(Bullet.shouldPersist) world.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
+        event.player.world!!.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
 
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {
@@ -1203,12 +1185,14 @@ class PacketHandler(
             }
         }
 
+        val world = event.player.world!!
+
         if(block in BlockTags.SIGNS) {
             client.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
-            if(Bullet.shouldPersist) world.modifiedBlocks[event.blockPos] =
+            world.modifiedBlocks[event.blockPos] =
                 BlockWithMetadata(heldItem, listOf("", "", "", ""))
         } else {
-            if(Bullet.shouldPersist) world.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
+            world.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
         }
     }
 }
