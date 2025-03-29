@@ -59,7 +59,9 @@ class EmptyStorage : AbstractServerStorage {
             return mutableMapOf()
         }
 
-        override fun writeBlockData(modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>): Boolean {
+        override fun writeBlockData(
+            modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>
+        ): Boolean {
             return true
         }
 

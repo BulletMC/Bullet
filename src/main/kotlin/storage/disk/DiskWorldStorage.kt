@@ -37,7 +37,9 @@ class DiskWorldStorage(
         return readFileData(file, HashMap())
     }
 
-    override fun writeBlockData(modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>): Boolean {
+    override fun writeBlockData(
+        modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>
+    ): Boolean {
         val file = File(folder, WORLD_STORAGE_FILE_NAME)
         return writeFileData(file, modifiedBlocks)
     }

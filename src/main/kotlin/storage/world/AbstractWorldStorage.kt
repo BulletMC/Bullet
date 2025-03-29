@@ -53,11 +53,14 @@ interface AbstractWorldStorage {
     fun readBlockData(): MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>
 
     /**
-     * Writes block data to the storage, containing information about all the blocks that have been modified in the world
+     * Writes block data to the storage.
+     * containing information about all the blocks that have been modified in the world
      *
      * @param modifiedBlocks A map of all the blocks that have been modified in the world
      * @return Whether the operation was successful or not
      */
-    fun writeBlockData(modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>): Boolean
+    fun writeBlockData(
+        modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>
+    ): Boolean
 
 }
