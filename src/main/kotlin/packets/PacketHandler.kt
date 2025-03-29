@@ -48,8 +48,6 @@ import packets.handshake.HandshakePacket
 import packets.status.out.ServerStatusResponsePacket
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -757,7 +755,7 @@ class PacketHandler(
 
         sendBlockChanges()
 
-        if(Bullet.shouldPersist) Bullet.storage.storage.writePlayerData(player)
+        Bullet.storage.storage.writePlayerData(player)
 
         val world = player.world!!
         player.setTimeOfDay(world.timeOfDay)
@@ -1020,8 +1018,6 @@ class PacketHandler(
     }
 
     private fun removeBlock(blockPos: BlockPositionType.BlockPosition) {
-        if(!Bullet.shouldPersist) return
-
         val world = world
         if(world.modifiedBlocks.keys.find {
                 it.x == blockPos.x && it.y == blockPos.y && it.z == blockPos.z
@@ -1087,7 +1083,6 @@ class PacketHandler(
     }
 
     private fun sendBlockChanges() {
-        if(!Bullet.shouldPersist) return
         val blocks = world.modifiedBlocks
 
         for((position, metadata) in blocks) {
@@ -1122,8 +1117,6 @@ class PacketHandler(
     }
 
     private fun checkForBan(): Boolean {
-        if(!Bullet.shouldPersist) return false
-
         // Get ban or return true i
         val ban = Bullet.storage.getPlayerBan(client.player.uuid) ?: return false
 
@@ -1168,7 +1161,7 @@ class PacketHandler(
     private fun handleBlockPlacement(block: Block, event: BlockPlaceEvent, heldItem: Int) {
         val stateBlock = Block.getStateID(block)
 
-        if(Bullet.shouldPersist) event.player.world!!.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
+        event.player.world!!.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
 
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {
@@ -1196,10 +1189,10 @@ class PacketHandler(
 
         if(block in BlockTags.SIGNS) {
             client.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
-            if(Bullet.shouldPersist) world.modifiedBlocks[event.blockPos] =
+            world.modifiedBlocks[event.blockPos] =
                 BlockWithMetadata(heldItem, listOf("", "", "", ""))
         } else {
-            if(Bullet.shouldPersist) world.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
+            world.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
         }
     }
 }

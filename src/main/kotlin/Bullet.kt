@@ -6,6 +6,7 @@ import com.aznos.entity.Entity
 import com.aznos.entity.livingentity.LivingEntity
 import com.aznos.entity.player.Player
 import com.aznos.packets.play.out.ServerParticlePacket
+import com.aznos.storage.EmptyStorage
 import com.aznos.storage.StorageManager
 import com.aznos.storage.disk.DiskServerStorage
 import com.aznos.world.data.Particles
@@ -68,7 +69,9 @@ object Bullet : AutoCloseable {
      * if set to false, nothing will save when the server is restarted
      */
     fun createServer(host: String, port: Int = 25565) {
-        storage = StorageManager(DiskServerStorage())
+        storage = StorageManager(
+            if(shouldPersist) DiskServerStorage()
+            else EmptyStorage())
 
         try {
             server = ServerSocket().apply {

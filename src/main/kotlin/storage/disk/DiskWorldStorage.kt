@@ -1,6 +1,5 @@
 package com.aznos.storage.disk
 
-import com.aznos.Bullet
 import com.aznos.datatypes.BlockPositionType
 import com.aznos.storage.disk.DiskStorageUtil.readFileData
 import com.aznos.storage.disk.DiskStorageUtil.writeFileData
@@ -29,8 +28,6 @@ class DiskWorldStorage(
     }
 
     override fun writeWorldData(data: WorldData): Boolean {
-        assert(Bullet.shouldPersist) // We only want to save if persistence is enabled
-
         val file = File(folder, WORLD_DATA_FILE_NAME)
         return writeFileData(file, data)
     }

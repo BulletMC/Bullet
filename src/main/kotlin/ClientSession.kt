@@ -291,7 +291,7 @@ class ClientSession(
         state = GameState.DISCONNECTED
 
         if(state == GameState.PLAY) {
-            if(Bullet.shouldPersist) Bullet.storage.storage.writePlayerData(player)
+            Bullet.storage.storage.writePlayerData(player)
 
             sendPacket(ServerPlayDisconnectPacket(message))
 

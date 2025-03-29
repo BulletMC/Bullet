@@ -15,6 +15,13 @@ interface AbstractWorldStorage {
     fun getName(): String
 
     /**
+     * Reads world data from the storage if exist
+     *
+     * @return The world data that was read from the storage. null if do not exist
+     */
+    fun readWorldData(): WorldData?
+
+    /**
      * Writes world data to the storage, containing information like the difficulty of the world, time of day, etc
      * so that it can be loaded back in when the server restarts
      * Note: this function has no guarantee that the player data is saved immediately
@@ -37,13 +44,6 @@ interface AbstractWorldStorage {
     ): Boolean {
         return writeWorldData(WorldData(world.difficulty.id, world.weather == 1, world.timeOfDay))
     }
-
-    /**
-     * Reads world data from the storage if exist
-     *
-     * @return The world data that was read from the storage. null if do not exist
-     */
-    fun readWorldData(): WorldData?
 
     /**
      * Reads block data from the storage if exist

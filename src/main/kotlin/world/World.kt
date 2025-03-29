@@ -1,12 +1,10 @@
 package com.aznos.world
 
-import com.aznos.Bullet.shouldPersist
 import com.aznos.datatypes.BlockPositionType
 import com.aznos.storage.world.AbstractWorldStorage
 import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.Difficulty
 import com.aznos.world.data.TimeOfDay
-import kotlinx.serialization.json.Json
 
 /**
  * Represents a world in the game
@@ -36,7 +34,8 @@ class World(
     }
 
     private fun loadWorldsData() {
-        if (!shouldPersist) return
+        this.modifiedBlocks = storage.readBlockData()
+
         val data = storage.readWorldData() ?: return
 
         val difficulty = Difficulty.getDifficultyFromID(data.difficulty)
@@ -44,8 +43,6 @@ class World(
         this.difficulty = difficulty
         this.weather = if (data.raining) 1 else 0
         this.timeOfDay = data.timeOfDay
-
-        this.modifiedBlocks = storage.readBlockData()
     }
 
     fun save() {

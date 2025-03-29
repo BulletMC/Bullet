@@ -31,8 +31,6 @@ class DiskServerStorage : AbstractServerStorage {
     }
 
     override fun writePlayerData(data: PlayerData): Boolean {
-        assert(Bullet.shouldPersist) // We only want to save if persistence is enabled
-
         val file = File(PLAYER_STORAGE_ROOT, "${data.uuid}.json")
         return writeFileData(file, data)
     }
