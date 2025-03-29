@@ -58,19 +58,18 @@ class SpawnCommand {
             val entity = LivingEntity()
             entity.location = player.location
 
-            Bullet.players.forEach {
-                it.sendPacket(
-                    ServerSpawnLivingEntityPacket(
-                        entity.entityID, entity.uuid, livingEntityType.id, player.location, 90f, 0, 0, 0
-                    )
-                )
-            }
+            val entityData = EntityData(
+                entity.entityID, entity.uuid, livingEntityType.id,
+                player.location, 90f, 0, 0, 0
+            )
 
-            Bullet.livingEntities.add(Pair(
-                EntityData(
-                    entity.entityID, entity.uuid, livingEntityType.id, player.location, isLiving = true
-                ), LivingEntity()
-            ))
+            Bullet.livingEntities.add(Pair(entityData, entity))
+            Bullet.players.forEach {
+                it.sendPacket(ServerSpawnLivingEntityPacket(
+                    entity.entityID, entity.uuid, livingEntityType.id,
+                    player.location, 90f, 0, 0, 0
+                ))
+            }
         } else if(nonLivingEntityType != null) {
             val entity = Entity()
             Bullet.players.forEach {

@@ -59,7 +59,9 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.experimental.and
+import kotlin.math.cos
 import kotlin.math.pow
+import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
@@ -92,28 +94,41 @@ class PacketHandler(
         val yawRadians = Math.toRadians(client.player.location.yaw.toDouble())
         val speed = 0.3
 
-        val motionX = -packet.forward * speed * Math.sin(yawRadians)
-        val motionZ = packet.forward * speed * Math.cos(yawRadians)
+        val motionX = -packet.forward * speed * sin(yawRadians)
+        val motionZ = packet.forward * speed * cos(yawRadians)
 
-        horse.velocityX = motionX.toInt().toShort()
-        horse.velocityZ = motionZ.toInt().toShort()
+        val oldLocation = horse.location
+        val newLocation = oldLocation.copy(
+            x = oldLocation.x + motionX,
+            y = oldLocation.y,
+            z = oldLocation.z + motionZ
+        )
 
-        for(otherPlayer in Bullet.players) {
-            if(otherPlayer != client.player) {
-                otherPlayer.sendPacket(ServerVehicleMovePacket(
-                    horse.location.x + motionX,
-                    horse.location.y,
-                    horse.location.z + motionZ,
-                    horse.location.yaw,
-                    horse.location.pitch
-                ))
-            }
+        val (deltaX, deltaY, deltaZ) = calculateDeltas(
+            newLocation.x, newLocation.y, newLocation.z,
+            oldLocation.x, oldLocation.y, oldLocation.z
+        )
+
+        horse.location = newLocation
+
+        for(player in Bullet.players) {
+            player.sendPacket(
+                ServerEntityPositionPacket(
+                    horse.entityID,
+                    deltaX, deltaY, deltaZ,
+                    onGround = true
+                )
+            )
         }
 
-        horse.location = horse.location.copy(
-            x = horse.location.x + motionX,
-            y = horse.location.y,
-            z = horse.location.z + motionZ
+        client.sendPacket(
+            ServerVehicleMovePacket(
+                newLocation.x,
+                newLocation.y + 1.0,
+                newLocation.z,
+                horse.location.yaw,
+                horse.location.pitch
+            )
         )
     }
 
