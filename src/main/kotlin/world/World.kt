@@ -1,21 +1,15 @@
 package com.aznos.world
 
 import com.aznos.Bullet.shouldPersist
-import com.aznos.Bullet.world
 import com.aznos.datatypes.BlockPositionType
-import com.aznos.datatypes.LocationType
-import com.aznos.entity.player.data.BanData
 import com.aznos.storage.world.AbstractWorldStorage
 import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.Difficulty
 import com.aznos.world.data.TimeOfDay
 import kotlinx.serialization.json.Json
-import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.*
-import kotlin.time.Duration
 
 /**
  * Represents a world in the game
@@ -122,6 +116,6 @@ class World(
 
     fun save() {
         storage.writeWorldData(this)
-        world.writeBlockData(world.modifiedBlocks)
+        writeBlockData(modifiedBlocks)
     }
 }

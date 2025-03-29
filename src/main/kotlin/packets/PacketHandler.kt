@@ -3,7 +3,6 @@ package com.aznos.packets
 import com.aznos.Bullet
 import com.aznos.Bullet.breakingBlocks
 import com.aznos.Bullet.sprinting
-import com.aznos.Bullet.world
 import com.aznos.ClientSession
 import com.aznos.GameState
 import com.aznos.commands.CommandCodes
@@ -29,13 +28,13 @@ import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
 import com.aznos.world.blocks.Block
 import com.aznos.util.DurationFormat
+import com.aznos.world.World
 import com.aznos.world.blocks.BlockTags
 import com.aznos.world.data.BlockStatus
 import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.items.Item
 import com.mojang.brigadier.exceptions.CommandSyntaxException
 import dev.dewy.nbt.tags.collection.CompoundTag
-import dev.dewy.nbt.tags.primitive.StringTag
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -68,6 +67,10 @@ import kotlin.math.sqrt
 class PacketHandler(
     private val client: ClientSession
 ) {
+
+    val world: World
+        get() = client.player.world!!
+
     @PacketReceiver
     fun onUpdateSign(packet: ClientUpdateSignPacket) {
         val data = CompoundTag("")
@@ -91,9 +94,10 @@ class PacketHandler(
             }
         }
 
-        val lines = listOf(packet.line1, packet.line2, packet.line3, packet.line4)
+        val world = world
         val prev = world.modifiedBlocks[packet.blockPos]
         if(prev != null) {
+            val lines = listOf(packet.line1, packet.line2, packet.line3, packet.line4)
             world.modifiedBlocks[packet.blockPos] = prev.copy(textLines = lines)
         }
     }
@@ -755,6 +759,7 @@ class PacketHandler(
 
         if(Bullet.shouldPersist) Bullet.storage.storage.writePlayerData(player)
 
+        val world = player.world!!
         player.setTimeOfDay(world.timeOfDay)
         if(world.weather == 1) player.sendPacket(ServerChangeGameStatePacket(2, 0f))
         else player.sendPacket(ServerChangeGameStatePacket(1, 0f))
@@ -1015,15 +1020,17 @@ class PacketHandler(
     }
 
     private fun removeBlock(blockPos: BlockPositionType.BlockPosition) {
-        if(Bullet.shouldPersist) {
-            if(world.modifiedBlocks.keys.find {
-                    it.x == blockPos.x && it.y == blockPos.y && it.z == blockPos.z
-                } != null) {
-                world.modifiedBlocks.remove(blockPos)
-            } else {
-                world.modifiedBlocks[blockPos] = BlockWithMetadata(0)
-            }
+        if(!Bullet.shouldPersist) return
+
+        val world = world
+        if(world.modifiedBlocks.keys.find {
+                it.x == blockPos.x && it.y == blockPos.y && it.z == blockPos.z
+            } != null) {
+            world.modifiedBlocks.remove(blockPos)
+        } else {
+            world.modifiedBlocks[blockPos] = BlockWithMetadata(0)
         }
+
     }
 
     private fun checkLoginValidity(username: String) {
@@ -1080,6 +1087,7 @@ class PacketHandler(
     }
 
     private fun sendBlockChanges() {
+        val world = world
         if(Files.exists(Paths.get("./${world.name}/data/blocks.json")) && Bullet.shouldPersist) {
             world.readBlockData().let {
                 for((position, metadata) in it) {
@@ -1162,7 +1170,7 @@ class PacketHandler(
     private fun handleBlockPlacement(block: Block, event: BlockPlaceEvent, heldItem: Int) {
         val stateBlock = Block.getStateID(block)
 
-        if(Bullet.shouldPersist) world.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
+        if(Bullet.shouldPersist) event.player.world!!.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
 
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {
@@ -1185,6 +1193,8 @@ class PacketHandler(
                 ))
             }
         }
+
+        val world = event.player.world!!
 
         if(block in BlockTags.SIGNS) {
             client.sendPacket(ServerOpenSignEditorPacket(event.blockPos))

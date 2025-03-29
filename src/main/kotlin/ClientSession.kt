@@ -252,9 +252,9 @@ class ClientSession(
      */
     private fun handleHealthDecrease(time: Int): Int {
         with(player.status) {
-            if(foodLevel == 0 && health > 0) {
-                if(time == 4000) {
-                    health -= when(Bullet.world.difficulty) {
+            if(foodLevel <= 0 && health > 0) {
+                if(time >= 4000) {
+                    health -= when(player.world!!.difficulty) {
                         Difficulty.PEACEFUL -> 0
                         Difficulty.EASY -> max(health - 1, 10)
                         Difficulty.NORMAL -> max(health - 1, 1)

@@ -8,7 +8,6 @@ import com.aznos.entity.player.Player
 import com.aznos.packets.play.out.ServerParticlePacket
 import com.aznos.storage.StorageManager
 import com.aznos.storage.disk.DiskServerStorage
-import com.aznos.world.World
 import com.aznos.world.data.Particles
 import com.google.gson.JsonParser
 import dev.dewy.nbt.api.registry.TagTypeRegistry
@@ -53,7 +52,7 @@ object Bullet : AutoCloseable {
     val entities = mutableListOf<Entity>()
 
     lateinit var storage: StorageManager
-    lateinit var world: World
+    val startupTime = System.currentTimeMillis()
 
     val breakingBlocks = mutableMapOf<BlockPositionType.BlockPosition, Job>()
     val sprinting = mutableSetOf<Int>()
@@ -90,7 +89,7 @@ object Bullet : AutoCloseable {
         CommandManager.registerCommands()
 
         // Load world(s)
-        world = storage.getOrLoadWorld("world")
+        storage.getOrLoadWorld("world")
 
         scheduleTimeUpdate()
         scheduleSprintingParticles()
@@ -119,8 +118,10 @@ object Bullet : AutoCloseable {
             while(isActive) {
                 delay(1.seconds)
 
-                world.timeOfDay = (world.timeOfDay + 20) % 24000
-                world.worldAge += 20
+                for (world in storage.getWorlds()) {
+                    world.timeOfDay = (world.timeOfDay + 20) % 24000
+                    world.worldAge += 20
+                }
             }
         }
     }
@@ -133,7 +134,9 @@ object Bullet : AutoCloseable {
             scope.launch {
                 while(isActive) {
                     delay(5.seconds)
-                    world.save()
+                    for (world in storage.getWorlds()) {
+                        world.save()
+                    }
                 }
             }
         }
