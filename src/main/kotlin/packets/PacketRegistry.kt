@@ -58,9 +58,9 @@ object PacketRegistry {
             this[0x28] = ClientCreativeInventoryActionPacket::class.java
             this[0x1A] = ClientPlayerAbilitiesPacket::class.java
             this[0x1B] = ClientDiggingPacket::class.java
+            this[0x1C] = ClientEntityActionPacket::class.java
             this[0x1D] = ClientSteerVehiclePacket::class.java
             this[0x2B] = ClientUpdateSignPacket::class.java
-            this[0x1C] = ClientEntityActionPacket::class.java
             this[0x2C] = ClientAnimationPacket::class.java
             this[0x2E] = ClientBlockPlacementPacket::class.java
         }
