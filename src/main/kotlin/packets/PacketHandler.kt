@@ -752,6 +752,7 @@ class PacketHandler(
         client.updatePlayerChunks(player.chunkX, player.chunkZ)
 
         sendBlockChanges()
+        sendEntities()
 
         world.writePlayerData(
             player.username,
@@ -1209,6 +1210,33 @@ class PacketHandler(
                 BlockWithMetadata(heldItem, listOf("", "", "", ""))
         } else {
             if(Bullet.shouldPersist) world.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
+        }
+    }
+
+    private fun sendEntities() {
+        for(livingEntity in Bullet.livingEntities) {
+            client.sendPacket(ServerSpawnLivingEntityPacket(
+                livingEntity.second.entityID,
+                livingEntity.second.uuid,
+                livingEntity.first.entityType,
+                livingEntity.first.location,
+                livingEntity.first.headYaw,
+                livingEntity.first.velocityX,
+                livingEntity.first.velocityY,
+                livingEntity.first.velocityZ
+            ))
+        }
+
+        for(entity in Bullet.entities) {
+            client.sendPacket(ServerSpawnEntityPacket(
+                entity.first.entityID,
+                entity.first.uuid,
+                entity.second.entityType,
+                entity.second.location,
+                entity.second.velocityX,
+                entity.second.velocityY,
+                entity.second.velocityZ
+            ))
         }
     }
 }

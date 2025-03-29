@@ -3,11 +3,7 @@ package com.aznos.world
 import com.aznos.datatypes.BlockPositionType
 import com.aznos.datatypes.LocationType
 import com.aznos.entity.player.data.BanData
-import com.aznos.world.data.BlockWithMetadata
-import com.aznos.world.data.Difficulty
-import com.aznos.world.data.PlayerData
-import com.aznos.world.data.TimeOfDay
-import com.aznos.world.data.WorldData
+import com.aznos.world.data.*
 import kotlinx.serialization.json.Json
 import java.io.IOException
 import java.nio.file.Files
@@ -50,12 +46,8 @@ class World(val name: String) {
 
         createFileIfNotExists(Paths.get("./$name/data/world.json"))
         createFileIfNotExists(Paths.get("./$name/data/blocks.json"))
-
-        val banFile = Paths.get("./$name/data/banned_players.json")
-        createFileIfNotExists(banFile)
-        if(Files.size(banFile) == 0L) {
-            Files.write(banFile, "[]".toByteArray())
-        }
+        createFileIfNotExists(Paths.get("./$name/data/entities.json"), "[]")
+        createFileIfNotExists(Paths.get("./$name/data/banned_players.json"), "[]")
 
         return true
     }
@@ -153,6 +145,15 @@ class World(val name: String) {
         return json.decodeFromString(jsonData)
     }
 
+
+    /**
+     * Writes a player to the banned list, when they try to log in they will be kicked from the server
+     *
+     * @param player The UUID of the player to ban
+     * @param reason The reason the player is being banned
+     * @param duration The duration of the ban
+     * @param moderator The UUID of the moderator who banned the player
+     */
     fun writeBannedPlayer(
         player: UUID,
         reason: String,
@@ -178,6 +179,11 @@ class World(val name: String) {
         Files.write(path, newJson.toByteArray())
     }
 
+    /**
+     * Unbans a player from the server
+     *
+     * @param player The UUID of the player to unban
+     */
     fun unbanPlayer(player: UUID) {
         createFiles()
 
@@ -197,8 +203,36 @@ class World(val name: String) {
         Files.write(path, newJson.toByteArray())
     }
 
+    /**
+     * Reads the list of banned players from the disk
+     *
+     * @return A list of all the banned players
+     */
     fun readBannedPlayers(): List<BanData> {
         val path = Paths.get("./$name/data/banned_players.json")
+        val jsonData = Files.readString(path)
+        return json.decodeFromString(jsonData)
+    }
+
+    /**
+     * Writes entity data to the disk, containing information about all the entities in the world
+     *
+     * @param entities A list of all the entities in the world
+     */
+    fun writeEntities(entities: List<EntityData>) {
+        createFiles()
+
+        val jsonData = json.encodeToString(entities)
+        Files.write(Paths.get("./$name/data/entities.json"), jsonData.toByteArray())
+    }
+
+    /**
+     * Reads entity data from the disk
+     *
+     * @return A list of all the entities in the world
+     */
+    fun readEntities(): List<EntityData> {
+        val path = Paths.get("./$name/data/entities.json")
         val jsonData = Files.readString(path)
         return json.decodeFromString(jsonData)
     }
@@ -219,9 +253,12 @@ class World(val name: String) {
      *
      * @param path The path of the file to create
      */
-    private fun createFileIfNotExists(path: Path) {
+    private fun createFileIfNotExists(path: Path, data: String = "") {
         if(!Files.exists(path)) {
             Files.createFile(path)
+            if(data.isNotEmpty()) {
+                Files.write(path, data.toByteArray())
+            }
         }
     }
 }

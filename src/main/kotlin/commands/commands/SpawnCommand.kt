@@ -10,6 +10,7 @@ import com.aznos.entity.player.Player
 import com.aznos.packets.play.out.ServerSpawnEntityPacket
 import com.aznos.packets.play.out.ServerSpawnLivingEntityPacket
 import com.aznos.world.data.Difficulty
+import com.aznos.world.data.EntityData
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
@@ -63,7 +64,11 @@ class SpawnCommand {
                 )
             }
 
-            Bullet.livingEntities.add(entity)
+            Bullet.livingEntities.add(Pair(
+                EntityData(
+                    entity.entityID, entity.uuid, livingEntityType.id, player.location, isLiving = true
+                ), LivingEntity()
+            ))
         } else if(nonLivingEntityType != null) {
             val entity = Entity()
             Bullet.players.forEach {
@@ -74,7 +79,12 @@ class SpawnCommand {
                 )
             }
 
-            Bullet.entities.add(entity)
+            Bullet.entities.add(Pair(
+                Entity(),
+                EntityData(
+                    entity.entityID, entity.uuid, nonLivingEntityType.id, player.location, isLiving = false
+                )
+            ))
         }
     }
 

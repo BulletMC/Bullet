@@ -3,11 +3,13 @@ package com.aznos
 import com.aznos.commands.CommandManager
 import com.aznos.datatypes.BlockPositionType
 import com.aznos.entity.Entity
+import com.aznos.entity.livingentity.LivingEntities
 import com.aznos.entity.livingentity.LivingEntity
 import com.aznos.entity.player.Player
 import com.aznos.packets.play.out.ServerParticlePacket
 import com.aznos.world.World
 import com.aznos.world.data.Difficulty
+import com.aznos.world.data.EntityData
 import com.aznos.world.data.Particles
 import com.google.gson.JsonParser
 import dev.dewy.nbt.api.registry.TagTypeRegistry
@@ -50,8 +52,8 @@ object Bullet : AutoCloseable {
     var shouldPersist = true
 
     val players = mutableListOf<Player>()
-    val livingEntities = mutableListOf<LivingEntity>()
-    val entities = mutableListOf<Entity>()
+    val livingEntities = mutableListOf<Pair<EntityData, LivingEntity>>()
+    val entities = mutableListOf<Pair<Entity, EntityData>>()
 
     val world = World("world")
 
@@ -65,7 +67,6 @@ object Bullet : AutoCloseable {
      *
      * @param host - The IP address of the server, for local development set this to 0.0.0.0
      * @param port - The port the server will run on, this defaults at 25565
-     * @param shouldPersist - Whether the server should save world data and block data to disk
      * if set to false, nothing will save when the server is restarted
      */
     fun createServer(host: String, port: Int = 25565) {
@@ -128,6 +129,17 @@ object Bullet : AutoCloseable {
         if(Files.exists(Paths.get("./${world.name}/data/blocks.json")) && shouldPersist) {
             world.modifiedBlocks = world.readBlockData()
         }
+
+        if(Files.exists(Paths.get("./${world.name}/data/entities.json")) && shouldPersist) {
+            val entities = world.readEntities()
+            for(entity in entities) {
+                if(entity.isLiving) {
+                    livingEntities.add(Pair(entity, LivingEntity()))
+                } else {
+                    this.entities.add(Pair(Entity(), entity))
+                }
+            }
+        }
     }
 
     /**
@@ -154,6 +166,7 @@ object Bullet : AutoCloseable {
                     delay(5.seconds)
                     world.writeWorldData(world.difficulty, world.weather == 1, world.timeOfDay)
                     world.writeBlockData(world.modifiedBlocks)
+                    world.writeEntities(livingEntities.map { it.first } + entities.map { it.second })
                 }
             }
         }
