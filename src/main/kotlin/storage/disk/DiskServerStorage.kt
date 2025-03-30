@@ -6,6 +6,7 @@ import com.aznos.storage.AbstractServerStorage
 import com.aznos.storage.disk.DiskStorageUtil.readFileData
 import com.aznos.storage.disk.DiskStorageUtil.writeFileData
 import com.aznos.storage.world.AbstractWorldStorage
+import com.aznos.world.data.EntityData
 import com.aznos.world.data.PlayerData
 import java.io.File
 import java.util.*
@@ -44,5 +45,4 @@ class DiskServerStorage : AbstractServerStorage {
         val file = File(STORAGE_ROOT, BANNED_FILE_NAME)
         return writeFileData(file, banned)
     }
-
 }

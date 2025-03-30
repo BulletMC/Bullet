@@ -73,7 +73,7 @@ class SpawnCommand {
                 )
             }
 
-            Bullet.livingEntities.add(Pair(entity, entityData))
+            player.world!!.livingEntities.add(Pair(entity, entityData))
         } else if(nonLivingEntityType != null) {
             val entity = Entity()
             val entityData = EntityData(
@@ -90,7 +90,7 @@ class SpawnCommand {
                 )
             }
 
-            Bullet.entities.add(Pair(entity, entityData))
+            player.world!!.entities.add(Pair(entity, entityData))
         }
     }
 

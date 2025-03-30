@@ -5,6 +5,7 @@ import com.aznos.storage.disk.DiskStorageUtil.readFileData
 import com.aznos.storage.disk.DiskStorageUtil.writeFileData
 import com.aznos.storage.world.AbstractWorldStorage
 import com.aznos.world.data.BlockWithMetadata
+import com.aznos.world.data.EntityData
 import com.aznos.world.data.WorldData
 import java.io.File
 
@@ -16,6 +17,7 @@ class DiskWorldStorage(
     companion object {
         private const val WORLD_DATA_FILE_NAME = "world.json"
         private const val WORLD_STORAGE_FILE_NAME = "blocks.json"
+        private const val WORLD_ENTITIES_FILE_NAME = "entities.json"
     }
 
     override fun getName(): String {
@@ -44,4 +46,16 @@ class DiskWorldStorage(
         return writeFileData(file, modifiedBlocks)
     }
 
+    override fun writeEntity(entityData: EntityData): Boolean {
+        val file = File(folder, WORLD_ENTITIES_FILE_NAME)
+        val entities = readEntities()?.toMutableList() ?: mutableListOf()
+        entities.add(entityData)
+
+        return writeFileData(file, entities)
+    }
+
+    override fun readEntities(): List<EntityData>? {
+        val file = File(folder, WORLD_ENTITIES_FILE_NAME)
+        return readFileData(file, null)
+    }
 }
