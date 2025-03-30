@@ -24,7 +24,6 @@ class Player(
 ) : Entity() {
     lateinit var username: String
     override lateinit var uuid: UUID
-    lateinit var location: LocationType.Location
     lateinit var locale: String
     lateinit var brand: String
     var world: World? = Bullet.storage.getWorlds()[0] //TODO better player spawn world initialization
