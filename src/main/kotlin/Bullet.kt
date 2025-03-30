@@ -9,6 +9,7 @@ import com.aznos.packets.play.out.ServerParticlePacket
 import com.aznos.storage.EmptyStorage
 import com.aznos.storage.StorageManager
 import com.aznos.storage.disk.DiskServerStorage
+import com.aznos.world.data.EntityData
 import com.aznos.world.data.Particles
 import com.google.gson.JsonParser
 import dev.dewy.nbt.api.registry.TagTypeRegistry
@@ -49,8 +50,6 @@ object Bullet : AutoCloseable {
     var shouldPersist = true
 
     val players = mutableListOf<Player>()
-    val livingEntities = mutableListOf<LivingEntity>()
-    val entities = mutableListOf<Entity>()
 
     lateinit var storage: StorageManager
     val startupTime = System.currentTimeMillis()

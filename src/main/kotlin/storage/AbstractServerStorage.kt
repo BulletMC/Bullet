@@ -3,6 +3,7 @@ package com.aznos.storage
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.BanData
 import com.aznos.storage.world.AbstractWorldStorage
+import com.aznos.world.data.EntityData
 import com.aznos.world.data.PlayerData
 import org.jetbrains.annotations.Contract
 import java.util.*
@@ -70,6 +71,4 @@ interface AbstractServerStorage {
      * @return Whether the operation was successful or not
      */
     fun writeBannedList(banned: Collection<BanData>): Boolean
-
-
 }

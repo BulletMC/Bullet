@@ -6,6 +6,7 @@ import com.aznos.entity.player.data.BanData
 import com.aznos.storage.world.AbstractWorldStorage
 import com.aznos.world.World
 import com.aznos.world.data.BlockWithMetadata
+import com.aznos.world.data.EntityData
 import com.aznos.world.data.PlayerData
 import com.aznos.world.data.WorldData
 import java.util.*
@@ -65,6 +66,12 @@ class EmptyStorage : AbstractServerStorage {
             return true
         }
 
-    }
+        override fun writeEntity(entityData: EntityData): Boolean {
+            return true
+        }
 
+        override fun readEntities(): List<EntityData>? {
+            return null
+        }
+    }
 }

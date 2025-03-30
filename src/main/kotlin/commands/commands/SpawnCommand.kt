@@ -10,6 +10,7 @@ import com.aznos.entity.player.Player
 import com.aznos.packets.play.out.ServerSpawnEntityPacket
 import com.aznos.packets.play.out.ServerSpawnLivingEntityPacket
 import com.aznos.world.data.Difficulty
+import com.aznos.world.data.EntityData
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
@@ -55,6 +56,18 @@ class SpawnCommand {
     private fun spawnEntity(player: Player, livingEntityType: LivingEntities?, nonLivingEntityType: Entities?) {
         if(livingEntityType != null) {
             val entity = LivingEntity()
+            val entityData = EntityData(
+                entity.uuid,
+                player.location,
+                livingEntityType.id,
+                20,
+                90f,
+                0,
+                0,
+                0,
+                true
+            )
+
             Bullet.players.forEach {
                 it.sendPacket(
                     ServerSpawnLivingEntityPacket(
@@ -63,9 +76,15 @@ class SpawnCommand {
                 )
             }
 
-            Bullet.livingEntities.add(entity)
+            player.world!!.livingEntities.add(Pair(entity, entityData))
         } else if(nonLivingEntityType != null) {
             val entity = Entity()
+            val entityData = EntityData(
+                entity.uuid,
+                player.location,
+                nonLivingEntityType.id
+            )
+
             Bullet.players.forEach {
                 it.sendPacket(
                     ServerSpawnEntityPacket(
@@ -74,7 +93,7 @@ class SpawnCommand {
                 )
             }
 
-            Bullet.entities.add(entity)
+            player.world!!.entities.add(Pair(entity, entityData))
         }
     }
 

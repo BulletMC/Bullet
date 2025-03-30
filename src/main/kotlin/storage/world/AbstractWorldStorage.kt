@@ -3,7 +3,9 @@ package com.aznos.storage.world
 import com.aznos.datatypes.BlockPositionType
 import com.aznos.world.World
 import com.aznos.world.data.BlockWithMetadata
+import com.aznos.world.data.EntityData
 import com.aznos.world.data.WorldData
+import org.jetbrains.annotations.Contract
 
 interface AbstractWorldStorage {
 
@@ -63,4 +65,7 @@ interface AbstractWorldStorage {
         modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>
     ): Boolean
 
+    fun writeEntity(entityData: EntityData): Boolean
+
+    fun readEntities(): List<EntityData>?
 }

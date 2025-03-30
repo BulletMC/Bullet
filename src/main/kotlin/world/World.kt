@@ -1,9 +1,12 @@
 package com.aznos.world
 
 import com.aznos.datatypes.BlockPositionType
+import com.aznos.entity.Entity
+import com.aznos.entity.livingentity.LivingEntity
 import com.aznos.storage.world.AbstractWorldStorage
 import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.Difficulty
+import com.aznos.world.data.EntityData
 import com.aznos.world.data.TimeOfDay
 
 /**
@@ -27,6 +30,8 @@ class World(
     var worldAge = 0L
     var timeOfDay: Long = TimeOfDay.SUNRISE.time
     var difficulty: Difficulty = Difficulty.NORMAL
+    val livingEntities = mutableListOf<Pair<LivingEntity, EntityData>>()
+    val entities = mutableListOf<Pair<Entity, EntityData>>()
     lateinit var modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>
 
     init {
@@ -43,10 +48,39 @@ class World(
         this.difficulty = difficulty
         this.weather = if (data.raining) 1 else 0
         this.timeOfDay = data.timeOfDay
+
+        for(entity in storage.readEntities()!!) {
+            when(entity.isLiving) {
+                true -> {
+                    livingEntities.add(
+                        Pair(
+                            LivingEntity(),
+                            entity
+                        )
+                    )
+                }
+                false -> {
+                    entities.add(
+                        Pair(
+                            Entity(),
+                            entity
+                        )
+                    )
+                }
+            }
+        }
     }
 
     fun save() {
         storage.writeWorldData(this)
         storage.writeBlockData(modifiedBlocks)
+
+        for(entity in entities) {
+            storage.writeEntity(entity.second)
+        }
+
+        for(livingEntity in livingEntities) {
+            storage.writeEntity(livingEntity.second)
+        }
     }
 }
