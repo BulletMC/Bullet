@@ -173,15 +173,7 @@ class ClientSession(
                 while(isActive) {
                     delay(5.seconds)
 
-                    Bullet.world.writePlayerData(
-                        player.username,
-                        player.uuid,
-                        player.location,
-                        player.status.health,
-                        player.status.foodLevel,
-                        player.status.saturation,
-                        player.status.exhaustion
-                    )
+                    Bullet.storage.storage.writePlayerData(player)
                 }
             }
         }
@@ -260,9 +252,9 @@ class ClientSession(
      */
     private fun handleHealthDecrease(time: Int): Int {
         with(player.status) {
-            if(foodLevel == 0 && health > 0) {
-                if(time == 4000) {
-                    health -= when(Bullet.world.difficulty) {
+            if(foodLevel <= 0 && health > 0) {
+                if(time >= 4000) {
+                    health -= when(player.world!!.difficulty) {
                         Difficulty.PEACEFUL -> 0
                         Difficulty.EASY -> max(health - 1, 10)
                         Difficulty.NORMAL -> max(health - 1, 1)
@@ -299,15 +291,7 @@ class ClientSession(
         state = GameState.DISCONNECTED
 
         if(state == GameState.PLAY) {
-            Bullet.world.writePlayerData(
-                player.username,
-                player.uuid,
-                player.location,
-                player.status.health,
-                player.status.foodLevel,
-                player.status.saturation,
-                player.status.exhaustion
-            )
+            Bullet.storage.storage.writePlayerData(player)
 
             sendPacket(ServerPlayDisconnectPacket(message))
 

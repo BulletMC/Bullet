@@ -27,7 +27,7 @@ class Player(
     lateinit var location: LocationType.Location
     lateinit var locale: String
     lateinit var brand: String
-    var world: World? = Bullet.world
+    var world: World? = Bullet.storage.getWorlds()[0] //TODO better player spawn world initialization
 
     //Inventory and Equipment
     var inventory = Inventory()
@@ -94,8 +94,10 @@ class Player(
      * @param time The time to set it to
      */
     fun setTimeOfDay(time: Long) {
-        world?.timeOfDay = time
-        sendPacket(ServerTimeUpdatePacket(Bullet.world.worldAge, time))
+        if(world == null) return
+
+        world!!.timeOfDay = time
+        sendPacket(ServerTimeUpdatePacket(world!!.worldAge, time))
     }
 
     /**

@@ -4,8 +4,8 @@ import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
 import com.aznos.commands.commands.suggestions.PlayerSuggestions
 import com.aznos.entity.player.Player
+import com.aznos.entity.player.data.BanData
 import com.aznos.util.DurationFormat.getReadableDuration
-import com.aznos.world.World
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
@@ -13,7 +13,6 @@ import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import java.nio.file.Paths
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
@@ -86,12 +85,14 @@ class BanCommand {
         val expirationDuration: Duration? = durationStr?.let { parseTime(it) }
         val readableDuration = getReadableDuration(expirationDuration)
 
-        Bullet.world.writeBannedPlayer(
+        val banData = BanData(
             player.uuid,
             reason,
             expirationDuration ?: Duration.ZERO,
-            context.source.uuid
-        )
+            System.currentTimeMillis(),
+            context.source.uuid)
+
+        Bullet.storage.writeBan(banData)
 
         sendBanMessage(player, readableDuration, reason)
         sendConfirmMessage(context.source, player, readableDuration, reason)
