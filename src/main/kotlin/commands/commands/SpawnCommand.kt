@@ -62,6 +62,9 @@ class SpawnCommand {
                 livingEntityType.id,
                 20,
                 90f,
+                0,
+                0,
+                0,
                 true
             )
 

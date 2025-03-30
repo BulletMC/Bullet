@@ -12,6 +12,9 @@ data class EntityData(
     @Contextual val location: LocationType.Location,
     val entityType: Int,
     val health: Int = 0,
-    val headYaw: Float = 0f,
+    val headPitch: Float = 0f,
+    val velocityX: Short = 0,
+    val velocityY: Short = 0,
+    val velocityZ: Short = 0,
     val isLiving: Boolean = true
 )

@@ -48,6 +48,27 @@ class World(
         this.difficulty = difficulty
         this.weather = if (data.raining) 1 else 0
         this.timeOfDay = data.timeOfDay
+
+        for(entity in storage.readEntities()!!) {
+            when(entity.isLiving) {
+                true -> {
+                    livingEntities.add(
+                        Pair(
+                            LivingEntity(),
+                            entity
+                        )
+                    )
+                }
+                false -> {
+                    entities.add(
+                        Pair(
+                            Entity(),
+                            entity
+                        )
+                    )
+                }
+            }
+        }
     }
 
     fun save() {
