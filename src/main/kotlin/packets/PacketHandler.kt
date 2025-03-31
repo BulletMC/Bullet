@@ -52,6 +52,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
+import javax.swing.text.html.HTML.Tag.I
 import kotlin.experimental.and
 import kotlin.math.pow
 import kotlin.math.sqrt
@@ -428,11 +429,7 @@ class PacketHandler(
         val heldItem = client.player.getHeldItem()
 
         val block = Block.getBlockFromID(heldItem) ?: Item.getItemFromID(heldItem) ?: Block.AIR
-        if(block is Block) {
-            handleBlockPlacement(block, event, heldItem)
-        } else if(block is Item) {
-            handleItemPlacement(block, event, heldItem)
-        }
+        handlePlacement(block, event, heldItem)
     }
 
     /**
@@ -1160,49 +1157,31 @@ class PacketHandler(
         return true
     }
 
-    private fun handleBlockPlacement(block: Block, event: BlockPlaceEvent, heldItem: Int) {
+    private fun handlePlacement(block: Any, event: BlockPlaceEvent, heldItem: Int) {
         try {
-            val stateBlock = Block.getStateID(block)
-
-            event.player.world!!.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
+            val stateID = when(block) {
+                is Block -> Block.getStateID(block)
+                is Item -> Item.getStateID(block)
+                else -> throw IllegalArgumentException("Unknown block or item type")
+            }
 
             for(otherPlayer in Bullet.players) {
                 if(otherPlayer != client.player) {
                     otherPlayer.sendPacket(ServerBlockChangePacket(
                         event.blockPos.copy(),
-                        stateBlock
-                    ))
-                }
-            }
-        } catch(e: IllegalArgumentException) {
-            //nothing to do
-        }
-    }
-
-    private fun handleItemPlacement(block: Item, event: BlockPlaceEvent, heldItem: Int) {
-        try {
-            val stateItem = Item.getStateID(block)
-
-            for(otherPlayer in Bullet.players) {
-                if(otherPlayer != client.player) {
-                    otherPlayer.sendPacket(ServerBlockChangePacket(
-                        event.blockPos.copy(),
-                        stateItem
+                        stateID
                     ))
                 }
             }
 
-            val world = event.player.world!!
-
-            if(block in BlockTags.SIGNS) {
+            if(block is Item && block in BlockTags.SIGNS) {
                 client.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
-                world.modifiedBlocks[event.blockPos] =
-                    BlockWithMetadata(heldItem, listOf("", "", "", ""))
+                world.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem, listOf("", "", "", ""))
             } else {
                 world.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
             }
-        } catch(e: IllegalArgumentException) {
-            //nothing to do
+        } catch (e: IllegalArgumentException) {
+            //do nothing
         }
     }
 
