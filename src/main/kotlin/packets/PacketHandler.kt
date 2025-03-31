@@ -178,6 +178,7 @@ class PacketHandler(
 
     @PacketReceiver
     fun onEntityInteract(packet: ClientInteractEntityPacket) {
+        println(packet.type)
         val attacker = client.player
 
         val event = PlayerInteractEntityEvent(attacker, packet.entityID, packet.type)
@@ -1160,40 +1161,48 @@ class PacketHandler(
     }
 
     private fun handleBlockPlacement(block: Block, event: BlockPlaceEvent, heldItem: Int) {
-        val stateBlock = Block.getStateID(block)
+        try {
+            val stateBlock = Block.getStateID(block)
 
-        event.player.world!!.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
+            event.player.world!!.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
 
-        for(otherPlayer in Bullet.players) {
-            if(otherPlayer != client.player) {
-                otherPlayer.sendPacket(ServerBlockChangePacket(
-                    event.blockPos.copy(),
-                    stateBlock
-                ))
+            for(otherPlayer in Bullet.players) {
+                if(otherPlayer != client.player) {
+                    otherPlayer.sendPacket(ServerBlockChangePacket(
+                        event.blockPos.copy(),
+                        stateBlock
+                    ))
+                }
             }
+        } catch(e: IllegalArgumentException) {
+            //nothing to do
         }
     }
 
     private fun handleItemPlacement(block: Item, event: BlockPlaceEvent, heldItem: Int) {
-        val stateItem = Item.getStateID(block)
+        try {
+            val stateItem = Item.getStateID(block)
 
-        for(otherPlayer in Bullet.players) {
-            if(otherPlayer != client.player) {
-                otherPlayer.sendPacket(ServerBlockChangePacket(
-                    event.blockPos.copy(),
-                    stateItem
-                ))
+            for(otherPlayer in Bullet.players) {
+                if(otherPlayer != client.player) {
+                    otherPlayer.sendPacket(ServerBlockChangePacket(
+                        event.blockPos.copy(),
+                        stateItem
+                    ))
+                }
             }
-        }
 
-        val world = event.player.world!!
+            val world = event.player.world!!
 
-        if(block in BlockTags.SIGNS) {
-            client.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
-            world.modifiedBlocks[event.blockPos] =
-                BlockWithMetadata(heldItem, listOf("", "", "", ""))
-        } else {
-            world.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
+            if(block in BlockTags.SIGNS) {
+                client.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
+                world.modifiedBlocks[event.blockPos] =
+                    BlockWithMetadata(heldItem, listOf("", "", "", ""))
+            } else {
+                world.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
+            }
+        } catch(e: IllegalArgumentException) {
+            //nothing to do
         }
     }
 
