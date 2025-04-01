@@ -845,10 +845,6 @@ class PacketHandler(
         player.username = username
         player.uuid = uuid
 
-        for(i in 1..45) {
-            player.inventory.items[i] = 0
-        }
-
         player.location = LocationType.Location(8.5, 2.0, 8.5)
         player.onGround = false
 
@@ -1073,6 +1069,10 @@ class PacketHandler(
         player.status.saturation = data.saturation
         player.status.exhaustion = data.exhaustionLevel
         player.location = data.location
+
+        for(item in data.inventory) {
+            player.inventory.items[item.first] = item.second
+        }
 
         player.sendPacket(ServerUpdateHealthPacket(
             player.status.health.toFloat(),
