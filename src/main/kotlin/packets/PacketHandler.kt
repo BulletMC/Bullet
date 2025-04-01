@@ -13,6 +13,8 @@ import com.aznos.datatypes.LocationType
 import com.aznos.datatypes.MetadataType
 import com.aznos.datatypes.Slot
 import com.aznos.datatypes.VarInt.readVarInt
+import com.aznos.entity.livingentity.LivingEntities
+import com.aznos.entity.livingentity.LivingEntity
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.GameMode
 import com.aznos.events.*
@@ -32,6 +34,7 @@ import com.aznos.world.World
 import com.aznos.world.blocks.BlockTags
 import com.aznos.world.data.BlockStatus
 import com.aznos.world.data.BlockWithMetadata
+import com.aznos.world.data.EntityData
 import com.aznos.world.items.Item
 import com.mojang.brigadier.exceptions.CommandSyntaxException
 import dev.dewy.nbt.tags.collection.CompoundTag
@@ -52,6 +55,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
+import javax.swing.text.html.HTML.Tag.I
 import kotlin.experimental.and
 import kotlin.math.pow
 import kotlin.math.sqrt
@@ -427,11 +431,7 @@ class PacketHandler(
         val heldItem = client.player.getHeldItem()
 
         val block = Block.getBlockFromID(heldItem) ?: Item.getItemFromID(heldItem) ?: Block.AIR
-        if(block is Block) {
-            handleBlockPlacement(block, event, heldItem)
-        } else if(block is Item) {
-            handleItemPlacement(block, event, heldItem)
-        }
+        handlePlacement(block, event, heldItem)
     }
 
     /**
@@ -1159,41 +1159,46 @@ class PacketHandler(
         return true
     }
 
-    private fun handleBlockPlacement(block: Block, event: BlockPlaceEvent, heldItem: Int) {
-        val stateBlock = Block.getStateID(block)
-
-        event.player.world!!.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
-
-        for(otherPlayer in Bullet.players) {
-            if(otherPlayer != client.player) {
-                otherPlayer.sendPacket(ServerBlockChangePacket(
-                    event.blockPos.copy(),
-                    stateBlock
-                ))
+    private fun handlePlacement(block: Any, event: BlockPlaceEvent, heldItem: Int) {
+        try {
+            val stateID = when (block) {
+                is Block -> Block.getStateID(block)
+                is Item -> try {
+                    Item.getStateID(block)
+                } catch(e: IllegalArgumentException) {
+                    -1
+                }
+                else -> throw IllegalArgumentException("Unknown block or item type")
             }
-        }
-    }
 
-    private fun handleItemPlacement(block: Item, event: BlockPlaceEvent, heldItem: Int) {
-        val stateItem = Item.getStateID(block)
 
-        for(otherPlayer in Bullet.players) {
-            if(otherPlayer != client.player) {
-                otherPlayer.sendPacket(ServerBlockChangePacket(
-                    event.blockPos.copy(),
-                    stateItem
-                ))
+            for(otherPlayer in Bullet.players) {
+                if(otherPlayer != client.player && stateID != -1) {
+                    otherPlayer.sendPacket(
+                        ServerBlockChangePacket(
+                            event.blockPos.copy(),
+                            stateID
+                        )
+                    )
+                }
             }
-        }
 
-        val world = event.player.world!!
+            when {
+                block is Item && block in BlockTags.SIGNS -> {
+                    client.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
+                    world.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem, listOf("", "", "", ""))
+                }
 
-        if(block in BlockTags.SIGNS) {
-            client.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
-            world.modifiedBlocks[event.blockPos] =
-                BlockWithMetadata(heldItem, listOf("", "", "", ""))
-        } else {
-            world.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
+                block is Item && block in BlockTags.SPAWN_EGGS -> {
+                    handleSpawnEgg(block, event)
+                }
+
+                else -> {
+                    world.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
+                }
+            }
+        } catch(e: IllegalArgumentException) {
+            //do nothing
         }
     }
 
@@ -1221,6 +1226,50 @@ class PacketHandler(
                 livingEntity.second.velocityY,
                 livingEntity.second.velocityZ,
             ))
+        }
+    }
+
+    private fun handleSpawnEgg(block: Item, event: BlockPlaceEvent) {
+        val itemName = block.name.removeSuffix("_SPAWN_EGG")
+        val entity = LivingEntities.entries.find { it.name.equals(itemName, true) }
+
+        if(entity != null) {
+            val location = LocationType.Location(
+                event.blockPos.x + 0.5,
+                event.blockPos.y,
+                event.blockPos.z + 0.5
+            )
+
+            val newEntity = LivingEntity()
+            val entityType = entity.id
+
+            client.sendPacket(
+                ServerSpawnLivingEntityPacket(
+                    newEntity.entityID,
+                    newEntity.uuid,
+                    entityType,
+                    location,
+                    90f,
+                    0,
+                    0,
+                    0
+                )
+            )
+
+            world.livingEntities.add(
+                Pair(
+                    newEntity, EntityData(
+                        newEntity.uuid,
+                        location,
+                        entityType,
+                        20,
+                        90f,
+                        0,
+                        0,
+                        0,
+                    )
+                )
+            )
         }
     }
 }
