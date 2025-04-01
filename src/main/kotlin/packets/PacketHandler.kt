@@ -35,6 +35,7 @@ import com.aznos.world.blocks.BlockTags
 import com.aznos.world.data.BlockStatus
 import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.EntityData
+import com.aznos.world.data.Particles
 import com.aznos.world.items.Item
 import com.mojang.brigadier.exceptions.CommandSyntaxException
 import dev.dewy.nbt.tags.collection.CompoundTag
@@ -363,6 +364,9 @@ class PacketHandler(
                         event.blockPos,
                         0
                     ))
+
+                    val block = world.modifiedBlocks[event.blockPos]?.blockID ?: Block.GRASS_BLOCK.id
+                    sendBlockBreakParticles(otherPlayer, block, event.blockPos)
                 }
             }
 
@@ -380,8 +384,10 @@ class PacketHandler(
 
                 BlockStatus.FINISHED_DIGGING.id -> {
                     client.player.status.exhaustion += 0.005f
-                    stopBlockBreak(event.blockPos)
+                    val block = world.modifiedBlocks[event.blockPos]?.blockID ?: Block.GRASS_BLOCK.id
 
+                    stopBlockBreak(event.blockPos)
+                    sendBlockBreakParticles(client.player, block, event.blockPos)
                     removeBlock(event.blockPos)
                 }
             }
@@ -1287,5 +1293,18 @@ class PacketHandler(
                 )
             )
         }
+    }
+
+    private fun sendBlockBreakParticles(player: Player, block: Int, blockPos: BlockPositionType.BlockPosition) {
+        player.sendPacket(ServerParticlePacket(
+            Particles.Block(block),
+            false,
+            blockPos.add(0.5, 0.5, 0.5),
+            0.2f,
+            0.22f,
+            0.2f,
+            0f,
+            25
+        ))
     }
 }
