@@ -35,6 +35,7 @@ import com.aznos.world.blocks.BlockTags
 import com.aznos.world.data.BlockStatus
 import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.EntityData
+import com.aznos.world.data.Particles
 import com.aznos.world.items.Item
 import com.mojang.brigadier.exceptions.CommandSyntaxException
 import dev.dewy.nbt.tags.collection.CompoundTag
@@ -362,6 +363,18 @@ class PacketHandler(
                     otherPlayer.sendPacket(ServerBlockChangePacket(
                         event.blockPos,
                         0
+                    ))
+
+                    val block = world.modifiedBlocks[event.blockPos]?.blockID ?: 0
+                    otherPlayer.sendPacket(ServerParticlePacket(
+                        Particles.Block(block),
+                        false,
+                        event.blockPos.add(0.5, 0.5, 0.5),
+                        0.2f,
+                        0.22f,
+                        0.25f,
+                        0f,
+                        25
                     ))
                 }
             }
