@@ -1190,47 +1190,7 @@ class PacketHandler(
                 }
 
                 block is Item && block in BlockTags.SPAWN_EGGS -> {
-                    val itemName = block.name.removeSuffix("_SPAWN_EGG")
-                    val entity = LivingEntities.entries.find { it.name.equals(itemName, true) }
-
-                    if(entity != null) {
-                        val location = LocationType.Location(
-                            event.blockPos.x + 0.5,
-                            event.blockPos.y + 1.0,
-                            event.blockPos.z + 0.5
-                        )
-
-                        val newEntity = LivingEntity()
-                        val entityType = entity.id
-
-                        client.sendPacket(
-                            ServerSpawnLivingEntityPacket(
-                                newEntity.entityID,
-                                newEntity.uuid,
-                                entityType,
-                                location,
-                                90f,
-                                0,
-                                0,
-                                0
-                            )
-                        )
-
-                        world.livingEntities.add(
-                            Pair(
-                                newEntity, EntityData(
-                                    newEntity.uuid,
-                                    location,
-                                    entityType,
-                                    20,
-                                    90f,
-                                    0,
-                                    0,
-                                    0,
-                                )
-                            )
-                        )
-                    }
+                    handleSpawnEgg(block, event)
                 }
 
                 else -> {
@@ -1266,6 +1226,50 @@ class PacketHandler(
                 livingEntity.second.velocityY,
                 livingEntity.second.velocityZ,
             ))
+        }
+    }
+
+    private fun handleSpawnEgg(block: Item, event: BlockPlaceEvent) {
+        val itemName = block.name.removeSuffix("_SPAWN_EGG")
+        val entity = LivingEntities.entries.find { it.name.equals(itemName, true) }
+
+        if(entity != null) {
+            val location = LocationType.Location(
+                event.blockPos.x + 0.5,
+                event.blockPos.y,
+                event.blockPos.z + 0.5
+            )
+
+            val newEntity = LivingEntity()
+            val entityType = entity.id
+
+            client.sendPacket(
+                ServerSpawnLivingEntityPacket(
+                    newEntity.entityID,
+                    newEntity.uuid,
+                    entityType,
+                    location,
+                    90f,
+                    0,
+                    0,
+                    0
+                )
+            )
+
+            world.livingEntities.add(
+                Pair(
+                    newEntity, EntityData(
+                        newEntity.uuid,
+                        location,
+                        entityType,
+                        20,
+                        90f,
+                        0,
+                        0,
+                        0,
+                    )
+                )
+            )
         }
     }
 }
