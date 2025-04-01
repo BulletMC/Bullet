@@ -365,17 +365,8 @@ class PacketHandler(
                         0
                     ))
 
-                    val block = world.modifiedBlocks[event.blockPos]?.blockID ?: 0
-                    otherPlayer.sendPacket(ServerParticlePacket(
-                        Particles.Block(block),
-                        false,
-                        event.blockPos.add(0.5, 0.5, 0.5),
-                        0.2f,
-                        0.22f,
-                        0.2f,
-                        0f,
-                        25
-                    ))
+                    val block = world.modifiedBlocks[event.blockPos]?.blockID ?: Block.GRASS_BLOCK.id
+                    sendBlockBreakParticles(otherPlayer, block, event.blockPos)
                 }
             }
 
@@ -393,8 +384,10 @@ class PacketHandler(
 
                 BlockStatus.FINISHED_DIGGING.id -> {
                     client.player.status.exhaustion += 0.005f
-                    stopBlockBreak(event.blockPos)
+                    val block = world.modifiedBlocks[event.blockPos]?.blockID ?: Block.GRASS_BLOCK.id
 
+                    stopBlockBreak(event.blockPos)
+                    sendBlockBreakParticles(client.player, block, event.blockPos)
                     removeBlock(event.blockPos)
                 }
             }
@@ -1284,5 +1277,18 @@ class PacketHandler(
                 )
             )
         }
+    }
+
+    private fun sendBlockBreakParticles(player: Player, block: Int, blockPos: BlockPositionType.BlockPosition) {
+        player.sendPacket(ServerParticlePacket(
+            Particles.Block(block),
+            false,
+            blockPos.add(0.5, 0.5, 0.5),
+            0.2f,
+            0.22f,
+            0.2f,
+            0f,
+            25
+        ))
     }
 }
