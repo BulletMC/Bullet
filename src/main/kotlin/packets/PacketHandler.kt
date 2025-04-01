@@ -372,7 +372,7 @@ class PacketHandler(
                         event.blockPos.add(0.5, 0.5, 0.5),
                         0.2f,
                         0.22f,
-                        0.25f,
+                        0.2f,
                         0f,
                         25
                     ))
