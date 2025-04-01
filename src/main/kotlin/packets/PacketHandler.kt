@@ -845,10 +845,6 @@ class PacketHandler(
         player.username = username
         player.uuid = uuid
 
-        for(i in 1..45) {
-            player.inventory.items[i] = 0
-        }
-
         player.location = LocationType.Location(8.5, 2.0, 8.5)
         player.onGround = false
 
@@ -1065,7 +1061,6 @@ class PacketHandler(
 
     private fun readPlayerPersistentData() {
         val player = client.player
-
         val data = Bullet.storage.storage.readPlayerData(player.uuid) ?: return
 
         player.status.health = data.health
@@ -1073,6 +1068,27 @@ class PacketHandler(
         player.status.saturation = data.saturation
         player.status.exhaustion = data.exhaustionLevel
         player.location = data.location
+
+        val savedItems = data.inventory.associate {
+            it.first to it.second
+        }
+        player.inventory.items.clear()
+
+        val totalSlots = 45
+        val slotDataList = mutableListOf<Slot.SlotData>()
+        for(slot in 0 until totalSlots) {
+            if(savedItems.containsKey(slot)) {
+                val itemID = savedItems[slot]!!
+                player.inventory.items[slot] = itemID
+
+                slotDataList.add(Slot.SlotData(true, itemID, 1))
+            } else {
+                slotDataList.add(Slot.SlotData(false))
+            }
+        }
+
+        player.sendPacket(ServerWindowItemsPacket(0, slotDataList))
+        sendHeldItemUpdate()
 
         player.sendPacket(ServerUpdateHealthPacket(
             player.status.health.toFloat(),

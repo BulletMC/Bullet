@@ -15,4 +15,5 @@ data class PlayerData(
     val foodLevel: Int,
     val saturation: Float,
     val exhaustionLevel: Float,
+    val inventory: List<Pair<Int, Int>>
 )

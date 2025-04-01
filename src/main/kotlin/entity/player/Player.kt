@@ -3,6 +3,7 @@ package com.aznos.entity.player
 import com.aznos.Bullet
 import com.aznos.ClientSession
 import com.aznos.datatypes.LocationType
+import com.aznos.datatypes.Slot
 import com.aznos.entity.Entity
 import com.aznos.entity.player.data.ChatPosition
 import com.aznos.entity.player.data.GameMode
