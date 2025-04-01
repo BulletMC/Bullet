@@ -1088,6 +1088,7 @@ class PacketHandler(
         }
 
         player.sendPacket(ServerWindowItemsPacket(0, slotDataList))
+        sendHeldItemUpdate()
 
         player.sendPacket(ServerUpdateHealthPacket(
             player.status.health.toFloat(),
