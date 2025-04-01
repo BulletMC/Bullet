@@ -179,7 +179,6 @@ class PacketHandler(
 
     @PacketReceiver
     fun onEntityInteract(packet: ClientInteractEntityPacket) {
-        println(packet.type)
         val attacker = client.player
 
         val event = PlayerInteractEntityEvent(attacker, packet.entityID, packet.type)
