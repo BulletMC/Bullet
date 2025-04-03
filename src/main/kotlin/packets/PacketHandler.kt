@@ -1187,9 +1187,12 @@ class PacketHandler(
             val properties = mutableMapOf<String, String>()
 
             when(block) {
-                Item.COBBLESTONE_STAIRS,
-                Item.OAK_STAIRS,
-                -> properties["facing"] = dir
+                Item.COBBLESTONE_STAIRS, Item.OAK_STAIRS -> {
+                    properties["facing"] = dir
+                    properties["half"] = "bottom"
+                    properties["shape"] = "straight"
+                    properties["waterlogged"] = "false"
+                }
             }
 
             val stateID = when(block) {
