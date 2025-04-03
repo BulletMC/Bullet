@@ -84,4 +84,41 @@ object BlockTags {
     )
 
     val SPAWN_EGGS = HOSTILE_SPAWN_EGGS + PASSIVE_SPAWN_EGGS
+
+    val STAIRS = listOf(
+        Item.ACACIA_STAIRS,
+        Item.ANDESITE_STAIRS,
+        Item.BLACKSTONE_STAIRS,
+        Item.BRICK_STAIRS,
+        Item.BIRCH_STAIRS,
+        Item.COBBLESTONE_STAIRS,
+        Item.CRIMSON_STAIRS,
+        Item.DARK_OAK_STAIRS,
+        Item.DARK_PRISMARINE_STAIRS,
+        Item.DIORITE_STAIRS,
+        Item.END_STONE_BRICK_STAIRS,
+        Item.GRANITE_STAIRS,
+        Item.JUNGLE_STAIRS,
+        Item.NETHER_BRICK_STAIRS,
+        Item.OAK_STAIRS,
+        Item.POLISHED_ANDESITE_STAIRS,
+        Item.POLISHED_BLACKSTONE_STAIRS,
+        Item.POLISHED_BLACKSTONE_BRICK_STAIRS,
+        Item.POLISHED_DIORITE_STAIRS,
+        Item.POLISHED_GRANITE_STAIRS,
+        Item.PRISMARINE_STAIRS,
+        Item.PRISMARINE_BRICK_STAIRS,
+        Item.PURPUR_STAIRS,
+        Item.QUARTZ_STAIRS,
+        Item.RED_NETHER_BRICK_STAIRS,
+        Item.RED_SANDSTONE_STAIRS,
+        Item.SANDSTONE_STAIRS,
+        Item.SMOOTH_QUARTZ_STAIRS,
+        Item.SMOOTH_RED_SANDSTONE_STAIRS,
+        Item.SMOOTH_SANDSTONE_STAIRS,
+        Item.SPRUCE_STAIRS,
+        Item.STONE_BRICK_STAIRS,
+        Item.STONE_STAIRS,
+        Item.WARPED_STAIRS
+    )
 }

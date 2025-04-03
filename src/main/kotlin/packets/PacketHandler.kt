@@ -1186,8 +1186,8 @@ class PacketHandler(
             val dir = getCardinalDirection(client.player.location.yaw)
             val properties = mutableMapOf<String, String>()
 
-            when(block) {
-                Item.COBBLESTONE_STAIRS, Item.OAK_STAIRS -> {
+            for(stair in BlockTags.STAIRS) {
+                if(block == stair) {
                     properties["facing"] = dir
                     properties["half"] = "bottom"
                     properties["shape"] = "straight"
