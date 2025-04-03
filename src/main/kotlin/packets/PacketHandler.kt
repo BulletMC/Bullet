@@ -1183,10 +1183,19 @@ class PacketHandler(
 
     private fun handlePlacement(block: Any, event: BlockPlaceEvent, heldItem: Int) {
         try {
-            val stateID = when (block) {
-                is Block -> Block.getStateID(block)
+            val dir = getCardinalDirection(client.player.location.yaw)
+            val properties = mutableMapOf<String, String>()
+
+            when(block) {
+                Item.COBBLESTONE_STAIRS,
+                Item.OAK_STAIRS,
+                -> properties["facing"] = dir
+            }
+
+            val stateID = when(block) {
+                is Block -> Block.getStateID(block, properties)
                 is Item -> try {
-                    Item.getStateID(block)
+                    Item.getStateID(block, properties)
                 } catch(e: IllegalArgumentException) {
                     -1
                 }
@@ -1306,5 +1315,15 @@ class PacketHandler(
             0f,
             25
         ))
+    }
+
+    private fun getCardinalDirection(yaw: Float): String {
+        val rot = (yaw % 360 + 360) % 360
+        return when {
+            rot >= 45 && rot < 135 -> "west"
+            rot >= 135 && rot < 225 -> "north"
+            rot >= 225 && rot < 315 -> "east"
+            else -> "south"
+        }
     }
 }
