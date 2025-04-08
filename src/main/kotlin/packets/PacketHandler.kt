@@ -1195,6 +1195,18 @@ class PacketHandler(
                 }
             }
 
+            for(furnace in BlockTags.FURNANCES) {
+                if(block == furnace) {
+                    properties["facing"] = dir
+                    properties["lit"] = "false"
+
+                    if(block == Block.CAMPFIRE) {
+                        properties["waterlogged"] = "false"
+                        properties["signal_fire"] = "false"
+                    }
+                }
+            }
+
             val stateID = when(block) {
                 is Block -> Block.getStateID(block, properties)
                 is Item -> try {

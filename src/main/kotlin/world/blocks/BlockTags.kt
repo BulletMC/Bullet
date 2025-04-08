@@ -121,4 +121,11 @@ object BlockTags {
         Item.STONE_STAIRS,
         Item.WARPED_STAIRS
     )
+
+    val FURNANCES = listOf(
+        Item.BLAST_FURNACE,
+        Item.CAMPFIRE,
+        Item.FURNACE,
+        Item.SMOKER
+    )
 }
