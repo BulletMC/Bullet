@@ -1235,6 +1235,26 @@ class PacketHandler(
                 properties["powered"] = "false"
             }
 
+            if(block == Block.BARREL) {
+                properties["facing"] = dir
+                properties["open"] = "false"
+            }
+
+            if(block == Block.LECTERN) {
+                properties["facing"] = dir
+                properties["has_book"] = "false"
+                properties["powered"] = "false"
+            }
+
+            if(block == Block.END_ROD) {
+                properties["facing"] = dir
+            }
+
+            if(block == Block.GRINDSTONE) {
+                properties["facing"] = dir
+                properties["face"] = "floor"
+            }
+
             val stateID = when(block) {
                 is Block -> Block.getStateID(block, properties)
                 is Item -> try {
