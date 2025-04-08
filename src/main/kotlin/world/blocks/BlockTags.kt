@@ -128,4 +128,67 @@ object BlockTags {
         Item.FURNACE,
         Item.SMOKER
     )
+
+    val LOGS = listOf(
+        Block.OAK_LOG,
+        Block.SPRUCE_LOG,
+        Block.BIRCH_LOG,
+        Block.JUNGLE_LOG,
+        Block.ACACIA_LOG,
+        Block.DARK_OAK_LOG,
+        Block.STRIPPED_OAK_LOG,
+        Block.STRIPPED_SPRUCE_LOG,
+        Block.STRIPPED_BIRCH_LOG,
+        Block.STRIPPED_JUNGLE_LOG,
+        Block.STRIPPED_ACACIA_LOG,
+        Block.STRIPPED_DARK_OAK_LOG,
+        Block.CRIMSON_STEM,
+        Block.WARPED_STEM,
+        Block.STRIPPED_CRIMSON_STEM,
+        Block.STRIPPED_WARPED_STEM,
+        Block.STRIPPED_CRIMSON_HYPHAE,
+        Block.STRIPPED_WARPED_HYPHAE,
+        Block.CRIMSON_HYPHAE,
+        Block.WARPED_HYPHAE,
+        Block.OAK_WOOD,
+        Block.SPRUCE_WOOD,
+        Block.BIRCH_WOOD,
+        Block.JUNGLE_WOOD,
+        Block.ACACIA_WOOD,
+        Block.DARK_OAK_WOOD,
+        Block.STRIPPED_OAK_WOOD,
+        Block.STRIPPED_SPRUCE_WOOD,
+        Block.STRIPPED_BIRCH_WOOD,
+        Block.STRIPPED_JUNGLE_WOOD,
+        Block.STRIPPED_ACACIA_WOOD,
+        Block.STRIPPED_DARK_OAK_WOOD,
+    )
+
+    val BANNERS = listOf(
+        Item.BLACK_BANNER,
+        Item.BLUE_BANNER,
+        Item.BROWN_BANNER,
+        Item.CYAN_BANNER,
+        Item.GRAY_BANNER,
+        Item.GREEN_BANNER,
+        Item.LIGHT_BLUE_BANNER,
+        Item.LIGHT_GRAY_BANNER,
+        Item.LIME_BANNER,
+        Item.MAGENTA_BANNER,
+        Item.ORANGE_BANNER,
+        Item.PINK_BANNER,
+        Item.PURPLE_BANNER,
+        Item.RED_BANNER,
+        Item.WHITE_BANNER,
+        Item.YELLOW_BANNER
+    )
+
+    val SKULLS = listOf(
+        Item.SKELETON_SKULL,
+        Item.WITHER_SKELETON_SKULL,
+        Item.ZOMBIE_HEAD,
+        Item.CREEPER_HEAD,
+        Item.DRAGON_HEAD,
+        Item.PLAYER_HEAD
+    )
 }

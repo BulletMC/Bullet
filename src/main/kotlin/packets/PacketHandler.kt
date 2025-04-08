@@ -1255,6 +1255,15 @@ class PacketHandler(
                 properties["face"] = "floor"
             }
 
+            if(block == BlockTags.BANNERS || block == BlockTags.SKULLS) {
+                properties["rotation"] = getRotationalDirection(client.player.location.yaw).toString()
+            }
+
+            if(block == BlockTags.SIGNS) {
+                properties["rotation"] = getRotationalDirection(client.player.location.yaw).toString()
+                properties["waterlogged"] = "false"
+            }
+
             val stateID = when(block) {
                 is Block -> Block.getStateID(block, properties)
                 is Item -> try {
@@ -1388,5 +1397,10 @@ class PacketHandler(
             rot >= 225 && rot < 315 -> "east"
             else -> "south"
         }
+    }
+
+    private fun getRotationalDirection(yaw: Float): Int {
+        val normalizedYaw = (yaw % 360 + 360) % 360
+        return ((normalizedYaw / 22.5).toInt() % 16)
     }
 }
