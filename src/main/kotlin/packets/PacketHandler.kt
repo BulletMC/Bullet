@@ -1207,6 +1207,21 @@ class PacketHandler(
                 }
             }
 
+            if(block == Block.DISPENSER || block == Block.DROPPER) {
+                properties["facing"] = dir
+                properties["triggered"] = "false"
+            }
+
+            if(block == Block.PISTON) {
+                properties["extended"] = "false"
+                properties["facing"] = dir
+            }
+
+            if(block == Block.OBSERVER) {
+                properties["facing"] = dir
+                properties["powered"] = "false"
+            }
+
             val stateID = when(block) {
                 is Block -> Block.getStateID(block, properties)
                 is Item -> try {
