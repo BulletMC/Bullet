@@ -1222,6 +1222,19 @@ class PacketHandler(
                 properties["powered"] = "false"
             }
 
+            if(block == Block.REPEATER) {
+                properties["facing"] = dir
+                properties["delay"] = "1"
+                properties["locked"] = "false"
+                properties["powered"] = "false"
+            }
+
+            if(block == Block.COMPARATOR) {
+                properties["facing"] = dir
+                properties["mode"] = "compare"
+                properties["powered"] = "false"
+            }
+
             val stateID = when(block) {
                 is Block -> Block.getStateID(block, properties)
                 is Item -> try {
