@@ -1186,107 +1186,7 @@ class PacketHandler(
     private fun handlePlacement(block: Any, event: BlockPlaceEvent, heldItem: Int) {
         try {
             val dir = getCardinalDirection(client.player.location.yaw)
-            val properties = mutableMapOf<String, String>()
-
-            for(stair in BlockTags.STAIRS) {
-                if(block == stair) {
-                    properties["facing"] = dir
-                    properties["half"] = "bottom"
-                    properties["shape"] = "straight"
-                    properties["waterlogged"] = "false"
-                }
-            }
-
-            for(furnace in BlockTags.FURNANCES) {
-                if(block == furnace) {
-                    properties["facing"] = dir
-                    properties["lit"] = "false"
-
-                    if(block == Block.CAMPFIRE) {
-                        properties["waterlogged"] = "false"
-                        properties["signal_fire"] = "false"
-                    }
-                }
-            }
-
-            if(block == Block.DISPENSER || block == Block.DROPPER) {
-                properties["facing"] = dir
-                properties["triggered"] = "false"
-            }
-
-            if(block == Block.PISTON) {
-                properties["extended"] = "false"
-                properties["facing"] = dir
-            }
-
-            if(block == Block.OBSERVER) {
-                properties["facing"] = dir
-                properties["powered"] = "false"
-            }
-
-            if(block == Block.REPEATER) {
-                properties["facing"] = dir
-                properties["delay"] = "1"
-                properties["locked"] = "false"
-                properties["powered"] = "false"
-            }
-
-            if(block == Block.COMPARATOR) {
-                properties["facing"] = dir
-                properties["mode"] = "compare"
-                properties["powered"] = "false"
-            }
-
-            if(block == Block.BARREL) {
-                properties["facing"] = dir
-                properties["open"] = "false"
-            }
-
-            if(block == Block.LECTERN) {
-                properties["facing"] = dir
-                properties["has_book"] = "false"
-                properties["powered"] = "false"
-            }
-
-            if(block == Block.END_ROD) {
-                properties["facing"] = dir
-            }
-
-            if(block == Block.GRINDSTONE) {
-                properties["facing"] = dir
-                properties["face"] = "floor"
-            }
-
-            if(block == BlockTags.BANNERS || block == BlockTags.SKULLS) {
-                properties["rotation"] = getRotationalDirection(client.player.location.yaw).toString()
-            }
-
-            if(block == BlockTags.SIGNS) {
-                properties["rotation"] = getRotationalDirection(client.player.location.yaw).toString()
-                properties["waterlogged"] = "false"
-            }
-
-            for(log in BlockTags.LOGS) {
-                if(block == log) {
-                    properties["axis"] = getAxisDirection(client.player.location.yaw, client.player.location.pitch).name.lowercase()
-                }
-            }
-
-            if(block == Item.QUARTZ_PILLAR) {
-                properties["axis"] = getAxisDirection(client.player.location.yaw, client.player.location.pitch).name.lowercase()
-            }
-
-            if(block == Item.CHAIN) {
-                properties["axis"] = getAxisDirection(client.player.location.yaw, client.player.location.pitch).name.lowercase()
-            }
-
-            if(block == Item.BONE_BLOCK) {
-                properties["axis"] = getAxisDirection(client.player.location.yaw, client.player.location.pitch).name.lowercase()
-            }
-
-            if(block == Item.BASALT || block == Item.POLISHED_BASALT) {
-                properties["axis"] = getAxisDirection(client.player.location.yaw, client.player.location.pitch).name.lowercase()
-            }
+            val properties = modifyBlockProperties(block, dir)
 
             val stateID = when(block) {
                 is Block -> Block.getStateID(block, properties)
@@ -1326,6 +1226,147 @@ class PacketHandler(
         } catch(e: IllegalArgumentException) {
             //do nothing
         }
+    }
+
+    private fun modifyBlockProperties(block: Any, cardinalDirection: String): MutableMap<String, String> {
+        val properties = mutableMapOf<String, String>()
+
+        for(stair in BlockTags.STAIRS) {
+            if(block == stair) {
+                properties["facing"] = cardinalDirection
+                properties["half"] = "bottom"
+                properties["shape"] = "straight"
+                properties["waterlogged"] = "false"
+            }
+        }
+
+        for(furnace in BlockTags.FURNANCES) {
+            if(block == furnace) {
+                properties["facing"] = cardinalDirection
+                properties["lit"] = "false"
+
+                if(block == Block.CAMPFIRE) {
+                    properties["waterlogged"] = "false"
+                    properties["signal_fire"] = "false"
+                }
+            }
+        }
+
+        if(block == Block.END_ROD) {
+            properties["facing"] = cardinalDirection
+        }
+
+        if(block == Block.GRINDSTONE) {
+            properties["facing"] = cardinalDirection
+            properties["face"] = "floor"
+        }
+
+        if(block == BlockTags.BANNERS || block == BlockTags.SKULLS) {
+            properties["rotation"] = getRotationalDirection(client.player.location.yaw).toString()
+        }
+
+        if(block == BlockTags.SIGNS) {
+            properties["rotation"] = getRotationalDirection(client.player.location.yaw).toString()
+            properties["waterlogged"] = "false"
+        }
+
+        modifyRedstoneBlockProperties(block, cardinalDirection).forEach { (key, value) ->
+            properties[key] = value
+        }
+
+        modifyAxisAlignedBlocks(block).forEach { (key, value) ->
+            properties[key] = value
+        }
+
+        return properties
+    }
+
+    private fun modifyRedstoneBlockProperties(block: Any, cardinalDirection: String): MutableMap<String, String> {
+        val properties = mutableMapOf<String, String>()
+
+        if(block == Block.DISPENSER || block == Block.DROPPER) {
+            properties["facing"] = cardinalDirection
+            properties["triggered"] = "false"
+        }
+
+        if(block == Block.PISTON) {
+            properties["extended"] = "false"
+            properties["facing"] = cardinalDirection
+        }
+
+        if(block == Block.OBSERVER) {
+            properties["facing"] = cardinalDirection
+            properties["powered"] = "false"
+        }
+
+        if(block == Block.REPEATER) {
+            properties["facing"] = cardinalDirection
+            properties["delay"] = "1"
+            properties["locked"] = "false"
+            properties["powered"] = "false"
+        }
+
+        if(block == Block.COMPARATOR) {
+            properties["facing"] = cardinalDirection
+            properties["mode"] = "compare"
+            properties["powered"] = "false"
+        }
+
+        if(block == Block.BARREL) {
+            properties["facing"] = cardinalDirection
+            properties["open"] = "false"
+        }
+
+        if(block == Block.LECTERN) {
+            properties["facing"] = cardinalDirection
+            properties["has_book"] = "false"
+            properties["powered"] = "false"
+        }
+
+        return properties
+    }
+
+    private fun modifyAxisAlignedBlocks(block: Any): MutableMap<String, String> {
+        val properties = mutableMapOf<String, String>()
+
+        for(log in BlockTags.LOGS) {
+            if(block == log) {
+                properties["axis"] = getAxisDirection(
+                    client.player.location.yaw,
+                    client.player.location.pitch
+                ).name.lowercase()
+            }
+        }
+
+        if(block == Item.QUARTZ_PILLAR) {
+            properties["axis"] = getAxisDirection(
+                client.player.location.yaw,
+                client.player.location.pitch
+            ).name.lowercase()
+        }
+
+        if(block == Item.CHAIN) {
+            properties["axis"] = getAxisDirection(
+                client.player.location.yaw,
+                client.player.location.pitch
+            ).name.lowercase()
+        }
+
+        if(block == Item.BONE_BLOCK) {
+            properties["axis"] = getAxisDirection(
+                client.player.location.yaw,
+                client.player.location.pitch
+            ).name.lowercase()
+        }
+
+        if(block == Item.BASALT || block == Item.POLISHED_BASALT) {
+            properties["axis"] = getAxisDirection(
+                client.player.location.yaw,
+                client.player.location.pitch
+            ).name.lowercase()
+        }
+
+        return properties
     }
 
     private fun sendEntities() {
