@@ -32,6 +32,7 @@ import com.aznos.world.blocks.Block
 import com.aznos.util.DurationFormat
 import com.aznos.world.World
 import com.aznos.world.blocks.BlockTags
+import com.aznos.world.data.Axis
 import com.aznos.world.data.BlockStatus
 import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.EntityData
@@ -58,6 +59,7 @@ import java.time.format.DateTimeFormatter
 import java.util.*
 import javax.swing.text.html.HTML.Tag.I
 import kotlin.experimental.and
+import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -1264,6 +1266,28 @@ class PacketHandler(
                 properties["waterlogged"] = "false"
             }
 
+            for(log in BlockTags.LOGS) {
+                if(block == log) {
+                    properties["axis"] = getAxisDirection(client.player.location.yaw, client.player.location.pitch).name.lowercase()
+                }
+            }
+
+            if(block == Item.QUARTZ_PILLAR) {
+                properties["axis"] = getAxisDirection(client.player.location.yaw, client.player.location.pitch).name.lowercase()
+            }
+
+            if(block == Item.CHAIN) {
+                properties["axis"] = getAxisDirection(client.player.location.yaw, client.player.location.pitch).name.lowercase()
+            }
+
+            if(block == Item.BONE_BLOCK) {
+                properties["axis"] = getAxisDirection(client.player.location.yaw, client.player.location.pitch).name.lowercase()
+            }
+
+            if(block == Item.BASALT || block == Item.POLISHED_BASALT) {
+                properties["axis"] = getAxisDirection(client.player.location.yaw, client.player.location.pitch).name.lowercase()
+            }
+
             val stateID = when(block) {
                 is Block -> Block.getStateID(block, properties)
                 is Item -> try {
@@ -1273,7 +1297,6 @@ class PacketHandler(
                 }
                 else -> throw IllegalArgumentException("Unknown block or item type")
             }
-
 
             for(otherPlayer in Bullet.players) {
                 if(otherPlayer != client.player && stateID != -1) {
@@ -1402,5 +1425,14 @@ class PacketHandler(
     private fun getRotationalDirection(yaw: Float): Int {
         val normalizedYaw = (yaw % 360 + 360) % 360
         return ((normalizedYaw / 22.5).toInt() % 16)
+    }
+
+    private fun getAxisDirection(yaw: Float, pitch: Float): Axis {
+        return when {
+            pitch > 60f -> Axis.Y
+            pitch < -60f -> Axis.Y
+            abs(yaw) % 180 < 45 || abs(yaw) % 180 > 135 -> Axis.Z
+            else -> Axis.X
+        }
     }
 }
