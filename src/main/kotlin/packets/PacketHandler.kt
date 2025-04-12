@@ -32,6 +32,7 @@ import com.aznos.world.blocks.Block
 import com.aznos.util.DurationFormat
 import com.aznos.world.World
 import com.aznos.world.blocks.BlockTags
+import com.aznos.world.data.Axis
 import com.aznos.world.data.BlockStatus
 import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.EntityData
@@ -58,6 +59,7 @@ import java.time.format.DateTimeFormatter
 import java.util.*
 import javax.swing.text.html.HTML.Tag.I
 import kotlin.experimental.and
+import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -1183,16 +1185,18 @@ class PacketHandler(
 
     private fun handlePlacement(block: Any, event: BlockPlaceEvent, heldItem: Int) {
         try {
-            val stateID = when (block) {
-                is Block -> Block.getStateID(block)
+            val dir = getCardinalDirection(client.player.location.yaw)
+            val properties = modifyBlockProperties(block, dir)
+
+            val stateID = when(block) {
+                is Block -> Block.getStateID(block, properties)
                 is Item -> try {
-                    Item.getStateID(block)
+                    Item.getStateID(block, properties)
                 } catch(e: IllegalArgumentException) {
                     -1
                 }
                 else -> throw IllegalArgumentException("Unknown block or item type")
             }
-
 
             for(otherPlayer in Bullet.players) {
                 if(otherPlayer != client.player && stateID != -1) {
@@ -1222,6 +1226,147 @@ class PacketHandler(
         } catch(e: IllegalArgumentException) {
             //do nothing
         }
+    }
+
+    private fun modifyBlockProperties(block: Any, cardinalDirection: String): MutableMap<String, String> {
+        val properties = mutableMapOf<String, String>()
+
+        for(stair in BlockTags.STAIRS) {
+            if(block == stair) {
+                properties["facing"] = cardinalDirection
+                properties["half"] = "bottom"
+                properties["shape"] = "straight"
+                properties["waterlogged"] = "false"
+            }
+        }
+
+        for(furnace in BlockTags.FURNANCES) {
+            if(block == furnace) {
+                properties["facing"] = cardinalDirection
+                properties["lit"] = "false"
+
+                if(block == Block.CAMPFIRE) {
+                    properties["waterlogged"] = "false"
+                    properties["signal_fire"] = "false"
+                }
+            }
+        }
+
+        if(block == Block.END_ROD) {
+            properties["facing"] = cardinalDirection
+        }
+
+        if(block == Block.GRINDSTONE) {
+            properties["facing"] = cardinalDirection
+            properties["face"] = "floor"
+        }
+
+        if(block == BlockTags.BANNERS || block == BlockTags.SKULLS) {
+            properties["rotation"] = getRotationalDirection(client.player.location.yaw).toString()
+        }
+
+        if(block == BlockTags.SIGNS) {
+            properties["rotation"] = getRotationalDirection(client.player.location.yaw).toString()
+            properties["waterlogged"] = "false"
+        }
+
+        modifyRedstoneBlockProperties(block, cardinalDirection).forEach { (key, value) ->
+            properties[key] = value
+        }
+
+        modifyAxisAlignedBlocks(block).forEach { (key, value) ->
+            properties[key] = value
+        }
+
+        return properties
+    }
+
+    private fun modifyRedstoneBlockProperties(block: Any, cardinalDirection: String): MutableMap<String, String> {
+        val properties = mutableMapOf<String, String>()
+
+        if(block == Block.DISPENSER || block == Block.DROPPER) {
+            properties["facing"] = cardinalDirection
+            properties["triggered"] = "false"
+        }
+
+        if(block == Block.PISTON) {
+            properties["extended"] = "false"
+            properties["facing"] = cardinalDirection
+        }
+
+        if(block == Block.OBSERVER) {
+            properties["facing"] = cardinalDirection
+            properties["powered"] = "false"
+        }
+
+        if(block == Block.REPEATER) {
+            properties["facing"] = cardinalDirection
+            properties["delay"] = "1"
+            properties["locked"] = "false"
+            properties["powered"] = "false"
+        }
+
+        if(block == Block.COMPARATOR) {
+            properties["facing"] = cardinalDirection
+            properties["mode"] = "compare"
+            properties["powered"] = "false"
+        }
+
+        if(block == Block.BARREL) {
+            properties["facing"] = cardinalDirection
+            properties["open"] = "false"
+        }
+
+        if(block == Block.LECTERN) {
+            properties["facing"] = cardinalDirection
+            properties["has_book"] = "false"
+            properties["powered"] = "false"
+        }
+
+        return properties
+    }
+
+    private fun modifyAxisAlignedBlocks(block: Any): MutableMap<String, String> {
+        val properties = mutableMapOf<String, String>()
+
+        for(log in BlockTags.LOGS) {
+            if(block == log) {
+                properties["axis"] = getAxisDirection(
+                    client.player.location.yaw,
+                    client.player.location.pitch
+                ).name.lowercase()
+            }
+        }
+
+        if(block == Item.QUARTZ_PILLAR) {
+            properties["axis"] = getAxisDirection(
+                client.player.location.yaw,
+                client.player.location.pitch
+            ).name.lowercase()
+        }
+
+        if(block == Item.CHAIN) {
+            properties["axis"] = getAxisDirection(
+                client.player.location.yaw,
+                client.player.location.pitch
+            ).name.lowercase()
+        }
+
+        if(block == Item.BONE_BLOCK) {
+            properties["axis"] = getAxisDirection(
+                client.player.location.yaw,
+                client.player.location.pitch
+            ).name.lowercase()
+        }
+
+        if(block == Item.BASALT || block == Item.POLISHED_BASALT) {
+            properties["axis"] = getAxisDirection(
+                client.player.location.yaw,
+                client.player.location.pitch
+            ).name.lowercase()
+        }
+
+        return properties
     }
 
     private fun sendEntities() {
@@ -1306,5 +1451,29 @@ class PacketHandler(
             0f,
             25
         ))
+    }
+
+    private fun getCardinalDirection(yaw: Float): String {
+        val rot = (yaw % 360 + 360) % 360
+        return when {
+            rot >= 45 && rot < 135 -> "west"
+            rot >= 135 && rot < 225 -> "north"
+            rot >= 225 && rot < 315 -> "east"
+            else -> "south"
+        }
+    }
+
+    private fun getRotationalDirection(yaw: Float): Int {
+        val normalizedYaw = (yaw % 360 + 360) % 360
+        return ((normalizedYaw / 22.5).toInt() % 16)
+    }
+
+    private fun getAxisDirection(yaw: Float, pitch: Float): Axis {
+        return when {
+            pitch > 60f -> Axis.Y
+            pitch < -60f -> Axis.Y
+            abs(yaw) % 180 < 45 || abs(yaw) % 180 > 135 -> Axis.Z
+            else -> Axis.X
+        }
     }
 }

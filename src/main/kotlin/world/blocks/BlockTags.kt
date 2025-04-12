@@ -84,4 +84,111 @@ object BlockTags {
     )
 
     val SPAWN_EGGS = HOSTILE_SPAWN_EGGS + PASSIVE_SPAWN_EGGS
+
+    val STAIRS = listOf(
+        Item.ACACIA_STAIRS,
+        Item.ANDESITE_STAIRS,
+        Item.BLACKSTONE_STAIRS,
+        Item.BRICK_STAIRS,
+        Item.BIRCH_STAIRS,
+        Item.COBBLESTONE_STAIRS,
+        Item.CRIMSON_STAIRS,
+        Item.DARK_OAK_STAIRS,
+        Item.DARK_PRISMARINE_STAIRS,
+        Item.DIORITE_STAIRS,
+        Item.END_STONE_BRICK_STAIRS,
+        Item.GRANITE_STAIRS,
+        Item.JUNGLE_STAIRS,
+        Item.NETHER_BRICK_STAIRS,
+        Item.OAK_STAIRS,
+        Item.POLISHED_ANDESITE_STAIRS,
+        Item.POLISHED_BLACKSTONE_STAIRS,
+        Item.POLISHED_BLACKSTONE_BRICK_STAIRS,
+        Item.POLISHED_DIORITE_STAIRS,
+        Item.POLISHED_GRANITE_STAIRS,
+        Item.PRISMARINE_STAIRS,
+        Item.PRISMARINE_BRICK_STAIRS,
+        Item.PURPUR_STAIRS,
+        Item.QUARTZ_STAIRS,
+        Item.RED_NETHER_BRICK_STAIRS,
+        Item.RED_SANDSTONE_STAIRS,
+        Item.SANDSTONE_STAIRS,
+        Item.SMOOTH_QUARTZ_STAIRS,
+        Item.SMOOTH_RED_SANDSTONE_STAIRS,
+        Item.SMOOTH_SANDSTONE_STAIRS,
+        Item.SPRUCE_STAIRS,
+        Item.STONE_BRICK_STAIRS,
+        Item.STONE_STAIRS,
+        Item.WARPED_STAIRS
+    )
+
+    val FURNANCES = listOf(
+        Item.BLAST_FURNACE,
+        Item.CAMPFIRE,
+        Item.FURNACE,
+        Item.SMOKER
+    )
+
+    val LOGS = listOf(
+        Block.OAK_LOG,
+        Block.SPRUCE_LOG,
+        Block.BIRCH_LOG,
+        Block.JUNGLE_LOG,
+        Block.ACACIA_LOG,
+        Block.DARK_OAK_LOG,
+        Block.STRIPPED_OAK_LOG,
+        Block.STRIPPED_SPRUCE_LOG,
+        Block.STRIPPED_BIRCH_LOG,
+        Block.STRIPPED_JUNGLE_LOG,
+        Block.STRIPPED_ACACIA_LOG,
+        Block.STRIPPED_DARK_OAK_LOG,
+        Block.CRIMSON_STEM,
+        Block.WARPED_STEM,
+        Block.STRIPPED_CRIMSON_STEM,
+        Block.STRIPPED_WARPED_STEM,
+        Block.STRIPPED_CRIMSON_HYPHAE,
+        Block.STRIPPED_WARPED_HYPHAE,
+        Block.CRIMSON_HYPHAE,
+        Block.WARPED_HYPHAE,
+        Block.OAK_WOOD,
+        Block.SPRUCE_WOOD,
+        Block.BIRCH_WOOD,
+        Block.JUNGLE_WOOD,
+        Block.ACACIA_WOOD,
+        Block.DARK_OAK_WOOD,
+        Block.STRIPPED_OAK_WOOD,
+        Block.STRIPPED_SPRUCE_WOOD,
+        Block.STRIPPED_BIRCH_WOOD,
+        Block.STRIPPED_JUNGLE_WOOD,
+        Block.STRIPPED_ACACIA_WOOD,
+        Block.STRIPPED_DARK_OAK_WOOD,
+    )
+
+    val BANNERS = listOf(
+        Item.BLACK_BANNER,
+        Item.BLUE_BANNER,
+        Item.BROWN_BANNER,
+        Item.CYAN_BANNER,
+        Item.GRAY_BANNER,
+        Item.GREEN_BANNER,
+        Item.LIGHT_BLUE_BANNER,
+        Item.LIGHT_GRAY_BANNER,
+        Item.LIME_BANNER,
+        Item.MAGENTA_BANNER,
+        Item.ORANGE_BANNER,
+        Item.PINK_BANNER,
+        Item.PURPLE_BANNER,
+        Item.RED_BANNER,
+        Item.WHITE_BANNER,
+        Item.YELLOW_BANNER
+    )
+
+    val SKULLS = listOf(
+        Item.SKELETON_SKULL,
+        Item.WITHER_SKELETON_SKULL,
+        Item.ZOMBIE_HEAD,
+        Item.CREEPER_HEAD,
+        Item.DRAGON_HEAD,
+        Item.PLAYER_HEAD
+    )
 }
