@@ -77,44 +77,7 @@ class PacketHandler(
 
     @PacketReceiver
     fun onUseItem(packet: ClientUseItemPacket) {
-        val item = client.player.getHeldItem()
-        if(item == Item.BOW.id || item == Item.CROSSBOW.id) {
-            val player = client.player
-            val location = player.location
-            val direction = location.directionVector()
 
-            val arrow = Entity()
-            val velocity = 1.5
-
-            val entityData = EntityData(
-                arrow.uuid,
-                location.add(direction.x, direction.y + 1.5, direction.z),
-                Entities.ARROW.id,
-                0,
-                0f,
-                (direction.x * velocity).toInt().toShort(),
-                (direction.y * velocity).toInt().toShort(),
-                (direction.z * velocity).toInt().toShort(),
-                true
-            )
-
-            Bullet.players.forEach {
-                it.sendPacket(
-                    ServerSpawnEntityPacket(
-                        arrow.entityID,
-                        arrow.uuid,
-                        Entities.ARROW.id,
-                        entityData.location,
-                        entityData.velocityX,
-                        entityData.velocityY,
-                        entityData.velocityZ,
-                        0
-                    )
-                )
-            }
-
-            player.world!!.entities.add(Pair(arrow, entityData))
-        }
     }
 
     @PacketReceiver
@@ -438,6 +401,45 @@ class PacketHandler(
                     removeBlock(event.blockPos)
                 }
             }
+        }
+
+        val item = client.player.getHeldItem()
+        if(item == Item.BOW.id || item == Item.CROSSBOW.id) {
+            val player = client.player
+            val location = player.location
+            val direction = location.directionVector()
+
+            val arrow = Entity()
+            val velocity = 15
+
+            val entityData = EntityData(
+                arrow.uuid,
+                location.add(direction.x, direction.y + 1.5, direction.z),
+                Entities.ARROW.id,
+                0,
+                0f,
+                ((direction.x * velocity) * 8000).toInt().toShort(),
+                ((direction.y * velocity) * 8000).toInt().toShort(),
+                ((direction.z * velocity) * 8000).toInt().toShort(),
+                true
+            )
+
+            Bullet.players.forEach {
+                it.sendPacket(
+                    ServerSpawnEntityPacket(
+                        arrow.entityID,
+                        arrow.uuid,
+                        Entities.ARROW.id,
+                        entityData.location,
+                        entityData.velocityX,
+                        entityData.velocityY,
+                        entityData.velocityZ,
+                        0
+                    )
+                )
+            }
+
+            player.world!!.entities.add(Pair(arrow, entityData))
         }
     }
 
