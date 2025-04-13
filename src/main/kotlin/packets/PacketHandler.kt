@@ -257,6 +257,16 @@ class PacketHandler(
 
             client.player.selectedSlot = packet.slot.toInt()
             sendHeldItemUpdate()
+
+            val metadata = MetadataType.MetadataEntry(7, 0, 0x00)
+            for(otherPlayer in Bullet.players) {
+                if(otherPlayer != client.player) {
+                    otherPlayer.sendPacket(ServerEntityMetadataPacket(
+                        client.player.entityID,
+                        listOf(metadata)
+                    ))
+                }
+            }
         } catch (e: Exception) {
             Bullet.logger.error("Error handling held item change packet", e)
         }
