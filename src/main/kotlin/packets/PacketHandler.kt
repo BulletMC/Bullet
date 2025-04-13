@@ -59,6 +59,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.experimental.and
+import kotlin.math.atan2
 import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sqrt
@@ -438,13 +439,26 @@ class PacketHandler(
 
             val arrow = Entity()
             val velocity = min(player.drawTime * 1000, 3000)
+            val dir = player.location.directionVector().normalize()
+            val arrowVelocity = Triple(
+                dir.x * velocity,
+                dir.y * velocity,
+                dir.z * velocity
+            )
+
+            val pitch = Math.toDegrees(
+                atan2(
+                    arrowVelocity.second,
+                    sqrt(arrowVelocity.first * arrowVelocity.first + arrowVelocity.third * arrowVelocity.third)
+                )
+            )
 
             val entityData = EntityData(
                 arrow.uuid,
                 location.add(direction.x, direction.y + 1.5, direction.z),
                 Entities.ARROW.id,
                 0,
-                0f,
+                pitch.toFloat(),
                 ((direction.x * velocity) * 8000).toInt().toShort(),
                 ((direction.y * velocity) * 8000).toInt().toShort(),
                 ((direction.z * velocity) * 8000).toInt().toShort(),

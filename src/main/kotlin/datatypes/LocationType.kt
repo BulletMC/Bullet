@@ -6,12 +6,18 @@ import java.io.DataOutputStream
 import java.io.IOException
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 object LocationType {
     /**
      * Represents a 3 dimensional vector
      */
-    data class Vector3(val x: Double, val y: Double, val z: Double)
+    data class Vector3(val x: Double, val y: Double, val z: Double) {
+        fun normalize(): Vector3 {
+            val length = sqrt(x * x + y * y + z * z)
+            return if(length == 0.0) this else Vector3(x / length, y / length, z / length)
+        }
+    }
 
     /**
      * Represents a location in the world, see [BlockPosition] for block positions
@@ -77,7 +83,6 @@ object LocationType {
 
             return Vector3(x, y, z)
         }
-
     }
 
 
