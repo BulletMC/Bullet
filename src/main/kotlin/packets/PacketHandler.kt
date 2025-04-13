@@ -435,7 +435,6 @@ class PacketHandler(
         if(item == Item.BOW.id || item == Item.CROSSBOW.id) {
             val player = client.player
             val location = player.location
-            val direction = location.directionVector()
 
             val arrow = Entity()
             val velocity = min(player.drawTime * 1000, 3000)
@@ -446,22 +445,17 @@ class PacketHandler(
                 dir.z * velocity
             )
 
-            val pitch = Math.toDegrees(
-                atan2(
-                    arrowVelocity.second,
-                    sqrt(arrowVelocity.first * arrowVelocity.first + arrowVelocity.third * arrowVelocity.third)
-                )
-            )
+            val (yaw, pitch) = vectorToYawPitch(dir.x, dir.y, dir.z)
 
             val entityData = EntityData(
                 arrow.uuid,
-                location.add(direction.x, direction.y + 1.5, direction.z),
+                location.add(dir.x, dir.y + 1.5, dir.z),
                 Entities.ARROW.id,
                 0,
-                pitch.toFloat(),
-                ((direction.x * velocity) * 8000).toInt().toShort(),
-                ((direction.y * velocity) * 8000).toInt().toShort(),
-                ((direction.z * velocity) * 8000).toInt().toShort(),
+                pitch,
+                ((dir.x * velocity) * 8000).toInt().toShort(),
+                ((dir.y * velocity) * 8000).toInt().toShort(),
+                ((dir.z * velocity) * 8000).toInt().toShort(),
                 true
             )
 
@@ -1447,10 +1441,13 @@ class PacketHandler(
                 val deltaY = ((loc.y - prevLoc.y) * 4096).toInt().toShort()
                 val deltaZ = ((loc.z - prevLoc.z) * 4096).toInt().toShort()
 
+                val dir = client.player.location.directionVector().normalize()
+                val (yaw, pitch) = vectorToYawPitch(dir.x, dir.y, dir.z)
+
                 val movePacket = ServerEntityPositionAndRotationPacket(
                     arrow.entityID,
                     deltaX, deltaY, deltaZ,
-                    0f, 0f,
+                    yaw, pitch,
                     true
                 )
 
@@ -1471,5 +1468,11 @@ class PacketHandler(
                 client.player.drawTime += 50
             }
         }
+    }
+
+    private fun vectorToYawPitch(x: Double, y: Double, z: Double): Pair<Float, Float> {
+        val yaw = Math.toDegrees(atan2(-x, z)).toFloat()
+        val pitch = Math.toDegrees(atan2(-y, sqrt(x * x + z * z))).toFloat()
+        return yaw to pitch
     }
 }
