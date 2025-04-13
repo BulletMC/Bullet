@@ -61,6 +61,7 @@ import java.util.*
 import kotlin.experimental.and
 import kotlin.math.pow
 import kotlin.math.sqrt
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Handles all incoming packets by dispatching them to the appropriate handler methods
@@ -472,6 +473,7 @@ class PacketHandler(
             }
 
             player.world!!.entities.add(Pair(arrow, entityData))
+            launchArrowMovement(arrow, entityData)
         }
     }
 
@@ -1387,5 +1389,42 @@ class PacketHandler(
             0f,
             25
         ))
+    }
+
+    private fun launchArrowMovement(arrow: Entity, data: EntityData) {
+        Bullet.scope.launch {
+            var location = data.location
+            var veloX = data.velocityX / 8000.0
+            var veloY = data.velocityY / 8000.0
+            var veloZ = data.velocityZ / 8000.0
+
+            var onGround = false
+            var ticksLived = 0
+
+            while(!onGround && ticksLived < 200) {
+                delay(50.milliseconds)
+
+                veloY -= 0.05
+                veloX *= 0.99
+                veloY *= 0.99
+                veloZ *= 0.99
+
+                location = location.add(veloX, veloY, veloZ)
+                val packet = ServerEntityPositionAndRotationPacket(
+                    arrow.entityID,
+                    (veloX * 4096).toInt().toShort(),
+                    (veloY * 4096).toInt().toShort(),
+                    (veloZ * 4096).toInt().toShort(),
+                    0f,
+                    0f,
+                    true
+                )
+
+                for(player in Bullet.players) player.sendPacket(packet)
+                if(location.y < 0) onGround = true
+
+                ticksLived++
+            }
+        }
     }
 }
