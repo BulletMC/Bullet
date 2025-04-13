@@ -14,6 +14,7 @@ import com.aznos.world.World
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
 import java.util.UUID
+import kotlin.time.Duration
 
 /**
  * Represents a player in the game
@@ -44,6 +45,8 @@ class Player(
     var fallDistance: Double = 0.0
     var isFlying: Boolean = false
     var canFly: Boolean = false
+    var isDrawing: Boolean = false
+    var drawTime: Int = 0
     private var tabListHeader = Component.text()
     private var tabListFooter = Component.text()
 

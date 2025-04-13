@@ -50,6 +50,7 @@ object Bullet : AutoCloseable {
     var shouldPersist = true
 
     val players = mutableListOf<Player>()
+    val arrows = mutableMapOf<Entity, Int>() //Int being the amount of damage to deal
 
     lateinit var storage: StorageManager
     val startupTime = System.currentTimeMillis()

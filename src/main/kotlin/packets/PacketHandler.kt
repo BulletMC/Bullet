@@ -90,6 +90,9 @@ class PacketHandler(
                     ))
                 }
             }
+
+            client.player.isDrawing = true
+            saveDrawTime()
         }
     }
 
@@ -433,7 +436,7 @@ class PacketHandler(
             val direction = location.directionVector()
 
             val arrow = Entity()
-            val velocity = 15
+            val velocity = 1.245
 
             val entityData = EntityData(
                 arrow.uuid,
@@ -473,6 +476,17 @@ class PacketHandler(
             }
 
             player.world!!.entities.add(Pair(arrow, entityData))
+
+            var damageToDeal = 0
+            when(player.drawTime) {
+                in 0..100 -> damageToDeal = 1
+                in 200..900 -> damageToDeal = 5
+                in 1000..1999 -> damageToDeal = 6
+                in 2000..2999 -> damageToDeal = 7
+                in 3000..Int.MAX_VALUE -> damageToDeal = 6
+            }
+
+            Bullet.arrows[arrow] = damageToDeal
             launchArrowMovement(arrow, entityData)
         }
     }
@@ -1393,37 +1407,57 @@ class PacketHandler(
 
     private fun launchArrowMovement(arrow: Entity, data: EntityData) {
         Bullet.scope.launch {
-            var location = data.location
-            var veloX = data.velocityX / 8000.0
-            var veloY = data.velocityY / 8000.0
-            var veloZ = data.velocityZ / 8000.0
+            var loc = data.location
+            var velocityX = data.velocityX / 8000.0
+            var velocityY = data.velocityY / 8000.0
+            var velocityZ = data.velocityZ / 8000.0
 
-            var onGround = false
-            var ticksLived = 0
+            val gravity = 0.05
+            val drag = 0.99
 
-            while(!onGround && ticksLived < 200) {
-                delay(50.milliseconds)
+            var lifeTicks = 0
 
-                veloY -= 0.05
-                veloX *= 0.99
-                veloY *= 0.99
-                veloZ *= 0.99
+            while (lifeTicks < 1200) {
+                delay(50)
 
-                location = location.add(veloX, veloY, veloZ)
-                val packet = ServerEntityPositionAndRotationPacket(
+                // Store previous location for delta calculation
+                val prevLoc = loc
+
+                // Apply drag and gravity
+                velocityX *= drag
+                velocityY = (velocityY - gravity) * drag
+                velocityZ *= drag
+
+                // Move the arrow
+                loc = loc.add(velocityX, velocityY, velocityZ)
+
+                val deltaX = ((loc.x - prevLoc.x) * 4096).toInt().toShort()
+                val deltaY = ((loc.y - prevLoc.y) * 4096).toInt().toShort()
+                val deltaZ = ((loc.z - prevLoc.z) * 4096).toInt().toShort()
+
+                // Broadcast movement
+                val movePacket = ServerEntityPositionAndRotationPacket(
                     arrow.entityID,
-                    (veloX * 4096).toInt().toShort(),
-                    (veloY * 4096).toInt().toShort(),
-                    (veloZ * 4096).toInt().toShort(),
-                    0f,
-                    0f,
+                    deltaX, deltaY, deltaZ,
+                    0f, 0f,
                     true
                 )
 
-                for(player in Bullet.players) player.sendPacket(packet)
-                if(location.y < 0) onGround = true
+                for (player in Bullet.players) {
+                    player.sendPacket(movePacket)
+                }
 
-                ticksLived++
+                lifeTicks++
+            }
+        }
+    }
+
+    private fun saveDrawTime() {
+        Bullet.scope.launch {
+            delay(50.milliseconds)
+
+            if(client.player.isDrawing) {
+                client.player.drawTime += 50
             }
         }
     }
