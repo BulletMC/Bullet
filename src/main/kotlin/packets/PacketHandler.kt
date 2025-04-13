@@ -461,6 +461,16 @@ class PacketHandler(
                 )
             }
 
+            val metadata = MetadataType.MetadataEntry(7, 0, 0x00)
+            for(otherPlayer in Bullet.players) {
+                if(otherPlayer != client.player) {
+                    otherPlayer.sendPacket(ServerEntityMetadataPacket(
+                        client.player.entityID,
+                        listOf(metadata)
+                    ))
+                }
+            }
+
             player.world!!.entities.add(Pair(arrow, entityData))
         }
     }
