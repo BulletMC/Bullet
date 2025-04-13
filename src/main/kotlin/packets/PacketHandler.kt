@@ -77,7 +77,19 @@ class PacketHandler(
 
     @PacketReceiver
     fun onUseItem(packet: ClientUseItemPacket) {
+        val item = client.player.getHeldItem()
+        if(item == Item.BOW.id) {
+            val metadata = MetadataType.MetadataEntry(7, 0, 0x01)
 
+            for(otherPlayer in Bullet.players) {
+                if(otherPlayer != client.player) {
+                    otherPlayer.sendPacket(ServerEntityMetadataPacket(
+                        client.player.entityID,
+                        listOf(metadata)
+                    ))
+                }
+            }
+        }
     }
 
     @PacketReceiver
