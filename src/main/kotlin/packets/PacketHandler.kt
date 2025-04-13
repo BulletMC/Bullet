@@ -13,8 +13,10 @@ import com.aznos.datatypes.LocationType
 import com.aznos.datatypes.MetadataType
 import com.aznos.datatypes.Slot
 import com.aznos.datatypes.VarInt.readVarInt
+import com.aznos.entity.Entity
 import com.aznos.entity.livingentity.LivingEntities
 import com.aznos.entity.livingentity.LivingEntity
+import com.aznos.entity.nonliving.Entities
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.GameMode
 import com.aznos.events.*
@@ -75,7 +77,44 @@ class PacketHandler(
 
     @PacketReceiver
     fun onUseItem(packet: ClientUseItemPacket) {
-        Bullet.logger.info("Use item, hand: ${packet.hand}")
+        val item = client.player.getHeldItem()
+        if(item == Item.BOW.id || item == Item.CROSSBOW.id) {
+            val player = client.player
+            val location = player.location
+            val direction = location.directionVector()
+
+            val arrow = Entity()
+            val velocity = 1.5
+
+            val entityData = EntityData(
+                arrow.uuid,
+                location.add(direction.x, direction.y + 1.5, direction.z),
+                Entities.ARROW.id,
+                0,
+                0f,
+                (direction.x * velocity).toInt().toShort(),
+                (direction.y * velocity).toInt().toShort(),
+                (direction.z * velocity).toInt().toShort(),
+                true
+            )
+
+            Bullet.players.forEach {
+                it.sendPacket(
+                    ServerSpawnEntityPacket(
+                        arrow.entityID,
+                        arrow.uuid,
+                        Entities.ARROW.id,
+                        entityData.location,
+                        entityData.velocityX,
+                        entityData.velocityY,
+                        entityData.velocityZ,
+                        0
+                    )
+                )
+            }
+
+            player.world!!.entities.add(Pair(arrow, entityData))
+        }
     }
 
     @PacketReceiver

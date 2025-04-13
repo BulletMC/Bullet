@@ -4,8 +4,15 @@ import kotlinx.serialization.Serializable
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException
+import kotlin.math.cos
+import kotlin.math.sin
 
 object LocationType {
+    /**
+     * Represents a 3 dimensional vector
+     */
+    data class Vector3(val x: Double, val y: Double, val z: Double)
+
     /**
      * Represents a location in the world, see [BlockPosition] for block positions
      */
@@ -58,6 +65,17 @@ object LocationType {
                 yaw = yaw,
                 pitch = pitch
             )
+        }
+
+        fun directionVector(): Vector3 {
+            val yawRad = Math.toRadians(yaw.toDouble())
+            val pitchRad = Math.toRadians(pitch.toDouble())
+
+            val x = -sin(yawRad) * cos(pitchRad)
+            val y = -sin(pitchRad)
+            val z = cos(yawRad) * cos(pitchRad)
+
+            return Vector3(x, y, z)
         }
 
     }
