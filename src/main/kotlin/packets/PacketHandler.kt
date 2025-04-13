@@ -59,6 +59,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.experimental.and
+import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sqrt
 import kotlin.time.Duration.Companion.milliseconds
@@ -160,7 +161,7 @@ class PacketHandler(
                 .map { it.text }
 
             val formattedMatches = matches.map { match ->
-                if (lastSpace == -1) "/$match" else match
+                if(lastSpace == -1) "/$match" else match
             }
 
             client.player.sendPacket(ServerTabCompletePacket(
@@ -436,7 +437,7 @@ class PacketHandler(
             val direction = location.directionVector()
 
             val arrow = Entity()
-            val velocity = 1.245
+            val velocity = min(player.drawTime * 1000, 3000)
 
             val entityData = EntityData(
                 arrow.uuid,
@@ -1417,25 +1418,21 @@ class PacketHandler(
 
             var lifeTicks = 0
 
-            while (lifeTicks < 1200) {
+            while(lifeTicks < 1200) {
                 delay(50)
 
-                // Store previous location for delta calculation
                 val prevLoc = loc
 
-                // Apply drag and gravity
                 velocityX *= drag
                 velocityY = (velocityY - gravity) * drag
                 velocityZ *= drag
 
-                // Move the arrow
                 loc = loc.add(velocityX, velocityY, velocityZ)
 
                 val deltaX = ((loc.x - prevLoc.x) * 4096).toInt().toShort()
                 val deltaY = ((loc.y - prevLoc.y) * 4096).toInt().toShort()
                 val deltaZ = ((loc.z - prevLoc.z) * 4096).toInt().toShort()
 
-                // Broadcast movement
                 val movePacket = ServerEntityPositionAndRotationPacket(
                     arrow.entityID,
                     deltaX, deltaY, deltaZ,
@@ -1443,7 +1440,7 @@ class PacketHandler(
                     true
                 )
 
-                for (player in Bullet.players) {
+                for(player in Bullet.players) {
                     player.sendPacket(movePacket)
                 }
 
