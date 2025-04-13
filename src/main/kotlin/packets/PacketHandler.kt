@@ -56,7 +56,6 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
-import javax.swing.text.html.HTML.Tag.I
 import kotlin.experimental.and
 import kotlin.math.pow
 import kotlin.math.sqrt
@@ -73,6 +72,11 @@ class PacketHandler(
 
     val world: World
         get() = client.player.world!!
+
+    @PacketReceiver
+    fun onUseItem(packet: ClientUseItemPacket) {
+        Bullet.logger.info("Use item, hand: ${packet.hand}")
+    }
 
     @PacketReceiver
     fun onUpdateSign(packet: ClientUpdateSignPacket) {
@@ -232,12 +236,16 @@ class PacketHandler(
 
     @PacketReceiver
     fun onHeldItemChange(packet: ClientHeldItemChangePacket) {
-        val event = PlayerHeldItemChangeEvent(client.player, packet.slot.toInt())
-        EventManager.fire(event)
-        if(event.isCancelled) return
+        try {
+            val event = PlayerHeldItemChangeEvent(client.player, packet.slot.toInt())
+            EventManager.fire(event)
+            if(event.isCancelled) return
 
-        client.player.selectedSlot = packet.slot.toInt()
-        sendHeldItemUpdate()
+            client.player.selectedSlot = packet.slot.toInt()
+            sendHeldItemUpdate()
+        } catch (e: Exception) {
+            Bullet.logger.error("Error handling held item change packet", e)
+        }
     }
 
     @PacketReceiver

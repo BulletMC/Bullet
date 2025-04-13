@@ -65,6 +65,7 @@ object PacketRegistry {
             this[0x1C] = ClientEntityActionPacket::class.java
             this[0x2C] = ClientAnimationPacket::class.java
             this[0x2E] = ClientBlockPlacementPacket::class.java
+            this[0x2F] = ClientUseItemPacket::class.java
         }
 
         packets[GameState.PLAY] = playPackets

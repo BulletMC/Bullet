@@ -4,6 +4,8 @@ import com.aznos.datatypes.VarInt.readVarInt
 import com.aznos.datatypes.VarInt.writeVarInt
 import dev.dewy.nbt.Nbt
 import dev.dewy.nbt.tags.collection.CompoundTag
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException
@@ -24,7 +26,7 @@ object Slot {
         var present: Boolean,
         val itemID: Int? = null,
         var itemCount: Byte? = null,
-        var nbt: CompoundTag? = null
+        var nbt: CompoundTag? = CompoundTag("")
     )
 
     /**
@@ -34,22 +36,21 @@ object Slot {
      * @throws IOException If an I/O error occurs
      */
     @Throws(IOException::class)
-    fun DataInputStream.readSlot(): SlotData {
+    fun DataInputStream.readSlot(): Slot.SlotData {
         val present = readBoolean()
-        if(!present) return SlotData(false)
+        if (!present) return Slot.SlotData(false)
 
         val itemID = readVarInt()
         val itemCount = readByte()
 
-        val nbt = if (readByte().toInt() == 0) null
-        else {
-            reset()
+        val nbt = try {
             Nbt().fromStream(this)
+        } catch (_: Exception) {
+            null
         }
 
-        return SlotData(true, itemID, itemCount, nbt)
+        return Slot.SlotData(true, itemID, itemCount, nbt)
     }
-
 
     /**
      * Writes a slot to the [DataOutputStream]
