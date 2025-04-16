@@ -1252,34 +1252,6 @@ class PacketHandler(
             }
         }
 
-        for(bed in BlockTags.BEDS) {
-            if(block == bed) {
-                properties["facing"] = cardinalDirection
-                properties["part"] = "foot"
-                properties["occupied"] = "false"
-
-                val headPos = when(cardinalDirection) {
-                    "north" -> event.blockPos.copy(z = event.blockPos.z - 1)
-                    "south" -> event.blockPos.copy(z = event.blockPos.z + 1)
-                    "west"  -> event.blockPos.copy(x = event.blockPos.x - 1)
-                    "east"  -> event.blockPos.copy(x = event.blockPos.x + 1)
-                    else    -> event.blockPos
-                }
-
-                world.modifiedBlocks[headPos] = BlockWithMetadata(client.player.getHeldItem())
-
-                val props: MutableMap<String, String> = mutableMapOf()
-                props["facing"] = cardinalDirection
-                props["part"] = "head"
-                props["occupied"] = "false"
-
-                val stateID = Item.getStateID(block as Item, props)
-                for(player in Bullet.players) {
-                    player.sendPacket(ServerBlockChangePacket(headPos, stateID))
-                }
-            }
-        }
-
         if(block == Block.END_ROD) {
             properties["facing"] = cardinalDirection
         }
@@ -1304,6 +1276,12 @@ class PacketHandler(
 
         modifyAxisAlignedBlocks(block).forEach { (key, value) ->
             properties[key] = value
+        }
+
+        if(block is Item) {
+            modifyBedBlocks(block, cardinalDirection, event).forEach { (key, value) ->
+                properties[key] = value
+            }
         }
 
         return properties
@@ -1392,6 +1370,40 @@ class PacketHandler(
                 client.player.location.yaw,
                 client.player.location.pitch
             ).name.lowercase()
+        }
+
+        return properties
+    }
+
+    private fun modifyBedBlocks(block: Item, cardinalDirection: String, event: BlockPlaceEvent): MutableMap<String, String> {
+        val properties = mutableMapOf<String, String>()
+
+        for(bed in BlockTags.BEDS) {
+            if(block == bed) {
+                properties["facing"] = cardinalDirection
+                properties["part"] = "foot"
+                properties["occupied"] = "false"
+
+                val headPos = when(cardinalDirection) {
+                    "north" -> event.blockPos.copy(z = event.blockPos.z - 1)
+                    "south" -> event.blockPos.copy(z = event.blockPos.z + 1)
+                    "west"  -> event.blockPos.copy(x = event.blockPos.x - 1)
+                    "east"  -> event.blockPos.copy(x = event.blockPos.x + 1)
+                    else    -> event.blockPos
+                }
+
+                world.modifiedBlocks[headPos] = BlockWithMetadata(client.player.getHeldItem())
+
+                val props: MutableMap<String, String> = mutableMapOf()
+                props["facing"] = cardinalDirection
+                props["part"] = "head"
+                props["occupied"] = "false"
+
+                val stateID = Item.getStateID(block as Item, props)
+                for(player in Bullet.players) {
+                    player.sendPacket(ServerBlockChangePacket(headPos, stateID))
+                }
+            }
         }
 
         return properties
