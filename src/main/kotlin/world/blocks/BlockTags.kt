@@ -191,4 +191,23 @@ object BlockTags {
         Item.DRAGON_HEAD,
         Item.PLAYER_HEAD
     )
+
+    val BEDS = listOf(
+        Item.BLACK_BED,
+        Item.BLUE_BED,
+        Item.BROWN_BED,
+        Item.CYAN_BED,
+        Item.GRAY_BED,
+        Item.GREEN_BED,
+        Item.LIGHT_BLUE_BED,
+        Item.LIGHT_GRAY_BED,
+        Item.LIME_BED,
+        Item.MAGENTA_BED,
+        Item.ORANGE_BED,
+        Item.PINK_BED,
+        Item.PURPLE_BED,
+        Item.RED_BED,
+        Item.WHITE_BED,
+        Item.YELLOW_BED
+    )
 }

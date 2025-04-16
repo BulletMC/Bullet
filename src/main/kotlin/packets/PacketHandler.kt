@@ -1186,7 +1186,7 @@ class PacketHandler(
     private fun handlePlacement(block: Any, event: BlockPlaceEvent, heldItem: Int) {
         try {
             val dir = getCardinalDirection(client.player.location.yaw)
-            val properties = modifyBlockProperties(block, dir)
+            val properties = modifyBlockProperties(block, dir, event)
 
             val stateID = when(block) {
                 is Block -> Block.getStateID(block, properties)
@@ -1228,7 +1228,7 @@ class PacketHandler(
         }
     }
 
-    private fun modifyBlockProperties(block: Any, cardinalDirection: String): MutableMap<String, String> {
+    private fun modifyBlockProperties(block: Any, cardinalDirection: String, event: BlockPlaceEvent): MutableMap<String, String> {
         val properties = mutableMapOf<String, String>()
 
         for(stair in BlockTags.STAIRS) {
@@ -1248,6 +1248,33 @@ class PacketHandler(
                 if(block == Block.CAMPFIRE) {
                     properties["waterlogged"] = "false"
                     properties["signal_fire"] = "false"
+                }
+            }
+        }
+
+        for(bed in BlockTags.BEDS) {
+            if(block == bed) {
+                properties["facing"] = cardinalDirection
+                properties["part"] = "foot"
+                properties["occupied"] = "false"
+
+                //spawn the head of the bed
+                val headPos = BlockPositionType.BlockPosition(
+                    event.blockPos.x,
+                    event.blockPos.y,
+                    event.blockPos.z + 1
+                )
+
+                world.modifiedBlocks[headPos] = BlockWithMetadata(client.player.getHeldItem())
+
+                val props: MutableMap<String, String> = mutableMapOf()
+                props["facing"] = cardinalDirection
+                props["part"] = "head"
+                props["occupied"] = "false"
+
+                val stateID = Item.getStateID(block as Item, props)
+                for(player in Bullet.players) {
+                    player.sendPacket(ServerBlockChangePacket(headPos, stateID))
                 }
             }
         }
