@@ -1258,12 +1258,13 @@ class PacketHandler(
                 properties["part"] = "foot"
                 properties["occupied"] = "false"
 
-                //spawn the head of the bed
-                val headPos = BlockPositionType.BlockPosition(
-                    event.blockPos.x,
-                    event.blockPos.y,
-                    event.blockPos.z + 1
-                )
+                val headPos = when(cardinalDirection) {
+                    "north" -> event.blockPos.copy(z = event.blockPos.z - 1)
+                    "south" -> event.blockPos.copy(z = event.blockPos.z + 1)
+                    "west"  -> event.blockPos.copy(x = event.blockPos.x - 1)
+                    "east"  -> event.blockPos.copy(x = event.blockPos.x + 1)
+                    else    -> event.blockPos
+                }
 
                 world.modifiedBlocks[headPos] = BlockWithMetadata(client.player.getHeldItem())
 
