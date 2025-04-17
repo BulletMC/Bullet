@@ -367,7 +367,7 @@ class PacketHandler(
                         0
                     ))
 
-                    val block = world.modifiedBlocks[event.blockPos]?.blockID ?: Block.GRASS_BLOCK.id
+                    val block = world.modifiedBlocks[event.blockPos]?.stateID ?: Block.GRASS_BLOCK.id
                     sendBlockBreakParticles(otherPlayer, block, event.blockPos)
                 }
             }
@@ -386,7 +386,7 @@ class PacketHandler(
 
                 BlockStatus.FINISHED_DIGGING.id -> {
                     client.player.status.exhaustion += 0.005f
-                    val block = world.modifiedBlocks[event.blockPos]?.blockID ?: Block.GRASS_BLOCK.id
+                    val block = world.modifiedBlocks[event.blockPos]?.stateID ?: Block.GRASS_BLOCK.id
 
                     stopBlockBreak(event.blockPos)
                     sendBlockBreakParticles(client.player, block, event.blockPos)
@@ -1108,35 +1108,26 @@ class PacketHandler(
     }
 
     private fun sendBlockChanges() {
-        val blocks = world.modifiedBlocks
+        if(world.modifiedBlocks.isEmpty()) return
+        for((pos, meta) in world.modifiedBlocks) {
+            client.player.sendPacket(ServerBlockChangePacket(
+                pos, meta.stateID
+            ))
 
-        for((position, metadata) in blocks) {
-            val block = Block.getBlockFromID(metadata.blockID)
-                ?: Item.getItemFromID(metadata.blockID) ?: Block.AIR
+            if(meta.textLines != null) {
+                val nbt = CompoundTag()
+                nbt.putString("id", "minecraft:sign")
+                nbt.putInt("x", pos.x.toInt())
+                nbt.putInt("y", pos.y.toInt())
+                nbt.putInt("z", pos.z.toInt())
 
-            if(block is Block) {
-                val state = Block.getStateID(block)
-                client.player.sendPacket(ServerBlockChangePacket(position, state))
-            } else if(block is Item) {
-                val state = Item.getStateID(block)
-                client.player.sendPacket(ServerBlockChangePacket(position, state))
-
-                if(block in BlockTags.SIGNS && metadata.textLines != null) {
-                    val data = CompoundTag("")
-                    data.putString("id", "minecraft:sign")
-                    data.putInt("x", position.x.toInt())
-                    data.putInt("y", position.y.toInt())
-                    data.putInt("z", position.z.toInt())
-                    metadata.textLines.forEachIndexed { index, line ->
-                        data.putString("Text${index + 1}", "{\"text\":\"$line\"}")
-                    }
-
-                    client.sendPacket(ServerBlockEntityDataPacket(
-                        position,
-                        9,
-                        data
-                    ))
+                meta.textLines.forEachIndexed { idx, line ->
+                    nbt.putString("Text${idx + 1}", "{\"text\":\"$line\"}")
                 }
+
+                client.player.sendPacket(ServerBlockEntityDataPacket(
+                    pos, 9, nbt
+                ))
             }
         }
     }
@@ -1190,37 +1181,29 @@ class PacketHandler(
 
             val stateID = when(block) {
                 is Block -> Block.getStateID(block, properties)
-                is Item -> try {
-                    Item.getStateID(block, properties)
-                } catch(e: IllegalArgumentException) {
-                    -1
-                }
-                else -> throw IllegalArgumentException("Unknown block or item type")
+                is Item -> Item.getStateID(block, properties)
+                else -> -1
             }
 
-            for(otherPlayer in Bullet.players) {
-                if(otherPlayer != client.player && stateID != -1) {
-                    otherPlayer.sendPacket(
-                        ServerBlockChangePacket(
-                            event.blockPos.copy(),
-                            stateID
-                        )
-                    )
-                }
-            }
+            if(stateID != -1) {
+                Bullet.players.forEach {
+                    it.sendPacket(ServerBlockChangePacket(event.blockPos, stateID))
 
-            when {
-                block is Item && block in BlockTags.SIGNS -> {
-                    client.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
-                    world.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem, listOf("", "", "", ""))
-                }
+                    val entry = when {
+                        block is Item && block in BlockTags.SIGNS -> {
+                            client.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
+                            BlockWithMetadata(stateID, listOf("", "", "", ""))
+                        }
 
-                block is Item && block in BlockTags.SPAWN_EGGS -> {
-                    handleSpawnEgg(block, event)
-                }
+                        block is Item && block in BlockTags.SPAWN_EGGS -> {
+                            handleSpawnEgg(block, event)
+                            BlockWithMetadata(stateID)
+                        }
 
-                else -> {
-                    world.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
+                        else -> BlockWithMetadata(stateID)
+                    }
+
+                    world.modifiedBlocks[event.blockPos] = entry
                 }
             }
         } catch(e: IllegalArgumentException) {
@@ -1392,14 +1375,14 @@ class PacketHandler(
                     else    -> event.blockPos
                 }
 
-                world.modifiedBlocks[headPos] = BlockWithMetadata(client.player.getHeldItem())
-
                 val props: MutableMap<String, String> = mutableMapOf()
                 props["facing"] = cardinalDirection
                 props["part"] = "head"
                 props["occupied"] = "false"
 
-                val stateID = Item.getStateID(block as Item, props)
+                val stateID = Item.getStateID(block, props)
+                world.modifiedBlocks[headPos] = BlockWithMetadata(stateID)
+
                 for(player in Bullet.players) {
                     player.sendPacket(ServerBlockChangePacket(headPos, stateID))
                 }
