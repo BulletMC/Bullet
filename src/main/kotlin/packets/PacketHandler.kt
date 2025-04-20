@@ -63,6 +63,7 @@ import kotlin.experimental.and
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sqrt
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Handles all incoming packets by dispatching them to the appropriate handler methods
@@ -327,7 +328,7 @@ class PacketHandler(
             }
 
             2 -> { //Leave bed
-                handleWakeUp()
+                handleWakeUp(client.player)
             }
 
             3 -> { //Start sprinting
@@ -1524,16 +1525,36 @@ class PacketHandler(
         for(player in players) {
             player.sendPacket(ServerEntityMetadataPacket(client.player.entityID, metadata))
         }
+
+        client.player.world!!.sleepingPlayers += 1
+        if(client.player.world!!.sleepingPlayers >= players.size / 2) {
+            handleSleeping()
+        }
     }
 
-    private fun handleWakeUp() {
+    private fun handleWakeUp(player: Player) {
         val metadata = listOf(
             MetadataType.MetadataEntry(13.toByte(), 10, false to null),
             MetadataType.MetadataEntry(6.toByte(), 18, 0)
         )
 
-        for(player in players) {
-            player.sendPacket(ServerEntityMetadataPacket(client.player.entityID, metadata))
+        for(plr in players) {
+            plr.sendPacket(ServerEntityMetadataPacket(player.entityID, metadata))
+        }
+
+        player.world!!.sleepingPlayers -= 1
+    }
+
+    private fun handleSleeping() {
+        Bullet.scope.launch {
+            delay(5.seconds)
+            for(player in players) {
+                player.sendPacket(ServerChangeGameStatePacket(1, 0f))
+                player.world!!.weather = 0
+                player.setTimeOfDay(0)
+
+                handleWakeUp(player)
+            }
         }
     }
 }
