@@ -1517,6 +1517,25 @@ class PacketHandler(
     }
 
     private fun handleBedClick(blockPos: BlockPositionType.BlockPosition) {
+        val time = client.player.world!!.timeOfDay
+        if(world.weather == 0) {
+            if(time !in 12542..23459) {
+                client.player.sendMessage(
+                    Component.text("You can only sleep at night")
+                        .color(NamedTextColor.RED)
+                )
+                return
+            }
+        } else {
+            if(time !in 12010..23991) {
+                client.player.sendMessage(
+                    Component.text("You can only sleep at night")
+                        .color(NamedTextColor.RED)
+                )
+                return
+            }
+        }
+
         val metadata = listOf(
             MetadataType.MetadataEntry(6.toByte(), 18, 2),
             MetadataType.MetadataEntry(13.toByte(), 10, true to blockPos),
