@@ -1056,17 +1056,15 @@ enum class Item(val id: Int) {
 
             for((key, value) in json.entrySet()) {
                 val blockName = key.removePrefix("minecraft:")
-                val item = Item.entries.find {
-                    it.name.equals(blockName, true)
-                } ?: continue
+                val item = Item.entries.find { it.name.equals(blockName, true) }
+                if(item == null) continue
 
                 val states = value.asJsonObject["states"]?.asJsonArray ?: continue
-                for(state in states) {
-                    val stateObj = state.asJsonObject
-                    if(stateObj["id"].asInt == stateID) {
-                        return item.id
-                    }
+                val matchingState = states.firstOrNull { state ->
+                    state.asJsonObject["id"].asInt == stateID
                 }
+
+                if(matchingState != null) return item.id
             }
 
             throw IllegalArgumentException("No item found for state ID $stateID")

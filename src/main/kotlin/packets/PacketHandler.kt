@@ -1185,11 +1185,8 @@ class PacketHandler(
             val dir = getCardinalDirection(client.player.location.yaw)
             val properties = modifyBlockProperties(block, dir, event)
 
-            val stateID = when(block) {
-                is Block -> Block.getStateID(block, properties)
-                is Item -> Item.getStateID(block, properties)
-                else -> -1
-            }
+            val stateID = getStateID(block, properties)
+            if(stateID == -1) return
 
             val clickedStateID = world.modifiedBlocks[blockPos]?.stateID ?: 0
             val clickedItemID = clickedStateID.let { Item.getIDFromState(it) }
@@ -1201,43 +1198,44 @@ class PacketHandler(
                 }
             }
 
-            if(stateID != -1) {
-                Bullet.players.forEach {
-                    it.sendPacket(ServerBlockChangePacket(event.blockPos, stateID))
+            players.forEach {
+                it.sendPacket(ServerBlockChangePacket(event.blockPos, stateID))
 
-                    val entry = when {
-                        block is Item && block in BlockTags.SIGNS -> {
-                            client.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
-                            BlockWithMetadata(stateID, listOf("", "", "", ""))
-                        }
-
-                        block is Item && block in BlockTags.SPAWN_EGGS -> {
-                            handleSpawnEgg(block, event)
-                            BlockWithMetadata(stateID)
-                        }
-
-                        else -> BlockWithMetadata(stateID)
+                val entry = when {
+                    block is Item && block in BlockTags.SIGNS -> {
+                        client.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
+                        BlockWithMetadata(stateID, listOf("", "", "", ""))
                     }
 
-                    world.modifiedBlocks[event.blockPos] = entry
+                    block is Item && block in BlockTags.SPAWN_EGGS -> {
+                        handleSpawnEgg(block, event)
+                        BlockWithMetadata(stateID)
+                    }
+
+                    else -> BlockWithMetadata(stateID)
                 }
+
+                world.modifiedBlocks[event.blockPos] = entry
             }
         } catch(e: IllegalArgumentException) {
             //do nothing
         }
     }
 
-    private fun modifyBlockProperties(block: Any, cardinalDirection: String, event: BlockPlaceEvent): MutableMap<String, String> {
-        val properties = mutableMapOf<String, String>()
-
-        for(stair in BlockTags.STAIRS) {
-            if(block == stair) {
-                properties["facing"] = cardinalDirection
-                properties["half"] = "bottom"
-                properties["shape"] = "straight"
-                properties["waterlogged"] = "false"
-            }
+    private fun getStateID(block: Any, properties: Map<String, String>): Int {
+        return when(block) {
+            is Block -> Block.getStateID(block, properties)
+            is Item -> Item.getStateID(block, properties)
+            else -> -1
         }
+    }
+
+    private fun modifyBlockProperties(
+        block: Any,
+        cardinalDirection: String,
+        event: BlockPlaceEvent
+    ): MutableMap<String, String> {
+        val properties = mutableMapOf<String, String>()
 
         for(furnace in BlockTags.FURNANCES) {
             if(block == furnace) {
@@ -1269,6 +1267,10 @@ class PacketHandler(
             properties["waterlogged"] = "false"
         }
 
+        modifyStairProperties(block, cardinalDirection).forEach { (key, value) ->
+            properties[key] = value
+        }
+
         modifyRedstoneBlockProperties(block, cardinalDirection).forEach { (key, value) ->
             properties[key] = value
         }
@@ -1280,6 +1282,21 @@ class PacketHandler(
         if(block is Item) {
             modifyBedBlocks(block, cardinalDirection, event).forEach { (key, value) ->
                 properties[key] = value
+            }
+        }
+
+        return properties
+    }
+
+    private fun modifyStairProperties(block: Any, cardinalDirection: String): MutableMap<String, String> {
+        val properties = mutableMapOf<String, String>()
+
+        for(stair in BlockTags.STAIRS) {
+            if(block == stair) {
+                properties["facing"] = cardinalDirection
+                properties["half"] = "bottom"
+                properties["shape"] = "straight"
+                properties["waterlogged"] = "false"
             }
         }
 
@@ -1374,7 +1391,11 @@ class PacketHandler(
         return properties
     }
 
-    private fun modifyBedBlocks(block: Item, cardinalDirection: String, event: BlockPlaceEvent): MutableMap<String, String> {
+    private fun modifyBedBlocks(
+        block: Item,
+        cardinalDirection: String,
+        event: BlockPlaceEvent
+    ): MutableMap<String, String> {
         val properties = mutableMapOf<String, String>()
 
         for(bed in BlockTags.BEDS) {
