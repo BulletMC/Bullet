@@ -1518,7 +1518,7 @@ class PacketHandler(
         )
 
         for(player in players) {
-            player.sendPacket(ServerEntityMetadataPacket(player.entityID, metadata))
+            player.sendPacket(ServerEntityMetadataPacket(client.player.entityID, metadata))
         }
     }
 }
