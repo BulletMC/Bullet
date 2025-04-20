@@ -1499,4 +1499,9 @@ class PacketHandler(
             else -> Axis.X
         }
     }
+
+    private fun handleBedClick(blockPos: BlockPositionType.BlockPosition) {
+        println("handling bed click")
+        updateEntityMetadata(client.player, 6, 11)
+    }
 }
