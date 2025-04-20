@@ -1186,9 +1186,13 @@ class PacketHandler(
                 else -> -1
             }
 
+            val clickedStateID = world.modifiedBlocks[blockPos]?.stateID ?: 0
+            val clickedItemID = clickedStateID.let { Item.getIDFromState(it) }
+
             for(bed in BlockTags.BEDS) {
-                if(world.modifiedBlocks[blockPos]?.stateID == Item.getStateID(bed)) {
+                if(clickedItemID == bed.id) {
                     handleBedClick()
+                    break
                 }
             }
 
