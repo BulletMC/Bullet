@@ -2,6 +2,7 @@ package com.aznos.packets
 
 import com.aznos.Bullet
 import com.aznos.Bullet.breakingBlocks
+import com.aznos.Bullet.players
 import com.aznos.Bullet.sprinting
 import com.aznos.ClientSession
 import com.aznos.GameState
@@ -1175,7 +1176,6 @@ class PacketHandler(
     }
 
     private fun handlePlacement(block: Any, event: BlockPlaceEvent, blockPos: BlockPositionType.BlockPosition) {
-        println("Handling placements")
         try {
             val dir = getCardinalDirection(client.player.location.yaw)
             val properties = modifyBlockProperties(block, dir, event)
@@ -1191,7 +1191,7 @@ class PacketHandler(
 
             for(bed in BlockTags.BEDS) {
                 if(clickedItemID == bed.id) {
-                    handleBedClick()
+                    handleBedClick(blockPos)
                     break
                 }
             }
@@ -1511,8 +1511,14 @@ class PacketHandler(
         }
     }
 
-    private fun handleBedClick() {
-        println("handling bed click")
-        updateEntityMetadata(client.player, 6, 11)
+    private fun handleBedClick(blockPos: BlockPositionType.BlockPosition) {
+        val metadata = listOf(
+            MetadataType.MetadataEntry(6.toByte(), 18, 2),
+            MetadataType.MetadataEntry(13.toByte(), 10, true to blockPos),
+        )
+
+        for(player in players) {
+            player.sendPacket(ServerEntityMetadataPacket(player.entityID, metadata))
+        }
     }
 }
