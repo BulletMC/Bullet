@@ -29,6 +29,7 @@ class World(
     var weather = 0
     var worldAge = 0L
     var timeOfDay: Long = TimeOfDay.SUNRISE.time
+    var sleepingPlayers: Int = 0
     var difficulty: Difficulty = Difficulty.NORMAL
     val livingEntities = mutableListOf<Pair<LivingEntity, EntityData>>()
     val entities = mutableListOf<Pair<Entity, EntityData>>()

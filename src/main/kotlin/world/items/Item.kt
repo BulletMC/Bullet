@@ -1039,5 +1039,35 @@ enum class Item(val id: Int) {
 
             throw IllegalArgumentException("No matching or default state found for $blockKey")
         }
+
+        /**
+         * Converts a state ID to a global palette item ID
+         *
+         * @param stateID The state ID to convert
+         * @return The global palette item ID
+         * @throws IllegalArgumentException if the state ID is not found
+         */
+        fun getIDFromState(stateID: Int): Int {
+            val jsonStream = Item::class.java.getResourceAsStream("/blocks.json")
+                ?: throw IllegalArgumentException("blocks.json not found")
+
+            val reader = InputStreamReader(jsonStream)
+            val json = JsonParser.parseReader(reader).asJsonObject
+
+            for((key, value) in json.entrySet()) {
+                val blockName = key.removePrefix("minecraft:")
+                val item = Item.entries.find { it.name.equals(blockName, true) }
+                if(item == null) continue
+
+                val states = value.asJsonObject["states"]?.asJsonArray ?: continue
+                val matchingState = states.firstOrNull { state ->
+                    state.asJsonObject["id"].asInt == stateID
+                }
+
+                if(matchingState != null) return item.id
+            }
+
+            throw IllegalArgumentException("No item found for state ID $stateID")
+        }
     }
 }

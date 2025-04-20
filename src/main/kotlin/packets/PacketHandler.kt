@@ -2,6 +2,7 @@ package com.aznos.packets
 
 import com.aznos.Bullet
 import com.aznos.Bullet.breakingBlocks
+import com.aznos.Bullet.players
 import com.aznos.Bullet.sprinting
 import com.aznos.ClientSession
 import com.aznos.GameState
@@ -62,6 +63,7 @@ import kotlin.experimental.and
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sqrt
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Handles all incoming packets by dispatching them to the appropriate handler methods
@@ -325,6 +327,10 @@ class PacketHandler(
                 updateEntityMetadata(client.player, 6, 0)
             }
 
+            2 -> { //Leave bed
+                handleWakeUp(client.player)
+            }
+
             3 -> { //Start sprinting
                 val event = PlayerSprintEvent(client.player, true)
                 EventManager.fire(event)
@@ -367,7 +373,7 @@ class PacketHandler(
                         0
                     ))
 
-                    val block = world.modifiedBlocks[event.blockPos]?.blockID ?: Block.GRASS_BLOCK.id
+                    val block = world.modifiedBlocks[event.blockPos]?.stateID ?: Block.GRASS_BLOCK.id
                     sendBlockBreakParticles(otherPlayer, block, event.blockPos)
                 }
             }
@@ -386,7 +392,7 @@ class PacketHandler(
 
                 BlockStatus.FINISHED_DIGGING.id -> {
                     client.player.status.exhaustion += 0.005f
-                    val block = world.modifiedBlocks[event.blockPos]?.blockID ?: Block.GRASS_BLOCK.id
+                    val block = world.modifiedBlocks[event.blockPos]?.stateID ?: Block.GRASS_BLOCK.id
 
                     stopBlockBreak(event.blockPos)
                     sendBlockBreakParticles(client.player, block, event.blockPos)
@@ -439,7 +445,7 @@ class PacketHandler(
         val heldItem = client.player.getHeldItem()
 
         val block = Block.getBlockFromID(heldItem) ?: Item.getItemFromID(heldItem) ?: Block.AIR
-        handlePlacement(block, event, heldItem)
+        handlePlacement(block, event, packet.blockPos)
     }
 
     /**
@@ -1108,35 +1114,26 @@ class PacketHandler(
     }
 
     private fun sendBlockChanges() {
-        val blocks = world.modifiedBlocks
+        if(world.modifiedBlocks.isEmpty()) return
+        for((pos, meta) in world.modifiedBlocks) {
+            client.player.sendPacket(ServerBlockChangePacket(
+                pos, meta.stateID
+            ))
 
-        for((position, metadata) in blocks) {
-            val block = Block.getBlockFromID(metadata.blockID)
-                ?: Item.getItemFromID(metadata.blockID) ?: Block.AIR
+            if(meta.textLines != null) {
+                val nbt = CompoundTag()
+                nbt.putString("id", "minecraft:sign")
+                nbt.putInt("x", pos.x.toInt())
+                nbt.putInt("y", pos.y.toInt())
+                nbt.putInt("z", pos.z.toInt())
 
-            if(block is Block) {
-                val state = Block.getStateID(block)
-                client.player.sendPacket(ServerBlockChangePacket(position, state))
-            } else if(block is Item) {
-                val state = Item.getStateID(block)
-                client.player.sendPacket(ServerBlockChangePacket(position, state))
-
-                if(block in BlockTags.SIGNS && metadata.textLines != null) {
-                    val data = CompoundTag("")
-                    data.putString("id", "minecraft:sign")
-                    data.putInt("x", position.x.toInt())
-                    data.putInt("y", position.y.toInt())
-                    data.putInt("z", position.z.toInt())
-                    metadata.textLines.forEachIndexed { index, line ->
-                        data.putString("Text${index + 1}", "{\"text\":\"$line\"}")
-                    }
-
-                    client.sendPacket(ServerBlockEntityDataPacket(
-                        position,
-                        9,
-                        data
-                    ))
+                meta.textLines.forEachIndexed { idx, line ->
+                    nbt.putString("Text${idx + 1}", "{\"text\":\"$line\"}")
                 }
+
+                client.player.sendPacket(ServerBlockEntityDataPacket(
+                    pos, 9, nbt
+                ))
             }
         }
     }
@@ -1183,62 +1180,62 @@ class PacketHandler(
         return true
     }
 
-    private fun handlePlacement(block: Any, event: BlockPlaceEvent, heldItem: Int) {
+    private fun handlePlacement(block: Any, event: BlockPlaceEvent, blockPos: BlockPositionType.BlockPosition) {
         try {
             val dir = getCardinalDirection(client.player.location.yaw)
-            val properties = modifyBlockProperties(block, dir)
+            val properties = modifyBlockProperties(block, dir, event)
 
-            val stateID = when(block) {
-                is Block -> Block.getStateID(block, properties)
-                is Item -> try {
-                    Item.getStateID(block, properties)
-                } catch(e: IllegalArgumentException) {
-                    -1
-                }
-                else -> throw IllegalArgumentException("Unknown block or item type")
-            }
+            val stateID = getStateID(block, properties)
+            if(stateID == -1) return
 
-            for(otherPlayer in Bullet.players) {
-                if(otherPlayer != client.player && stateID != -1) {
-                    otherPlayer.sendPacket(
-                        ServerBlockChangePacket(
-                            event.blockPos.copy(),
-                            stateID
-                        )
-                    )
+            val clickedStateID = world.modifiedBlocks[blockPos]?.stateID ?: 0
+            val clickedItemID = clickedStateID.let { Item.getIDFromState(it) }
+
+            for(bed in BlockTags.BEDS) {
+                if(clickedItemID == bed.id) {
+                    handleBedClick(blockPos)
+                    break
                 }
             }
 
-            when {
-                block is Item && block in BlockTags.SIGNS -> {
-                    client.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
-                    world.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem, listOf("", "", "", ""))
+            players.forEach {
+                it.sendPacket(ServerBlockChangePacket(event.blockPos, stateID))
+
+                val entry = when {
+                    block is Item && block in BlockTags.SIGNS -> {
+                        client.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
+                        BlockWithMetadata(stateID, listOf("", "", "", ""))
+                    }
+
+                    block is Item && block in BlockTags.SPAWN_EGGS -> {
+                        handleSpawnEgg(block, event)
+                        BlockWithMetadata(stateID)
+                    }
+
+                    else -> BlockWithMetadata(stateID)
                 }
 
-                block is Item && block in BlockTags.SPAWN_EGGS -> {
-                    handleSpawnEgg(block, event)
-                }
-
-                else -> {
-                    world.modifiedBlocks[event.blockPos] = BlockWithMetadata(heldItem)
-                }
+                world.modifiedBlocks[event.blockPos] = entry
             }
         } catch(e: IllegalArgumentException) {
             //do nothing
         }
     }
 
-    private fun modifyBlockProperties(block: Any, cardinalDirection: String): MutableMap<String, String> {
-        val properties = mutableMapOf<String, String>()
-
-        for(stair in BlockTags.STAIRS) {
-            if(block == stair) {
-                properties["facing"] = cardinalDirection
-                properties["half"] = "bottom"
-                properties["shape"] = "straight"
-                properties["waterlogged"] = "false"
-            }
+    private fun getStateID(block: Any, properties: Map<String, String>): Int {
+        return when(block) {
+            is Block -> Block.getStateID(block, properties)
+            is Item -> Item.getStateID(block, properties)
+            else -> -1
         }
+    }
+
+    private fun modifyBlockProperties(
+        block: Any,
+        cardinalDirection: String,
+        event: BlockPlaceEvent
+    ): MutableMap<String, String> {
+        val properties = mutableMapOf<String, String>()
 
         for(furnace in BlockTags.FURNANCES) {
             if(block == furnace) {
@@ -1270,12 +1267,37 @@ class PacketHandler(
             properties["waterlogged"] = "false"
         }
 
+        modifyStairProperties(block, cardinalDirection).forEach { (key, value) ->
+            properties[key] = value
+        }
+
         modifyRedstoneBlockProperties(block, cardinalDirection).forEach { (key, value) ->
             properties[key] = value
         }
 
         modifyAxisAlignedBlocks(block).forEach { (key, value) ->
             properties[key] = value
+        }
+
+        if(block is Item) {
+            modifyBedBlocks(block, cardinalDirection, event).forEach { (key, value) ->
+                properties[key] = value
+            }
+        }
+
+        return properties
+    }
+
+    private fun modifyStairProperties(block: Any, cardinalDirection: String): MutableMap<String, String> {
+        val properties = mutableMapOf<String, String>()
+
+        for(stair in BlockTags.STAIRS) {
+            if(block == stair) {
+                properties["facing"] = cardinalDirection
+                properties["half"] = "bottom"
+                properties["shape"] = "straight"
+                properties["waterlogged"] = "false"
+            }
         }
 
         return properties
@@ -1364,6 +1386,44 @@ class PacketHandler(
                 client.player.location.yaw,
                 client.player.location.pitch
             ).name.lowercase()
+        }
+
+        return properties
+    }
+
+    private fun modifyBedBlocks(
+        block: Item,
+        cardinalDirection: String,
+        event: BlockPlaceEvent
+    ): MutableMap<String, String> {
+        val properties = mutableMapOf<String, String>()
+
+        for(bed in BlockTags.BEDS) {
+            if(block == bed) {
+                properties["facing"] = cardinalDirection
+                properties["part"] = "foot"
+                properties["occupied"] = "false"
+
+                val headPos = when(cardinalDirection) {
+                    "north" -> event.blockPos.copy(z = event.blockPos.z - 1)
+                    "south" -> event.blockPos.copy(z = event.blockPos.z + 1)
+                    "west"  -> event.blockPos.copy(x = event.blockPos.x - 1)
+                    "east"  -> event.blockPos.copy(x = event.blockPos.x + 1)
+                    else    -> event.blockPos
+                }
+
+                val props: MutableMap<String, String> = mutableMapOf()
+                props["facing"] = cardinalDirection
+                props["part"] = "head"
+                props["occupied"] = "false"
+
+                val stateID = Item.getStateID(block, props)
+                world.modifiedBlocks[headPos] = BlockWithMetadata(stateID)
+
+                for(player in Bullet.players) {
+                    player.sendPacket(ServerBlockChangePacket(headPos, stateID))
+                }
+            }
         }
 
         return properties
@@ -1474,6 +1534,86 @@ class PacketHandler(
             pitch < -60f -> Axis.Y
             abs(yaw) % 180 < 45 || abs(yaw) % 180 > 135 -> Axis.Z
             else -> Axis.X
+        }
+    }
+
+    private fun handleBedClick(blockPos: BlockPositionType.BlockPosition) {
+        val time = client.player.world!!.timeOfDay
+        if(world.weather == 0) {
+            if(time !in 12542..23459) {
+                client.player.sendMessage(
+                    Component.text("You can only sleep at night")
+                        .color(NamedTextColor.RED)
+                )
+                return
+            }
+        } else {
+            if(time !in 12010..23991) {
+                client.player.sendMessage(
+                    Component.text("You can only sleep at night")
+                        .color(NamedTextColor.RED)
+                )
+                return
+            }
+        }
+
+        val metadata = listOf(
+            MetadataType.MetadataEntry(6.toByte(), 18, 2),
+            MetadataType.MetadataEntry(13.toByte(), 10, true to blockPos),
+        )
+
+        for(player in players) {
+            player.sendPacket(ServerEntityMetadataPacket(client.player.entityID, metadata))
+        }
+
+        client.player.world!!.sleepingPlayers += 1
+        if(canSleepNow()) handleSleeping()
+    }
+
+    private fun handleWakeUp(player: Player) {
+        if(!canSleepNow()) return
+
+        val metadata = listOf(
+            MetadataType.MetadataEntry(13.toByte(), 10, false to null),
+            MetadataType.MetadataEntry(6.toByte(), 18, 0)
+        )
+
+        for(plr in players) {
+            plr.sendPacket(ServerEntityMetadataPacket(player.entityID, metadata))
+        }
+
+        player.world!!.sleepingPlayers -= 1
+    }
+
+    private fun handleSleeping() {
+        Bullet.scope.launch {
+            delay(5.seconds)
+            val world = client.player.world!!
+            if(!canSleepNow()) return@launch
+
+            for(player in players) {
+                player.sendPacket(ServerChangeGameStatePacket(1, 0f))
+                world.weather = 0
+                player.setTimeOfDay(0)
+                handleWakeUp(player)
+            }
+        }
+    }
+
+    private fun canSleepNow(): Boolean {
+        val world = client.player.world!!
+        val time = world.timeOfDay
+        val totalPlayers = players.size
+        val sleepingPlayers = world.sleepingPlayers
+
+        return if(totalPlayers > 0 && sleepingPlayers >= totalPlayers / 2) {
+            if(world.weather == 0) {
+                time in 12542..23459
+            } else {
+                time in 12010..23991
+            }
+        } else {
+            false
         }
     }
 }

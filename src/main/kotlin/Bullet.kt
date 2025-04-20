@@ -46,7 +46,7 @@ object Bullet : AutoCloseable {
 
     private val pool = Executors.newCachedThreadPool()
     private var server: ServerSocket? = null
-    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     var shouldPersist = true
 
     val players = mutableListOf<Player>()

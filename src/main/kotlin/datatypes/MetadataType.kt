@@ -1,5 +1,6 @@
 package com.aznos.datatypes
 
+import com.aznos.datatypes.BlockPositionType.writeBlockPos
 import com.aznos.datatypes.VarInt.writeVarInt
 import java.io.DataOutputStream
 import java.io.IOException
@@ -31,11 +32,18 @@ object MetadataType {
 
         when(entry.type) {
             0 -> writeByte(entry.value as Int)
-            1 -> writeVarInt(entry.value  as Int)
-            2 -> writeFloat(entry.value  as Float)
-            3 -> writeUTF(entry.value  as String)
-            7 -> writeBoolean(entry.value  as Boolean)
-            18 -> writeVarInt(entry.value  as Int)
+            1 -> writeVarInt(entry.value as Int)
+            2 -> writeFloat(entry.value as Float)
+            3 -> writeUTF(entry.value as String)
+            7 -> writeBoolean(entry.value as Boolean)
+            10 -> {
+                val (isPresent, pos) = entry.value as Pair<Boolean, BlockPositionType.BlockPosition?>
+                writeBoolean(isPresent)
+                if(isPresent && pos != null) {
+                    writeBlockPos(pos)
+                }
+            }
+            18 -> writeVarInt(entry.value as Int)
         }
     }
 }
