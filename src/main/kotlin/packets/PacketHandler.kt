@@ -326,6 +326,10 @@ class PacketHandler(
                 updateEntityMetadata(client.player, 6, 0)
             }
 
+            2 -> { //Leave bed
+                handleWakeUp()
+            }
+
             3 -> { //Start sprinting
                 val event = PlayerSprintEvent(client.player, true)
                 EventManager.fire(event)
@@ -1515,6 +1519,17 @@ class PacketHandler(
         val metadata = listOf(
             MetadataType.MetadataEntry(6.toByte(), 18, 2),
             MetadataType.MetadataEntry(13.toByte(), 10, true to blockPos),
+        )
+
+        for(player in players) {
+            player.sendPacket(ServerEntityMetadataPacket(client.player.entityID, metadata))
+        }
+    }
+
+    private fun handleWakeUp() {
+        val metadata = listOf(
+            MetadataType.MetadataEntry(13.toByte(), 10, false to null),
+            MetadataType.MetadataEntry(6.toByte(), 18, 0)
         )
 
         for(player in players) {
