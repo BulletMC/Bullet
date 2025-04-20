@@ -439,7 +439,7 @@ class PacketHandler(
         val heldItem = client.player.getHeldItem()
 
         val block = Block.getBlockFromID(heldItem) ?: Item.getItemFromID(heldItem) ?: Block.AIR
-        handlePlacement(block, event, heldItem)
+        handlePlacement(block, event, packet.blockPos)
     }
 
     /**
@@ -1174,7 +1174,8 @@ class PacketHandler(
         return true
     }
 
-    private fun handlePlacement(block: Any, event: BlockPlaceEvent, heldItem: Int) {
+    private fun handlePlacement(block: Any, event: BlockPlaceEvent, blockPos: BlockPositionType.BlockPosition) {
+        println("Handling placements")
         try {
             val dir = getCardinalDirection(client.player.location.yaw)
             val properties = modifyBlockProperties(block, dir, event)
@@ -1183,6 +1184,12 @@ class PacketHandler(
                 is Block -> Block.getStateID(block, properties)
                 is Item -> Item.getStateID(block, properties)
                 else -> -1
+            }
+
+            for(bed in BlockTags.BEDS) {
+                if(world.modifiedBlocks[blockPos]?.stateID == Item.getStateID(bed)) {
+                    handleBedClick()
+                }
             }
 
             if(stateID != -1) {
@@ -1500,7 +1507,7 @@ class PacketHandler(
         }
     }
 
-    private fun handleBedClick(blockPos: BlockPositionType.BlockPosition) {
+    private fun handleBedClick() {
         println("handling bed click")
         updateEntityMetadata(client.player, 6, 11)
     }
