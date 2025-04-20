@@ -1527,12 +1527,12 @@ class PacketHandler(
         }
 
         client.player.world!!.sleepingPlayers += 1
-        if(client.player.world!!.sleepingPlayers >= players.size / 2) {
-            handleSleeping()
-        }
+        if(canSleepNow()) handleSleeping()
     }
 
     private fun handleWakeUp(player: Player) {
+        if(!canSleepNow()) return
+
         val metadata = listOf(
             MetadataType.MetadataEntry(13.toByte(), 10, false to null),
             MetadataType.MetadataEntry(6.toByte(), 18, 0)
@@ -1548,13 +1548,32 @@ class PacketHandler(
     private fun handleSleeping() {
         Bullet.scope.launch {
             delay(5.seconds)
+            val world = client.player.world!!
+            if(!canSleepNow()) return@launch
+
             for(player in players) {
                 player.sendPacket(ServerChangeGameStatePacket(1, 0f))
-                player.world!!.weather = 0
+                world.weather = 0
                 player.setTimeOfDay(0)
-
                 handleWakeUp(player)
             }
+        }
+    }
+
+    private fun canSleepNow(): Boolean {
+        val world = client.player.world!!
+        val time = world.timeOfDay
+        val totalPlayers = players.size
+        val sleepingPlayers = world.sleepingPlayers
+
+        return if(totalPlayers > 0 && sleepingPlayers >= totalPlayers / 2) {
+            if(world.weather == 0) {
+                time in 12542..23459
+            } else {
+                time in 12010..23991
+            }
+        } else {
+            false
         }
     }
 }
