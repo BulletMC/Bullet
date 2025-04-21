@@ -20,6 +20,7 @@ import java.util.UUID
  *
  * @property clientSession The client session associated with the player
  */
+@Suppress("TooManyFunctions")
 class Player(
     val clientSession: ClientSession
 ) : Entity() {
@@ -149,5 +150,50 @@ class Player(
         )
 
         tabListFooter = footerBuilder
+    }
+
+    /**
+     * Sets a title (and optionally) a subtitle for the player
+     *
+     * @param title The main title to display, this is required
+     * @param subtitle If you want to have a subtitle, put it here
+     * @param fadeIn The time in ticks to fade in the title
+     * @param stay The time in ticks to stay on the screen
+     * @param fadeOut The time in ticks to fade out the title
+     */
+    fun setTitle(
+        title: TextComponent,
+        subtitle: TextComponent? = null,
+        fadeIn: Int = 10,
+        stay: Int = 80,
+        fadeOut: Int = 20
+    ) {
+        sendPacket(ServerTitlePacket(
+            TitleAction.SET_TIME_AND_DISPLAY,
+            fadeInTicks = fadeIn,
+            stayTicks = stay,
+            fadeOutTicks = fadeOut)
+        )
+
+        sendPacket(ServerTitlePacket(TitleAction.SET_TITLE, title))
+        if(subtitle != null) {
+            sendPacket(ServerTitlePacket(TitleAction.SET_SUBTITLE, subtitle))
+        }
+    }
+
+    /**
+     * Sets the action bar text for the player
+     *
+     * @param text The text to display in the action bar
+     */
+    fun setActionBar(text: TextComponent) {
+        sendPacket(ServerTitlePacket(TitleAction.SET_ACTIONBAR, text))
+    }
+
+    /**
+     * Removes the title/subtitle from the screen, this can also be used to remove an action bar
+     */
+    fun removeTitle() {
+        sendPacket(ServerTitlePacket(TitleAction.RESET))
     }
 }
