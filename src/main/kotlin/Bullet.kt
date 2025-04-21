@@ -64,7 +64,6 @@ object Bullet : AutoCloseable {
      *
      * @param host - The IP address of the server, for local development set this to 0.0.0.0
      * @param port - The port the server will run on, this defaults at 25565
-     * @param shouldPersist - Whether the server should save world data and block data to disk
      * if set to false, nothing will save when the server is restarted
      */
     fun createServer(host: String, port: Int = 25565) {
