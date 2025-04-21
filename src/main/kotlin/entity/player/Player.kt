@@ -20,6 +20,7 @@ import java.util.UUID
  *
  * @property clientSession The client session associated with the player
  */
+@Suppress("TooManyFunctions")
 class Player(
     val clientSession: ClientSession
 ) : Entity() {
@@ -160,7 +161,13 @@ class Player(
      * @param stay The time in ticks to stay on the screen
      * @param fadeOut The time in ticks to fade out the title
      */
-    fun setTitle(title: TextComponent, subtitle: TextComponent? = null, fadeIn: Int = 10, stay: Int = 80, fadeOut: Int = 20) {
+    fun setTitle(
+        title: TextComponent,
+        subtitle: TextComponent? = null,
+        fadeIn: Int = 10,
+        stay: Int = 80,
+        fadeOut: Int = 20
+    ) {
         sendPacket(ServerTitlePacket(
             TitleAction.SET_TIME_AND_DISPLAY,
             fadeInTicks = fadeIn,
