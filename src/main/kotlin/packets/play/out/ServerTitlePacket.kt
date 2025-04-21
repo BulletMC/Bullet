@@ -40,9 +40,9 @@ class ServerTitlePacket(
             }
 
             TitleAction.SET_TIME_AND_DISPLAY -> {
-                wrapper.writeVarInt(fadeInTicks)
-                wrapper.writeVarInt(stayTicks)
-                wrapper.writeVarInt(fadeOutTicks)
+                wrapper.writeInt(fadeInTicks)
+                wrapper.writeInt(stayTicks)
+                wrapper.writeInt(fadeOutTicks)
             }
 
             TitleAction.HIDE -> {}
