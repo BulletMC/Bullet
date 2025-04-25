@@ -1,5 +1,7 @@
 package com.aznos
 
+import com.aznos.api.Plugin
+import com.aznos.api.PluginMetadata
 import com.aznos.commands.CommandManager
 import com.aznos.datatypes.BlockPositionType
 import com.aznos.entity.Entity
@@ -11,6 +13,7 @@ import com.aznos.storage.StorageManager
 import com.aznos.storage.disk.DiskServerStorage
 import com.aznos.world.data.EntityData
 import com.aznos.world.data.Particles
+import com.google.gson.Gson
 import com.google.gson.JsonParser
 import dev.dewy.nbt.api.registry.TagTypeRegistry
 import dev.dewy.nbt.tags.collection.CompoundTag
@@ -20,22 +23,27 @@ import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
+import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
 import java.net.BindException
 import java.net.InetSocketAddress
 import java.net.ServerSocket
+import java.net.URLClassLoader
 import java.util.Base64
 import java.util.concurrent.Executors
+import java.util.jar.JarFile
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 /**
  * This is where the core of the bullet server logic is housed
  */
+@Suppress("TooManyFunctions")
 object Bullet : AutoCloseable {
     const val PROTOCOL: Int = 754 // Protocol version 769 = Minecraft version 1.16.5
     const val VERSION: String = "1.16.5"
+    const val BULLET_VERSION: String = "PREALPHA-0.0.1"
 
     @Suppress("MaxLineLength")
     var favicon: String = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAexJREFUeJztm0GOgjAUht8I0WAmuuFGnsPNLJx4iFlNMlcwmYUbr+cGYqgQcWZhMLS2ULD1J+F9CQmR+vjfZ4GGxLfVavVHIyYkIjoej+gcEOI4pgk6BBoWgA6AhgWgA6BhAegAaFgAOgAaFoAOgIYFoAOgYQHoAGhYADoAGhaADoCGBaADoAmrnTRNabFY3PeHSJXPJaHpwOF76fxkfVh/JXTY3rKsd4l0zIUQo4AhUomocCFEEuB76meiICKieTR1Us+FkJfOAFeNm2gSYpLhRUAmCu/N2lAXst4lWgm9HoOZKKRNpWvzuhpNiLwkkZedxhy2S+0l3kvAPJpKWxtNsqp6XYhmAUWzwHhc5KV2jE7CSxZCTbKaxPTFJEfkJf1+vEsS4I9B3/eKtkullwCb614d47NRtcloFhgb3+xP0s3QKKD+zLaZopko6FJeHz4Pg8lDPZtaddp+RRXb5oksZkB6Ot+baEM3TpXSVu9SXq3P1wVd80QWAp4N0/X7Lpvf7E/3/ZcuhFDUGyYa4FLYNX0aVpEEDP19gIuGVYwz4PNHPF3cFVXjXl+I1Iv7ONFQGf07QRaADoCGBaADoGEB6ABoWAA6ABoWgA6AhgWgA6BhAegAaFgAOgAaFoAOgIYFoAOgCYlu/6IeK/8hQ6uwCcyPRQAAAABJRU5ErkJggg=="
@@ -49,6 +57,7 @@ object Bullet : AutoCloseable {
     val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     var shouldPersist = true
 
+    val loadedPlugins = mutableListOf<Plugin>()
     val players = mutableListOf<Player>()
 
     lateinit var storage: StorageManager
@@ -87,6 +96,7 @@ object Bullet : AutoCloseable {
         val parsed = JsonParser.parseReader(reader).asJsonObject
         dimensionCodec = CompoundTag().fromJson(parsed, 0, TagTypeRegistry())
 
+        loadPlugins()
         CommandManager.registerCommands()
 
         // Load world(s)
@@ -109,6 +119,51 @@ object Bullet : AutoCloseable {
                 }
             }
         }
+    }
+
+    /**
+     * Loads all plugins from inside the /plugins folder
+     */
+    private fun loadPlugins() {
+        val pluginDir = File("plugins")
+        if(!pluginDir.exists()) pluginDir.mkdirs()
+
+        pluginDir.listFiles { file -> file.extension == "jar" }?.forEach { file ->
+            val classLoader = URLClassLoader(arrayOf(file.toURI().toURL()), this::class.java.classLoader)
+            val jar = JarFile(file)
+
+            val pluginJsonEntry = jar.getEntry("plugin.json")
+            if(pluginJsonEntry == null) {
+                logger.warn("Plugin ${file.name} does not contain a plugin.json file, skipping...")
+                return@forEach
+            }
+
+            val pluginJson = jar.getInputStream(pluginJsonEntry).reader().readText()
+            val metadata = parsePluginJson(pluginJson)
+
+            if(metadata.bulletVersion != BULLET_VERSION) {
+                logger.warn(
+                    "Plugin ${metadata.name} was built for BulletMC ${metadata.bulletVersion}, " +
+                    "but the server is running $BULLET_VERSION, this may cause issues"
+                )
+            }
+
+            val pluginClass = classLoader.loadClass(metadata.mainClass)
+            if(Plugin::class.java.isAssignableFrom(pluginClass) && !pluginClass.isInterface) {
+                val plugin = pluginClass.getDeclaredConstructor().newInstance() as Plugin
+
+                plugin.onEnable()
+                plugin.registerEvents()
+                plugin.registerCommands()
+
+                loadedPlugins.add(plugin)
+            }
+        }
+    }
+
+    private fun parsePluginJson(json: String): PluginMetadata {
+        val parser = Gson()
+        return parser.fromJson(json, PluginMetadata::class.java)
     }
 
     /**
@@ -242,7 +297,15 @@ object Bullet : AutoCloseable {
      * Shuts down the server
      */
     override fun close() {
-        for (world in storage.getWorlds()) {
+        for(plugin in loadedPlugins) {
+            try {
+                plugin.onDisable()
+            } catch(e: IOException) {
+                logger.error("Failed to disable plugin ${plugin.getName()}", e)
+            }
+        }
+
+        for(world in storage.getWorlds()) {
             world.save()
         }
 
