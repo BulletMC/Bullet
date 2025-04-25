@@ -5,4 +5,5 @@ interface Plugin {
     fun onDisable()
     fun getName(): String
     fun registerEvents() {}
+    fun registerCommands() {}
 }

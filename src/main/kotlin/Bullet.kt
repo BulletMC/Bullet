@@ -150,8 +150,10 @@ object Bullet : AutoCloseable {
             val pluginClass = classLoader.loadClass(metadata.mainClass)
             if(Plugin::class.java.isAssignableFrom(pluginClass) && !pluginClass.isInterface) {
                 val plugin = pluginClass.getDeclaredConstructor().newInstance() as Plugin
+
                 plugin.onEnable()
                 plugin.registerEvents()
+                plugin.registerCommands()
             }
         }
     }
