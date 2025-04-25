@@ -1,5 +1,6 @@
 package com.aznos
 
+import com.aznos.api.Plugin
 import com.aznos.commands.CommandManager
 import com.aznos.datatypes.BlockPositionType
 import com.aznos.entity.Entity
@@ -20,13 +21,16 @@ import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
+import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
 import java.net.BindException
 import java.net.InetSocketAddress
 import java.net.ServerSocket
+import java.net.URLClassLoader
 import java.util.Base64
 import java.util.concurrent.Executors
+import java.util.jar.JarFile
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -87,6 +91,7 @@ object Bullet : AutoCloseable {
         val parsed = JsonParser.parseReader(reader).asJsonObject
         dimensionCodec = CompoundTag().fromJson(parsed, 0, TagTypeRegistry())
 
+        loadPlugins()
         CommandManager.registerCommands()
 
         // Load world(s)
@@ -106,6 +111,28 @@ object Bullet : AutoCloseable {
             pool.submit {
                 client?.let {
                     ClientSession(it).handle()
+                }
+            }
+        }
+    }
+
+    private fun loadPlugins() {
+        val pluginDir = File("plugins")
+        if(!pluginDir.exists()) pluginDir.mkdirs()
+
+        pluginDir.listFiles { file -> file.extension == "jar" }?.forEach { file ->
+            val classLoader = URLClassLoader(arrayOf(file.toURI().toURL()), this::class.java.classLoader)
+            val jar = JarFile(file)
+
+            jar.entries().asSequence().forEach { entry ->
+                if(entry.name.endsWith(".class")) {
+                    val className = entry.name.replace("/", ".").removeSuffix(".class")
+                    val clazz = classLoader.loadClass(className)
+
+                    if(Plugin::class.java.isAssignableFrom(clazz) && !clazz.isInterface) {
+                        val plugin = clazz.getDeclaredConstructor().newInstance() as Plugin
+                        plugin.onEnable()
+                    }
                 }
             }
         }

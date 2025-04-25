@@ -12,7 +12,7 @@ The vanilla minecraft server that is written by Mojang, comes with a host of lim
 <ol>
     <li>Performance - Vanilla servers demand an absurd amount of RAM, even to support 10 players, an absolute minimum of 8GB of ram is needed to run smoothly.</li>
     <li>Single threaded - The core server is single threaded, meaning the server can't efficiently use multi core CPU's. This means server owners need to invest heavily into a CPU with high single core performance, and disregard the number of cores on the CPU.</li>
-    <li>Limited Modularity - Extending vanilla functionality requires major workarounds, bukkit was created to solve this problem but had performance issues, spigot was created to solve bukkits problems, paper was created to solve spigots problems, and so on. This has created a fragmented ecosystem of plugins that are not always compatible with each other and brings unncessary complexity to server management and plugin development.</li>
+    <li>Limited Modularity - Extending vanilla functionality requires major workarounds, bukkit was created to solve this problem but had performance issues, spigot was created to solve bukkits problems, paper was created to solve spigots problems, and so on. This has created a fragmented ecosystem of api that are not always compatible with each other and brings unncessary complexity to server management and plugin development.</li>
 </ol>
 
 ### Bullet's solution
@@ -27,7 +27,7 @@ The vanilla minecraft server that is written by Mojang, comes with a host of lim
 
 ### Why not use minestom or another pre existing server?
 <ol>
-    <li>Steep learning curve - Switching to an entirely new framework requires rewriting plugins and understanding a new complicated API. Developers first coming from spigot or paper, shouldn't have to implement world generation or chunk loading from scratch.</li>
+    <li>Steep learning curve - Switching to an entirely new framework requires rewriting api and understanding a new complicated API. Developers first coming from spigot or paper, shouldn't have to implement world generation or chunk loading from scratch.</li>
     <li>Lack of flexibility - Some alternative servers prioritize speed but sacrifice modularity and customization, limiting what developers can achieve</li>
     <li>Incompleteness - Many of the custom servers out there, don't fully implement vanilla mechanics in the way the official server does</li>
 </ol>
