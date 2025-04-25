@@ -57,6 +57,7 @@ object Bullet : AutoCloseable {
     val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     var shouldPersist = true
 
+    val loadedPlugins = mutableListOf<Plugin>()
     val players = mutableListOf<Player>()
 
     lateinit var storage: StorageManager
@@ -154,6 +155,8 @@ object Bullet : AutoCloseable {
                 plugin.onEnable()
                 plugin.registerEvents()
                 plugin.registerCommands()
+
+                loadedPlugins.add(plugin)
             }
         }
     }
@@ -294,7 +297,15 @@ object Bullet : AutoCloseable {
      * Shuts down the server
      */
     override fun close() {
-        for (world in storage.getWorlds()) {
+        for(plugin in loadedPlugins) {
+            try {
+                plugin.onDisable()
+            } catch(e: IOException) {
+                logger.error("Failed to disable plugin ${plugin.getName()}", e)
+            }
+        }
+
+        for(world in storage.getWorlds()) {
             world.save()
         }
 
