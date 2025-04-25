@@ -1,6 +1,7 @@
 package com.aznos
 
 import com.aznos.api.Plugin
+import com.aznos.api.PluginMetadata
 import com.aznos.commands.CommandManager
 import com.aznos.datatypes.BlockPositionType
 import com.aznos.entity.Entity
@@ -12,6 +13,7 @@ import com.aznos.storage.StorageManager
 import com.aznos.storage.disk.DiskServerStorage
 import com.aznos.world.data.EntityData
 import com.aznos.world.data.Particles
+import com.google.gson.Gson
 import com.google.gson.JsonParser
 import dev.dewy.nbt.api.registry.TagTypeRegistry
 import dev.dewy.nbt.tags.collection.CompoundTag
@@ -40,6 +42,7 @@ import kotlin.time.Duration.Companion.seconds
 object Bullet : AutoCloseable {
     const val PROTOCOL: Int = 754 // Protocol version 769 = Minecraft version 1.16.5
     const val VERSION: String = "1.16.5"
+    const val BULLET_VERSION: String = "PREALPHA-0.0.1"
 
     @Suppress("MaxLineLength")
     var favicon: String = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAexJREFUeJztm0GOgjAUht8I0WAmuuFGnsPNLJx4iFlNMlcwmYUbr+cGYqgQcWZhMLS2ULD1J+F9CQmR+vjfZ4GGxLfVavVHIyYkIjoej+gcEOI4pgk6BBoWgA6AhgWgA6BhAegAaFgAOgAaFoAOgIYFoAOgYQHoAGhYADoAGhaADoCGBaADoAmrnTRNabFY3PeHSJXPJaHpwOF76fxkfVh/JXTY3rKsd4l0zIUQo4AhUomocCFEEuB76meiICKieTR1Us+FkJfOAFeNm2gSYpLhRUAmCu/N2lAXst4lWgm9HoOZKKRNpWvzuhpNiLwkkZedxhy2S+0l3kvAPJpKWxtNsqp6XYhmAUWzwHhc5KV2jE7CSxZCTbKaxPTFJEfkJf1+vEsS4I9B3/eKtkullwCb614d47NRtcloFhgb3+xP0s3QKKD+zLaZopko6FJeHz4Pg8lDPZtaddp+RRXb5oksZkB6Ot+baEM3TpXSVu9SXq3P1wVd80QWAp4N0/X7Lpvf7E/3/ZcuhFDUGyYa4FLYNX0aVpEEDP19gIuGVYwz4PNHPF3cFVXjXl+I1Iv7ONFQGf07QRaADoCGBaADoGEB6ABoWAA6ABoWgA6AhgWgA6BhAegAaFgAOgAaFoAOgIYFoAOgCYlu/6IeK/8hQ6uwCcyPRQAAAABJRU5ErkJggg=="
@@ -116,6 +119,9 @@ object Bullet : AutoCloseable {
         }
     }
 
+    /**
+     * Loads all plugins from inside the /plugins folder
+     */
     private fun loadPlugins() {
         val pluginDir = File("plugins")
         if(!pluginDir.exists()) pluginDir.mkdirs()
@@ -124,18 +130,31 @@ object Bullet : AutoCloseable {
             val classLoader = URLClassLoader(arrayOf(file.toURI().toURL()), this::class.java.classLoader)
             val jar = JarFile(file)
 
-            jar.entries().asSequence().forEach { entry ->
-                if(entry.name.endsWith(".class")) {
-                    val className = entry.name.replace("/", ".").removeSuffix(".class")
-                    val clazz = classLoader.loadClass(className)
+            val pluginJsonEntry = jar.getEntry("plugin.json")
+            if(pluginJsonEntry == null) {
+                logger.warn("Plugin ${file.name} does not contain a plugin.json file, skipping...")
+                return@forEach
+            }
 
-                    if(Plugin::class.java.isAssignableFrom(clazz) && !clazz.isInterface) {
-                        val plugin = clazz.getDeclaredConstructor().newInstance() as Plugin
-                        plugin.onEnable()
-                    }
-                }
+            val pluginJson = jar.getInputStream(pluginJsonEntry).reader().readText()
+            val metadata = parsePluginJson(pluginJson)
+
+            if(metadata.bulletVersion != BULLET_VERSION) {
+                logger.warn("Plugin ${metadata.name} was built for BulletMC ${metadata.bulletVersion}, but the server is running $BULLET_VERSION, this may cause issues")
+                return@forEach
+            }
+
+            val pluginClass = classLoader.loadClass(metadata.mainClass)
+            if(Plugin::class.java.isAssignableFrom(pluginClass) && !pluginClass.isInterface) {
+                val plugin = pluginClass.getDeclaredConstructor().newInstance() as Plugin
+                plugin.onEnable()
             }
         }
+    }
+
+    private fun parsePluginJson(json: String): PluginMetadata {
+        val parser = Gson()
+        return parser.fromJson(json, PluginMetadata::class.java)
     }
 
     /**
