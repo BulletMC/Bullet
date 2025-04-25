@@ -39,6 +39,7 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * This is where the core of the bullet server logic is housed
  */
+@Suppress("TooManyFunctions")
 object Bullet : AutoCloseable {
     const val PROTOCOL: Int = 754 // Protocol version 769 = Minecraft version 1.16.5
     const val VERSION: String = "1.16.5"
@@ -140,14 +141,17 @@ object Bullet : AutoCloseable {
             val metadata = parsePluginJson(pluginJson)
 
             if(metadata.bulletVersion != BULLET_VERSION) {
-                logger.warn("Plugin ${metadata.name} was built for BulletMC ${metadata.bulletVersion}, but the server is running $BULLET_VERSION, this may cause issues")
-                return@forEach
+                logger.warn(
+                    "Plugin ${metadata.name} was built for BulletMC ${metadata.bulletVersion}, " +
+                    "but the server is running $BULLET_VERSION, this may cause issues"
+                )
             }
 
             val pluginClass = classLoader.loadClass(metadata.mainClass)
             if(Plugin::class.java.isAssignableFrom(pluginClass) && !pluginClass.isInterface) {
                 val plugin = pluginClass.getDeclaredConstructor().newInstance() as Plugin
                 plugin.onEnable()
+                plugin.registerEvents()
             }
         }
     }

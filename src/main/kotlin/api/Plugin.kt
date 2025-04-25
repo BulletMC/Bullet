@@ -4,4 +4,5 @@ interface Plugin {
     fun onEnable()
     fun onDisable()
     fun getName(): String
+    fun registerEvents() {}
 }
