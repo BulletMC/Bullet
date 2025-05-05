@@ -20,6 +20,7 @@ dependencies {
     //Kotlin
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.6")
 
     //Serialization
     implementation("com.google.code.gson:gson:2.12.1")
