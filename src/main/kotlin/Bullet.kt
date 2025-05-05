@@ -50,7 +50,7 @@ object Bullet : AutoCloseable {
     var max_players: Int = 20
     var motd: String = "§6Runs as fast as a bullet!"
 
-    val logger: Logger = LogManager.getLogger()
+    val logger: Logger = LogManager.getLogger(Bullet::class.java)
 
     private val pool = Executors.newCachedThreadPool()
     private var server: ServerSocket? = null

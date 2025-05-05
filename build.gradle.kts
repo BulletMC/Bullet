@@ -60,6 +60,15 @@ tasks.register("runServer") {
     group = "bullet"
 }
 
+tasks.jar {
+    manifest {
+        attributes["Main-Class"] = "com.aznos.MainKt"
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from(configurations.runtimeClasspath.get().map { zipTree(it) })
+}
+
 kotlin {
     jvmToolchain(21)
 }
