@@ -34,7 +34,7 @@ The vanilla minecraft server that is written by Mojang, comes with a host of lim
 
 # How to get started
 
-Work in progress..
+Read the <a href="https://bulletmc.gitbook.io/bullet/getting-started">getting started</a> on the wiki! You can also find much more information about things like custom events, commands, packets, and more.
 
 # License
 
