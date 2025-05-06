@@ -7,6 +7,7 @@ import com.aznos.datatypes.Slot
 import com.aznos.entity.Entity
 import com.aznos.entity.player.data.ChatPosition
 import com.aznos.entity.player.data.GameMode
+import com.aznos.entity.player.data.PermissionLevel
 import com.aznos.packets.Packet
 import com.aznos.entity.player.data.PlayerProperty
 import com.aznos.packets.play.out.*
@@ -45,6 +46,7 @@ class Player(
     var fallDistance: Double = 0.0
     var isFlying: Boolean = false
     var canFly: Boolean = false
+    var permissionLevel: PermissionLevel = PermissionLevel.MEMBER
     private var tabListHeader = Component.text()
     private var tabListFooter = Component.text()
 
