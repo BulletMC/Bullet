@@ -44,6 +44,7 @@ object CommandManager {
         KickCommand().register(dispatcher)
         BanCommand().register(dispatcher)
         UnbanCommand().register(dispatcher)
+        SetPermissionCommand().register(dispatcher)
     }
 
     /**
