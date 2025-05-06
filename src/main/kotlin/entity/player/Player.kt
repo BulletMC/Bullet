@@ -22,7 +22,7 @@ import java.util.UUID
  * @property clientSession The client session associated with the player
  */
 @Suppress("TooManyFunctions")
-class Player(
+open class Player(
     val clientSession: ClientSession
 ) : Entity() {
     lateinit var username: String
@@ -78,7 +78,7 @@ class Player(
      *
      * @param message The message to be shown on why they were disconnected
      */
-    fun disconnect(message: Component) {
+    open fun disconnect(message: Component) {
         clientSession.disconnect(message)
     }
 
@@ -87,7 +87,7 @@ class Player(
      *
      * @param message The message to be sent to the client
      */
-    fun sendMessage(message: TextComponent) {
+    open fun sendMessage(message: TextComponent) {
         sendPacket(ServerChatMessagePacket(message, ChatPosition.CHAT, null))
     }
 
