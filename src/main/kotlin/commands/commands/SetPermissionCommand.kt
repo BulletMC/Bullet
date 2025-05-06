@@ -5,12 +5,16 @@ import com.aznos.commands.CommandCodes
 import com.aznos.commands.commands.suggestions.PlayerSuggestions
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.PermissionLevel
+import com.aznos.world.data.TimeOfDay
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.builder.RequiredArgumentBuilder
+import com.mojang.brigadier.suggestion.SuggestionProvider
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import java.util.*
+import java.util.concurrent.CompletableFuture
 
 class SetPermissionCommand {
     fun register(dispatcher: CommandDispatcher<Player>) {
@@ -21,6 +25,7 @@ class SetPermissionCommand {
                         .suggests(PlayerSuggestions.playerNameSuggestions())
                         .then(
                             RequiredArgumentBuilder.argument<Player, String>("permission", StringArgumentType.word())
+                                .suggests(permissionSuggestions())
                                 .executes { context ->
                                     val sender = context.source
                                     val targetName = StringArgumentType.getString(context, "target")
@@ -64,5 +69,15 @@ class SetPermissionCommand {
                         )
                 )
         )
+    }
+
+    private fun permissionSuggestions(): SuggestionProvider<Player> {
+        return SuggestionProvider { context, builder ->
+            PermissionLevel.entries.forEach {
+                builder.suggest(it.name.lowercase(Locale.getDefault()))
+            }
+
+            return@SuggestionProvider CompletableFuture.completedFuture(builder.build())
+        }
     }
 }
