@@ -20,7 +20,9 @@ class SetPermissionCommand {
     fun register(dispatcher: CommandDispatcher<Player>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<Player>("setpermission")
-                .then(
+                .requires { player ->
+                    player.permissionLevel == PermissionLevel.ADMINISTRATOR
+                }.then(
                     RequiredArgumentBuilder.argument<Player, String>("target", StringArgumentType.word())
                         .suggests(PlayerSuggestions.playerNameSuggestions())
                         .then(

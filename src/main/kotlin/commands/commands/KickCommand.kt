@@ -4,6 +4,7 @@ import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
 import com.aznos.commands.commands.suggestions.PlayerSuggestions
 import com.aznos.entity.player.Player
+import com.aznos.entity.player.data.PermissionLevel
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
@@ -15,6 +16,10 @@ class KickCommand {
     fun register(dispatcher: CommandDispatcher<Player>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<Player>("kick")
+                .requires { player ->
+                    player.permissionLevel == PermissionLevel.MODERATOR ||
+                            player.permissionLevel == PermissionLevel.ADMINISTRATOR
+                }
                 .then(
                     RequiredArgumentBuilder.argument<Player, String>("player", StringArgumentType.word())
                         .suggests(PlayerSuggestions.playerNameSuggestions())

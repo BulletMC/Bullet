@@ -5,6 +5,7 @@ import com.aznos.commands.CommandCodes
 import com.aznos.commands.commands.suggestions.PlayerSuggestions
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.BanData
+import com.aznos.entity.player.data.PermissionLevel
 import com.aznos.util.DurationFormat.getReadableDuration
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
@@ -23,6 +24,10 @@ class BanCommand {
     fun register(dispatcher: CommandDispatcher<Player>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<Player>("ban")
+                .requires { player ->
+                    player.permissionLevel == PermissionLevel.MODERATOR ||
+                            player.permissionLevel == PermissionLevel.ADMINISTRATOR
+                }
                 .then(
                     RequiredArgumentBuilder.argument<Player, String>("player", StringArgumentType.word())
                         .suggests(PlayerSuggestions.playerNameSuggestions())

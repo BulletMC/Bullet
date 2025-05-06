@@ -4,6 +4,7 @@ import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.GameMode
+import com.aznos.entity.player.data.PermissionLevel
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
@@ -17,26 +18,33 @@ import java.util.concurrent.CompletableFuture
 class GameModeCommand {
     fun register(dispatcher: CommandDispatcher<Player>) {
         dispatcher.register(
-            LiteralArgumentBuilder.literal<Player>("gamemode").then(
-                RequiredArgumentBuilder.argument<Player, String>("mode", StringArgumentType.word())
-                    .suggests(gameModeSuggestions()).executes { context ->
-                        val input = StringArgumentType.getString(context, "mode")
-                        val mode = parseGameMode(input)
-                        if(mode == null) {
+            LiteralArgumentBuilder.literal<Player>("gamemode")
+                .requires { player ->
+                    player.permissionLevel == PermissionLevel.MODERATOR ||
+                            player.permissionLevel == PermissionLevel.ADMINISTRATOR
+                }
+                .then(
+                    RequiredArgumentBuilder.argument<Player, String>("mode", StringArgumentType.word())
+                        .suggests(gameModeSuggestions()).executes { context ->
+                            val input = StringArgumentType.getString(context, "mode")
+                            val mode = parseGameMode(input)
+                            if(mode == null) {
+                                context.source.sendMessage(
+                                    Component.text("Invalid gamemode: $input", NamedTextColor.RED)
+                                )
+
+                                return@executes CommandCodes.ILLEGAL_ARGUMENT.id
+                            }
+
+                            context.source.setGameMode(mode)
                             context.source.sendMessage(
-                                Component.text("Invalid gamemode: $input", NamedTextColor.RED)
+                                Component.text("Gamemode set to ${mode.name.lowercase()}", NamedTextColor.GREEN)
                             )
 
-                            return@executes CommandCodes.ILLEGAL_ARGUMENT.id
+                            return@executes CommandCodes.SUCCESS.id
                         }
-
-                        context.source.setGameMode(mode)
-                        context.source.sendMessage(
-                            Component.text("Gamemode set to ${mode.name.lowercase()}", NamedTextColor.GREEN)
-                        )
-
-                        return@executes CommandCodes.SUCCESS.id
-                    }))
+                    )
+        )
     }
 
     private fun parseGameMode(input: String): GameMode? {

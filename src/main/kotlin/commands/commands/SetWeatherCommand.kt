@@ -3,6 +3,7 @@ package com.aznos.commands.commands
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
 import com.aznos.entity.player.Player
+import com.aznos.entity.player.data.PermissionLevel
 import com.aznos.packets.play.out.ServerChangeGameStatePacket
 import com.aznos.world.data.Difficulty
 import com.mojang.brigadier.CommandDispatcher
@@ -19,6 +20,10 @@ class SetWeatherCommand {
     fun register(dispatcher: CommandDispatcher<Player>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<Player>("setweather")
+                .requires { player ->
+                    player.permissionLevel == PermissionLevel.MODERATOR ||
+                            player.permissionLevel == PermissionLevel.ADMINISTRATOR
+                }
                 .then(
                     RequiredArgumentBuilder.argument<Player, String>("weather", StringArgumentType.word())
                         .suggests(weatherSuggestions())

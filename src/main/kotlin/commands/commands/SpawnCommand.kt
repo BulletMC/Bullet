@@ -7,6 +7,7 @@ import com.aznos.entity.livingentity.LivingEntities
 import com.aznos.entity.livingentity.LivingEntity
 import com.aznos.entity.nonliving.Entities
 import com.aznos.entity.player.Player
+import com.aznos.entity.player.data.PermissionLevel
 import com.aznos.packets.play.out.ServerSpawnEntityPacket
 import com.aznos.packets.play.out.ServerSpawnLivingEntityPacket
 import com.aznos.world.data.Difficulty
@@ -24,6 +25,10 @@ class SpawnCommand {
     fun register(dispatcher: CommandDispatcher<Player>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<Player>("spawn")
+                .requires { player ->
+                    player.permissionLevel == PermissionLevel.MODERATOR ||
+                            player.permissionLevel == PermissionLevel.ADMINISTRATOR
+                }
                 .then(
                     RequiredArgumentBuilder.argument<Player, String>("type", StringArgumentType.word())
                         .suggests(entityTypeSuggestions())

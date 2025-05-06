@@ -3,6 +3,7 @@ package com.aznos.commands.commands
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
 import com.aznos.entity.player.Player
+import com.aznos.entity.player.data.PermissionLevel
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
@@ -21,6 +22,9 @@ class StopCommand {
     fun register(dispatcher: CommandDispatcher<Player>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<Player>("stop")
+                .requires { player ->
+                    player.permissionLevel == PermissionLevel.ADMINISTRATOR
+                }
                 .executes { context ->
                     Bullet.close()
                     CommandCodes.SUCCESS.id

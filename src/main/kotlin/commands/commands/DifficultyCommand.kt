@@ -3,6 +3,7 @@ package com.aznos.commands.commands
 import com.aznos.commands.CommandCodes
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.GameMode
+import com.aznos.entity.player.data.PermissionLevel
 import com.aznos.world.data.Difficulty
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
@@ -17,6 +18,10 @@ class DifficultyCommand {
     fun register(dispatcher: CommandDispatcher<Player>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<Player>("difficulty")
+                .requires { player ->
+                    player.permissionLevel == PermissionLevel.MODERATOR ||
+                            player.permissionLevel == PermissionLevel.ADMINISTRATOR
+                }
                 .then(
                     RequiredArgumentBuilder.argument<Player, String>("value", StringArgumentType.greedyString())
                         .suggests(difficultySuggestions())

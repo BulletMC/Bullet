@@ -3,6 +3,7 @@ package com.aznos.commands.commands
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
 import com.aznos.entity.player.Player
+import com.aznos.entity.player.data.PermissionLevel
 import com.aznos.world.data.Difficulty
 import com.aznos.world.data.TimeOfDay
 import com.mojang.brigadier.CommandDispatcher
@@ -18,6 +19,10 @@ class SetTimeCommand {
     fun register(dispatcher: CommandDispatcher<Player>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<Player>("settime")
+                .requires { player ->
+                    player.permissionLevel == PermissionLevel.MODERATOR ||
+                            player.permissionLevel == PermissionLevel.ADMINISTRATOR
+                }
                 .then(
                     RequiredArgumentBuilder.argument<Player, Long>("time", LongArgumentType.longArg())
                         .suggests(timeSuggestions())
