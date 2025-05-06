@@ -17,5 +17,6 @@ object ConsoleSender : Player(null!!) {
         Bullet.logger.info("[Console]: ${message.content()}")
     }
 
+    @Suppress("EmptyFunctionBlock")
     override fun disconnect(message: Component) {}
 }

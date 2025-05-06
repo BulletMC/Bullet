@@ -4,6 +4,7 @@ import com.aznos.api.Plugin
 import com.aznos.api.PluginMetadata
 import com.aznos.commands.CommandManager
 import com.aznos.datatypes.BlockPositionType
+import com.aznos.entity.ConsoleSender
 import com.aznos.entity.Entity
 import com.aznos.entity.livingentity.LivingEntity
 import com.aznos.entity.player.Player
@@ -109,6 +110,7 @@ object Bullet : AutoCloseable {
         }
 
         logger.info("Bullet server started at $host:$port")
+        launchConsole()
 
         while(!isClosed()) {
             val client = server?.accept()
@@ -228,6 +230,22 @@ object Bullet : AutoCloseable {
                 }
 
                 delay(200.milliseconds)
+            }
+        }
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    private fun launchConsole() {
+        scope.launch(Dispatchers.IO) {
+            val reader = System.`in`.bufferedReader()
+            while(isActive) {
+                val input = reader.readLine() ?: continue
+
+                try {
+                    CommandManager.dispatcher.execute(input, ConsoleSender)
+                } catch(e: Exception) {
+                    logger.warn("[Console Error] ${e.message}")
+                }
             }
         }
     }
