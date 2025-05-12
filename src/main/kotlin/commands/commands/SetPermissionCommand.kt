@@ -2,10 +2,11 @@ package com.aznos.commands.commands
 
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
+import com.aznos.commands.CommandSource
 import com.aznos.commands.commands.suggestions.PlayerSuggestions
+import com.aznos.entity.ConsoleSender
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.PermissionLevel
-import com.aznos.world.data.TimeOfDay
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
@@ -17,16 +18,22 @@ import java.util.*
 import java.util.concurrent.CompletableFuture
 
 class SetPermissionCommand {
-    fun register(dispatcher: CommandDispatcher<Player>) {
+    fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
-            LiteralArgumentBuilder.literal<Player>("setpermission")
-                .requires { player ->
-                    player.permissionLevel == PermissionLevel.ADMINISTRATOR
-                }.then(
-                    RequiredArgumentBuilder.argument<Player, String>("target", StringArgumentType.word())
+            LiteralArgumentBuilder.literal<CommandSource>("setpermission")
+                .requires { source ->
+                    source is Player &&
+                    source.permissionLevel == PermissionLevel.ADMINISTRATOR ||
+                    source is ConsoleSender
+                }
+                .then(
+                    RequiredArgumentBuilder.argument<CommandSource, String>("target", StringArgumentType.word())
                         .suggests(PlayerSuggestions.playerNameSuggestions())
                         .then(
-                            RequiredArgumentBuilder.argument<Player, String>("permission", StringArgumentType.word())
+                            RequiredArgumentBuilder.argument<CommandSource, String>(
+                                "permission",
+                                StringArgumentType.word()
+                            )
                                 .suggests(permissionSuggestions())
                                 .executes { context ->
                                     val sender = context.source
@@ -43,10 +50,10 @@ class SetPermissionCommand {
                                         return@executes CommandCodes.ILLEGAL_ARGUMENT.id
                                     }
 
-                                    val permission = when(permissionInput) {
+                                    val permission = when (permissionInput) {
                                         "member" -> PermissionLevel.MEMBER
                                         "mod", "moderator" -> PermissionLevel.MODERATOR
-                                        "admin, administrator" -> PermissionLevel.ADMINISTRATOR
+                                        "admin", "administrator" -> PermissionLevel.ADMINISTRATOR
                                         else -> {
                                             sender.sendMessage(Component.text(
                                                 "Invalid permission level, use member, moderator, or administrator"
@@ -73,13 +80,13 @@ class SetPermissionCommand {
         )
     }
 
-    private fun permissionSuggestions(): SuggestionProvider<Player> {
-        return SuggestionProvider { context, builder ->
+    private fun permissionSuggestions(): SuggestionProvider<CommandSource> {
+        return SuggestionProvider { _, builder ->
             PermissionLevel.entries.forEach {
                 builder.suggest(it.name.lowercase(Locale.getDefault()))
             }
 
-            return@SuggestionProvider CompletableFuture.completedFuture(builder.build())
+            CompletableFuture.completedFuture(builder.build())
         }
     }
 }

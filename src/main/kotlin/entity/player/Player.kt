@@ -2,6 +2,7 @@ package com.aznos.entity.player
 
 import com.aznos.Bullet
 import com.aznos.ClientSession
+import com.aznos.commands.CommandSource
 import com.aznos.datatypes.LocationType
 import com.aznos.datatypes.Slot
 import com.aznos.entity.Entity
@@ -22,10 +23,10 @@ import java.util.UUID
  * @property clientSession The client session associated with the player
  */
 @Suppress("TooManyFunctions")
-open class Player(
+class Player(
     val clientSession: ClientSession
-) : Entity() {
-    lateinit var username: String
+) : Entity(), CommandSource {
+    override lateinit var username: String
     override lateinit var uuid: UUID
     lateinit var locale: String
     lateinit var brand: String
@@ -78,7 +79,7 @@ open class Player(
      *
      * @param message The message to be shown on why they were disconnected
      */
-    open fun disconnect(message: Component) {
+    fun disconnect(message: Component) {
         clientSession.disconnect(message)
     }
 
@@ -87,7 +88,7 @@ open class Player(
      *
      * @param message The message to be sent to the client
      */
-    open fun sendMessage(message: TextComponent) {
+    override fun sendMessage(message: TextComponent) {
         sendPacket(ServerChatMessagePacket(message, ChatPosition.CHAT, null))
     }
 
