@@ -1082,6 +1082,7 @@ class PacketHandler(
         player.status.saturation = data.saturation
         player.status.exhaustion = data.exhaustionLevel
         player.location = data.location
+        player.permissionLevel = data.permissionLevel
 
         val savedItems = data.inventory.associate {
             it.first to it.second

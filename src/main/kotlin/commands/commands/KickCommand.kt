@@ -2,8 +2,11 @@ package com.aznos.commands.commands
 
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
+import com.aznos.commands.CommandSource
 import com.aznos.commands.commands.suggestions.PlayerSuggestions
+import com.aznos.entity.ConsoleSender
 import com.aznos.entity.player.Player
+import com.aznos.entity.player.data.PermissionLevel
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
@@ -12,14 +15,18 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 
 class KickCommand {
-    fun register(dispatcher: CommandDispatcher<Player>) {
+    fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
-            LiteralArgumentBuilder.literal<Player>("kick")
-                .then(
-                    RequiredArgumentBuilder.argument<Player, String>("player", StringArgumentType.word())
+            LiteralArgumentBuilder.literal<CommandSource>("kick")
+                .requires { sender ->
+                    (sender is Player && (sender.permissionLevel == PermissionLevel.MODERATOR ||
+                        sender.permissionLevel == PermissionLevel.ADMINISTRATOR)
+                    ) || sender is ConsoleSender
+                }.then(
+                    RequiredArgumentBuilder.argument<CommandSource, String>("player", StringArgumentType.word())
                         .suggests(PlayerSuggestions.playerNameSuggestions())
                         .then(
-                            RequiredArgumentBuilder.argument<Player, String>(
+                            RequiredArgumentBuilder.argument<CommandSource, String>(
                                 "reason",
                                 StringArgumentType.greedyString()
                             )

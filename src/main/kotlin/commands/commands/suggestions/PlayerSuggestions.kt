@@ -1,12 +1,13 @@
 package com.aznos.commands.commands.suggestions
 
 import com.aznos.Bullet
+import com.aznos.commands.CommandSource
 import com.aznos.entity.player.Player
 import com.mojang.brigadier.suggestion.SuggestionProvider
 import java.util.concurrent.CompletableFuture
 
 object PlayerSuggestions {
-    fun playerNameSuggestions(): SuggestionProvider<Player> {
+    fun playerNameSuggestions(): SuggestionProvider<CommandSource> {
         return SuggestionProvider { context, builder ->
             Bullet.players.forEach { player ->
                 builder.suggest(player.username)

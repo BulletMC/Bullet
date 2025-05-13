@@ -29,6 +29,7 @@ dependencies {
     //Kyori
     implementation("net.kyori:adventure-api:4.19.0")
     implementation("net.kyori:adventure-text-serializer-gson:4.19.0")
+    implementation("net.kyori:adventure-text-serializer-ansi:4.21.0")
     implementation("net.kyori:adventure-text-minimessage:4.19.0")
 
     //Faster collections

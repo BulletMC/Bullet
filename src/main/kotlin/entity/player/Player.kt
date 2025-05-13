@@ -2,11 +2,13 @@ package com.aznos.entity.player
 
 import com.aznos.Bullet
 import com.aznos.ClientSession
+import com.aznos.commands.CommandSource
 import com.aznos.datatypes.LocationType
 import com.aznos.datatypes.Slot
 import com.aznos.entity.Entity
 import com.aznos.entity.player.data.ChatPosition
 import com.aznos.entity.player.data.GameMode
+import com.aznos.entity.player.data.PermissionLevel
 import com.aznos.packets.Packet
 import com.aznos.entity.player.data.PlayerProperty
 import com.aznos.packets.play.out.*
@@ -23,8 +25,8 @@ import java.util.UUID
 @Suppress("TooManyFunctions")
 class Player(
     val clientSession: ClientSession
-) : Entity() {
-    lateinit var username: String
+) : Entity(), CommandSource {
+    override lateinit var username: String
     override lateinit var uuid: UUID
     lateinit var locale: String
     lateinit var brand: String
@@ -45,6 +47,7 @@ class Player(
     var fallDistance: Double = 0.0
     var isFlying: Boolean = false
     var canFly: Boolean = false
+    var permissionLevel: PermissionLevel = PermissionLevel.MEMBER
     private var tabListHeader = Component.text()
     private var tabListFooter = Component.text()
 
@@ -85,7 +88,7 @@ class Player(
      *
      * @param message The message to be sent to the client
      */
-    fun sendMessage(message: TextComponent) {
+    override fun sendMessage(message: TextComponent) {
         sendPacket(ServerChatMessagePacket(message, ChatPosition.CHAT, null))
     }
 

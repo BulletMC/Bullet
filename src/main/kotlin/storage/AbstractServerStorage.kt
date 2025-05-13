@@ -60,7 +60,8 @@ interface AbstractServerStorage {
                 player.status.foodLevel,
                 player.status.saturation,
                 player.status.exhaustion,
-                inventory
+                inventory,
+                player.permissionLevel
             )
         )
     }

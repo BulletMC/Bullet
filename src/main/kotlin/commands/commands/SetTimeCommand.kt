@@ -2,7 +2,10 @@ package com.aznos.commands.commands
 
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
+import com.aznos.commands.CommandSource
+import com.aznos.entity.ConsoleSender
 import com.aznos.entity.player.Player
+import com.aznos.entity.player.data.PermissionLevel
 import com.aznos.world.data.Difficulty
 import com.aznos.world.data.TimeOfDay
 import com.mojang.brigadier.CommandDispatcher
@@ -15,12 +18,15 @@ import java.util.*
 import java.util.concurrent.CompletableFuture
 
 class SetTimeCommand {
-    fun register(dispatcher: CommandDispatcher<Player>) {
+    fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
-            LiteralArgumentBuilder.literal<Player>("settime")
-                .then(
-                    RequiredArgumentBuilder.argument<Player, Long>("time", LongArgumentType.longArg())
-                        .suggests(timeSuggestions())
+            LiteralArgumentBuilder.literal<CommandSource>("settime")
+                .requires { sender ->
+                    (sender is Player && (sender.permissionLevel == PermissionLevel.MODERATOR ||
+                        sender.permissionLevel == PermissionLevel.ADMINISTRATOR)
+                    ) || sender is ConsoleSender
+                }.then(
+                    RequiredArgumentBuilder.argument<CommandSource, Long>("time", LongArgumentType.longArg())
                         .executes { context ->
                             val time = LongArgumentType.getLong(context, "time")
 
@@ -32,20 +38,13 @@ class SetTimeCommand {
                                 return@executes CommandCodes.ILLEGAL_ARGUMENT.id
                             }
 
-                            context.source.setTimeOfDay(time)
-                            CommandCodes.SUCCESS.id
+                            for(player in Bullet.players) {
+                                player.setTimeOfDay(time)
+                            }
+
+                            return@executes CommandCodes.SUCCESS.id
                         }
                 )
         )
-    }
-
-    private fun timeSuggestions(): SuggestionProvider<Player> {
-        return SuggestionProvider { context, builder ->
-            TimeOfDay.entries.forEach {
-                builder.suggest(it.name.lowercase(Locale.getDefault()))
-            }
-
-            return@SuggestionProvider CompletableFuture.completedFuture(builder.build())
-        }
     }
 }

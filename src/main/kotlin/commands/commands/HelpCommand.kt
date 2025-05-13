@@ -3,6 +3,7 @@ package com.aznos.commands.commands
 import com.aznos.commands.CommandCodes
 import com.aznos.entity.player.Player
 import com.aznos.commands.CommandManager
+import com.aznos.commands.CommandSource
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
@@ -18,15 +19,15 @@ import kotlin.math.ceil
 import kotlin.math.min
 
 class HelpCommand {
-    fun register(dispatcher: CommandDispatcher<Player>) {
+    fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
-            LiteralArgumentBuilder.literal<Player>("help")
+            LiteralArgumentBuilder.literal<CommandSource>("help")
                 .executes { context ->
                     sendHelpPage(context.source, 1)
                     return@executes CommandCodes.SUCCESS.id
                 }
                 .then(
-                    RequiredArgumentBuilder.argument<Player, Int>(
+                    RequiredArgumentBuilder.argument<CommandSource, Int>(
                         "page", IntegerArgumentType.integer(1)
                     ).executes { context ->
                         val page = IntegerArgumentType.getInteger(context, "page")
@@ -35,7 +36,7 @@ class HelpCommand {
                     }
                 )
                 .then(
-                    RequiredArgumentBuilder.argument<Player, String>("command", StringArgumentType.word())
+                    RequiredArgumentBuilder.argument<CommandSource, String>("command", StringArgumentType.word())
                         .suggests { context, builder ->
                             CommandManager.dispatcher.root.children.forEach { child ->
                                 child.name?.let { name ->
@@ -68,7 +69,7 @@ class HelpCommand {
         )
     }
 
-    private fun sendHelpPage(player: Player, page: Int) {
+    private fun sendHelpPage(player: CommandSource, page: Int) {
         val commands = CommandManager.dispatcher.root.children.mapNotNull { it.name }.sorted()
         val commandsPerPage = 15
         val totalPages = ceil(commands.size / commandsPerPage.toDouble()).toInt()
@@ -98,7 +99,7 @@ class HelpCommand {
         player.sendMessage(builder.build())
     }
 
-    private fun getCommandDetails(node: com.mojang.brigadier.tree.CommandNode<Player>): Component {
+    private fun getCommandDetails(node: com.mojang.brigadier.tree.CommandNode<CommandSource>): Component {
         val builder = Component.text().content("Command: /").color(NamedTextColor.GOLD)
             .append(Component.text(node.name ?: "unknown", NamedTextColor.YELLOW))
             .append(Component.newline())

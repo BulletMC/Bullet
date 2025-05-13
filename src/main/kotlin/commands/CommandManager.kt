@@ -7,6 +7,7 @@ import com.aznos.commands.data.IntegerProperties
 import com.aznos.commands.data.StringTypes
 import com.aznos.entity.player.Player
 import com.aznos.commands.data.GraphCommandNode
+import com.aznos.entity.ConsoleSender
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.BoolArgumentType
 import com.mojang.brigadier.arguments.DoubleArgumentType
@@ -24,7 +25,7 @@ import com.mojang.brigadier.tree.RootCommandNode
  * @property dispatcher The command dispatcher
  */
 object CommandManager {
-    val dispatcher = CommandDispatcher<Player>()
+    val dispatcher = CommandDispatcher<CommandSource>()
 
     /**
      * Registers the default BulletMC commands with the command dispatcher
@@ -44,6 +45,7 @@ object CommandManager {
         KickCommand().register(dispatcher)
         BanCommand().register(dispatcher)
         UnbanCommand().register(dispatcher)
+        SetPermissionCommand().register(dispatcher)
     }
 
     /**
