@@ -20,7 +20,10 @@ class MessageCommand {
                 RequiredArgumentBuilder.argument<CommandSource, String>("target", StringArgumentType.word())
                     .suggests(PlayerSuggestions.playerNameSuggestions())
                     .then(
-                        RequiredArgumentBuilder.argument<CommandSource, String>("text", StringArgumentType.greedyString())
+                        RequiredArgumentBuilder.argument<CommandSource, String>(
+                            "text",
+                            StringArgumentType.greedyString()
+                        )
                             .executes { context ->
                                 val sender = context.source
                                 val targetName = StringArgumentType.getString(context, "target")

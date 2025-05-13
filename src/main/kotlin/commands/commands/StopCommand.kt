@@ -44,7 +44,10 @@ class StopCommand {
                             CommandCodes.SUCCESS.id
                         }
                         .then(
-                            RequiredArgumentBuilder.argument<CommandSource, Int>("delay", IntegerArgumentType.integer(1))
+                            RequiredArgumentBuilder.argument<CommandSource, Int>(
+                                "delay",
+                                IntegerArgumentType.integer(1)
+                            )
                                 .executes { context ->
                                     val delay = IntegerArgumentType.getInteger(context, "delay")
                                     scheduleShutdown(delay.seconds)

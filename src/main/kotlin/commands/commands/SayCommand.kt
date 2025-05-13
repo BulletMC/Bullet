@@ -22,7 +22,10 @@ class SayCommand {
                         sender.permissionLevel == PermissionLevel.ADMINISTRATOR)
                     ) || sender is ConsoleSender
                 }.then(
-                    RequiredArgumentBuilder.argument<CommandSource, String>("message", StringArgumentType.greedyString())
+                    RequiredArgumentBuilder.argument<CommandSource, String>(
+                        "message",
+                        StringArgumentType.greedyString()
+                    )
                         .executes{ context ->
                             val message = StringArgumentType.getString(context, "message")
                             if(message.isEmpty()) {

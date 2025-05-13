@@ -27,7 +27,10 @@ class TeleportCommand {
                     RequiredArgumentBuilder.argument<CommandSource, String>("target", StringArgumentType.greedyString())
                         .suggests(PlayerSuggestions.playerNameSuggestions())
                         .executes {
-                            context -> executeTeleport(context.source as Player, StringArgumentType.getString(context, "target"))
+                            context -> executeTeleport(
+                                context.source as Player,
+                                StringArgumentType.getString(context, "target")
+                            )
                         }
                         .then(
                             RequiredArgumentBuilder.argument<CommandSource, String>(
