@@ -2,6 +2,7 @@ package com.aznos
 
 import com.aznos.api.Plugin
 import com.aznos.api.PluginMetadata
+import com.aznos.commands.CommandCodes
 import com.aznos.commands.CommandManager
 import com.aznos.datatypes.BlockPositionType
 import com.aznos.entity.ConsoleSender
@@ -21,6 +22,7 @@ import dev.dewy.nbt.tags.collection.CompoundTag
 import kotlinx.coroutines.*
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
+import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
@@ -242,7 +244,27 @@ object Bullet : AutoCloseable {
                 val input = reader.readLine() ?: continue
 
                 try {
-                    CommandManager.dispatcher.execute(input, ConsoleSender)
+                    val res = CommandManager.dispatcher.execute(input, ConsoleSender)
+
+                    when(res) {
+                        CommandCodes.ILLEGAL_ARGUMENT.id -> {
+                            ConsoleSender.sendMessage(Component.text("Illegal argument", NamedTextColor.RED))
+                        }
+
+                        CommandCodes.INVALID_PERMISSIONS.id -> {
+                            ConsoleSender.sendMessage(
+                                Component.text("You do not have permission to run this command", NamedTextColor.RED)
+                            )
+                        }
+
+                        CommandCodes.ILLEGAL_SYNTAX.id -> {
+                            ConsoleSender.sendMessage(Component.text("Illegal syntax", NamedTextColor.RED))
+                        }
+
+                        CommandCodes.UNKNOWN.id -> {
+                            ConsoleSender.sendMessage(Component.text("Unknown command", NamedTextColor.RED))
+                        }
+                    }
                 } catch(e: Exception) {
                     logger.warn("[Console Error] ${e.message}")
                 }
