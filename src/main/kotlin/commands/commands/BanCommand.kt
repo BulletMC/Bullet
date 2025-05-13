@@ -2,7 +2,9 @@ package com.aznos.commands.commands
 
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
+import com.aznos.commands.CommandSource
 import com.aznos.commands.commands.suggestions.PlayerSuggestions
+import com.aznos.entity.ConsoleSender
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.BanData
 import com.aznos.entity.player.data.PermissionLevel
@@ -21,18 +23,18 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 class BanCommand {
-    fun register(dispatcher: CommandDispatcher<Player>) {
+    fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
-            LiteralArgumentBuilder.literal<Player>("ban")
-                .requires { player ->
-                    player.permissionLevel == PermissionLevel.MODERATOR ||
-                            player.permissionLevel == PermissionLevel.ADMINISTRATOR
-                }
-                .then(
-                    RequiredArgumentBuilder.argument<Player, String>("player", StringArgumentType.word())
+            LiteralArgumentBuilder.literal<CommandSource>("ban")
+                .requires { sender ->
+                    (sender is Player && (sender.permissionLevel == PermissionLevel.MODERATOR ||
+                        sender.permissionLevel == PermissionLevel.ADMINISTRATOR)
+                    ) || sender is ConsoleSender
+                }.then(
+                    RequiredArgumentBuilder.argument<CommandSource, String>("player", StringArgumentType.word())
                         .suggests(PlayerSuggestions.playerNameSuggestions())
                         .then(
-                            RequiredArgumentBuilder.argument<Player, String>(
+                            RequiredArgumentBuilder.argument<CommandSource, String>(
                                 "reason",
                                 StringArgumentType.greedyString()
                             )
@@ -76,7 +78,7 @@ class BanCommand {
         username: String,
         reason: String,
         durationStr: String?,
-        context: CommandContext<Player>
+        context: CommandContext<CommandSource>
     ) {
         val player = Bullet.players.find { it.username.equals(username, ignoreCase = true) }
         if(player == null) {
@@ -95,7 +97,8 @@ class BanCommand {
             reason,
             expirationDuration ?: Duration.ZERO,
             System.currentTimeMillis(),
-            context.source.uuid)
+            if (context.source is Player) (context.source as Player).uuid.toString() else "CONSOLE"
+        )
 
         Bullet.storage.writeBan(banData)
 
@@ -115,7 +118,7 @@ class BanCommand {
         )
     }
 
-    private fun sendConfirmMessage(source: Player, player: Player, expirationText: String, reason: String) {
+    private fun sendConfirmMessage(source: CommandSource, player: Player, expirationText: String, reason: String) {
         source.sendMessage(
             Component.text()
                 .append(Component.text("Banned ", NamedTextColor.GRAY))

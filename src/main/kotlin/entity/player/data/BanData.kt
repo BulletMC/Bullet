@@ -14,5 +14,5 @@ data class BanData(
     val reason: String,
     val duration: Duration,
     val currentTime: Long,
-    @Serializable(with = UUIDSerializer::class) val bannedBy: UUID
+    val bannedBy: String
 )

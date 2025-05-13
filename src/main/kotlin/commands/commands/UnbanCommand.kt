@@ -2,6 +2,8 @@ package com.aznos.commands.commands
 
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
+import com.aznos.commands.CommandSource
+import com.aznos.entity.ConsoleSender
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.PermissionLevel
 import com.mojang.brigadier.CommandDispatcher
@@ -14,20 +16,20 @@ import java.util.*
 
 class UnbanCommand {
 
-    fun register(dispatcher: CommandDispatcher<Player>) {
+    fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
-            LiteralArgumentBuilder.literal<Player>("unban")
-                .requires { player ->
-                    player.permissionLevel == PermissionLevel.MODERATOR ||
-                            player.permissionLevel == PermissionLevel.ADMINISTRATOR
-                }
-                .then(
-                    RequiredArgumentBuilder.argument<Player, String>("player", StringArgumentType.word())
+            LiteralArgumentBuilder.literal<CommandSource>("unban")
+                .requires { sender ->
+                    (sender is Player && (sender.permissionLevel == PermissionLevel.MODERATOR ||
+                        sender.permissionLevel == PermissionLevel.ADMINISTRATOR)
+                    ) || sender is ConsoleSender
+                }.then(
+                    RequiredArgumentBuilder.argument<CommandSource, String>("player", StringArgumentType.word())
                         .executes { context ->
                             val username = StringArgumentType.getString(context, "player")
                             val uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:$username").toByteArray())
 
-                            if (username.equals(context.source.username, true)) {
+                            if(username.equals(context.source.username, true)) {
                                 context.source.sendMessage(
                                     Component.text("You can't unban yourself", NamedTextColor.RED)
                                 )
@@ -36,7 +38,7 @@ class UnbanCommand {
                             }
 
                             val ban = Bullet.storage.unbanPlayer(uuid)
-                            if (ban == null) {
+                            if(ban == null) {
                                 context.source.sendMessage(
                                     Component.text("That player is not banned", NamedTextColor.RED)
                                 )
@@ -57,5 +59,4 @@ class UnbanCommand {
                 )
         )
     }
-
 }

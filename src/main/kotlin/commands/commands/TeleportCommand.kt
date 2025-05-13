@@ -2,8 +2,10 @@ package com.aznos.commands.commands
 
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
+import com.aznos.commands.CommandSource
 import com.aznos.commands.commands.suggestions.PlayerSuggestions
 import com.aznos.datatypes.LocationType
+import com.aznos.entity.ConsoleSender
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.PermissionLevel
 import com.aznos.packets.play.out.ServerEntityTeleportPacket
@@ -15,25 +17,24 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 
 class TeleportCommand {
-    fun register(dispatcher: CommandDispatcher<Player>) {
+    fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
-            LiteralArgumentBuilder.literal<Player>("tp")
-                .requires { player ->
-                    player.permissionLevel == PermissionLevel.MODERATOR ||
-                            player.permissionLevel == PermissionLevel.ADMINISTRATOR
-                }
-                .then(
-                    RequiredArgumentBuilder.argument<Player, String>("target", StringArgumentType.greedyString())
+            LiteralArgumentBuilder.literal<CommandSource>("tp")
+                .requires { sender ->
+                    sender is Player && (sender.permissionLevel == PermissionLevel.MODERATOR ||
+                    sender.permissionLevel == PermissionLevel.ADMINISTRATOR)
+                }.then(
+                    RequiredArgumentBuilder.argument<CommandSource, String>("target", StringArgumentType.greedyString())
                         .suggests(PlayerSuggestions.playerNameSuggestions())
                         .executes {
-                            context -> executeTeleport(context.source, StringArgumentType.getString(context, "target"))
+                            context -> executeTeleport(context.source as Player, StringArgumentType.getString(context, "target"))
                         }
                         .then(
-                            RequiredArgumentBuilder.argument<Player, String>(
+                            RequiredArgumentBuilder.argument<CommandSource, String>(
                                 "destination", StringArgumentType.greedyString()
                             ).executes { context ->
                                     executeTeleportToDestination(
-                                        context.source,
+                                        context.source as Player,
                                         StringArgumentType.getString(context, "target"),
                                         StringArgumentType.getString(context, "destination")
                                     )

@@ -2,6 +2,8 @@ package com.aznos.commands.commands
 
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
+import com.aznos.commands.CommandSource
+import com.aznos.entity.ConsoleSender
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.PermissionLevel
 import com.aznos.packets.play.out.ServerChangeGameStatePacket
@@ -17,21 +19,20 @@ import java.util.*
 import java.util.concurrent.CompletableFuture
 
 class SetWeatherCommand {
-    fun register(dispatcher: CommandDispatcher<Player>) {
+    fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
-            LiteralArgumentBuilder.literal<Player>("setweather")
-                .requires { player ->
-                    player.permissionLevel == PermissionLevel.MODERATOR ||
-                            player.permissionLevel == PermissionLevel.ADMINISTRATOR
-                }
-                .then(
-                    RequiredArgumentBuilder.argument<Player, String>("weather", StringArgumentType.word())
+            LiteralArgumentBuilder.literal<CommandSource>("setweather")
+                .requires { sender ->
+                    sender is Player && (sender.permissionLevel == PermissionLevel.MODERATOR ||
+                        sender.permissionLevel == PermissionLevel.ADMINISTRATOR)
+                }.then(
+                    RequiredArgumentBuilder.argument<CommandSource, String>("weather", StringArgumentType.word())
                         .suggests(weatherSuggestions())
                         .executes{ context ->
                             val message = StringArgumentType.getString(context, "weather")
                             when(message.lowercase(Locale.getDefault())) {
                                 "clear" -> {
-                                    context.source.world?.weather = 0
+                                    (context.source as Player).world?.weather = 0
 
                                     for(player in Bullet.players) {
                                         player.sendPacket(ServerChangeGameStatePacket(1, 0f))
@@ -39,7 +40,7 @@ class SetWeatherCommand {
                                 }
 
                                 "rain" -> {
-                                    context.source.world?.weather = 1
+                                    (context.source as Player).world?.weather = 1
 
                                     for(player in Bullet.players) {
                                         player.sendPacket(ServerChangeGameStatePacket(2, 0f))
@@ -68,7 +69,7 @@ class SetWeatherCommand {
         )
     }
 
-    private fun weatherSuggestions(): SuggestionProvider<Player> {
+    private fun weatherSuggestions(): SuggestionProvider<CommandSource> {
         return SuggestionProvider { context, builder ->
             builder.suggest("clear")
             builder.suggest("rain")

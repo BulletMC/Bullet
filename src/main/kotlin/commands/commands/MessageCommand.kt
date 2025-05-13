@@ -2,6 +2,7 @@ package com.aznos.commands.commands
 
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
+import com.aznos.commands.CommandSource
 import com.aznos.commands.commands.suggestions.PlayerSuggestions
 import com.aznos.entity.player.Player
 import com.mojang.brigadier.CommandDispatcher
@@ -12,14 +13,14 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 
 class MessageCommand {
-    fun register(dispatcher: CommandDispatcher<Player>) {
+    fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
-            LiteralArgumentBuilder.literal<Player>("message")
+            LiteralArgumentBuilder.literal<CommandSource>("message")
             .then(
-                RequiredArgumentBuilder.argument<Player, String>("target", StringArgumentType.word())
+                RequiredArgumentBuilder.argument<CommandSource, String>("target", StringArgumentType.word())
                     .suggests(PlayerSuggestions.playerNameSuggestions())
                     .then(
-                        RequiredArgumentBuilder.argument<Player, String>("text", StringArgumentType.greedyString())
+                        RequiredArgumentBuilder.argument<CommandSource, String>("text", StringArgumentType.greedyString())
                             .executes { context ->
                                 val sender = context.source
                                 val targetName = StringArgumentType.getString(context, "target")
@@ -70,7 +71,7 @@ class MessageCommand {
         )
 
         dispatcher.register(
-            LiteralArgumentBuilder.literal<Player>("msg")
+            LiteralArgumentBuilder.literal<CommandSource>("msg")
                 .redirect(dispatcher.root.getChild("message"))
         )
     }

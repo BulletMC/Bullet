@@ -2,6 +2,8 @@ package com.aznos.commands.commands
 
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
+import com.aznos.commands.CommandSource
+import com.aznos.entity.ConsoleSender
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.GameMode
 import com.aznos.entity.player.data.PermissionLevel
@@ -16,15 +18,14 @@ import net.kyori.adventure.text.format.NamedTextColor
 import java.util.concurrent.CompletableFuture
 
 class GameModeCommand {
-    fun register(dispatcher: CommandDispatcher<Player>) {
+    fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
-            LiteralArgumentBuilder.literal<Player>("gamemode")
-                .requires { player ->
-                    player.permissionLevel == PermissionLevel.MODERATOR ||
-                            player.permissionLevel == PermissionLevel.ADMINISTRATOR
-                }
-                .then(
-                    RequiredArgumentBuilder.argument<Player, String>("mode", StringArgumentType.word())
+            LiteralArgumentBuilder.literal<CommandSource>("gamemode")
+                .requires { sender ->
+                    sender is Player && (sender.permissionLevel == PermissionLevel.MODERATOR ||
+                    sender.permissionLevel == PermissionLevel.ADMINISTRATOR)
+                }.then(
+                    RequiredArgumentBuilder.argument<CommandSource, String>("mode", StringArgumentType.word())
                         .suggests(gameModeSuggestions()).executes { context ->
                             val input = StringArgumentType.getString(context, "mode")
                             val mode = parseGameMode(input)
@@ -36,7 +37,7 @@ class GameModeCommand {
                                 return@executes CommandCodes.ILLEGAL_ARGUMENT.id
                             }
 
-                            context.source.setGameMode(mode)
+                            (context.source as Player).setGameMode(mode)
                             context.source.sendMessage(
                                 Component.text("Gamemode set to ${mode.name.lowercase()}", NamedTextColor.GREEN)
                             )
@@ -60,7 +61,7 @@ class GameModeCommand {
         }
     }
 
-    private fun gameModeSuggestions(): SuggestionProvider<Player> {
+    private fun gameModeSuggestions(): SuggestionProvider<CommandSource> {
         return SuggestionProvider { context, builder ->
             GameMode.entries.forEach { mode ->
                 if(mode != GameMode.NONE) {

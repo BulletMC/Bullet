@@ -2,6 +2,8 @@ package com.aznos.commands.commands
 
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
+import com.aznos.commands.CommandSource
+import com.aznos.entity.ConsoleSender
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.PermissionLevel
 import com.mojang.brigadier.CommandDispatcher
@@ -19,18 +21,19 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 class StopCommand {
-    fun register(dispatcher: CommandDispatcher<Player>) {
+    fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
-            LiteralArgumentBuilder.literal<Player>("stop")
-                .requires { player ->
-                    player.permissionLevel == PermissionLevel.ADMINISTRATOR
+            LiteralArgumentBuilder.literal<CommandSource>("stop")
+                .requires { sender ->
+                    (sender is Player && sender.permissionLevel == PermissionLevel.ADMINISTRATOR) ||
+                    sender is ConsoleSender
                 }
                 .executes { context ->
                     Bullet.close()
                     CommandCodes.SUCCESS.id
                 }
                 .then(
-                    LiteralArgumentBuilder.literal<Player>("broadcast")
+                    LiteralArgumentBuilder.literal<CommandSource>("broadcast")
                         .executes { context ->
                             scheduleShutdown(60.seconds)
                             context.source.sendMessage(Component.text(
@@ -41,7 +44,7 @@ class StopCommand {
                             CommandCodes.SUCCESS.id
                         }
                         .then(
-                            RequiredArgumentBuilder.argument<Player, Int>("delay", IntegerArgumentType.integer(1))
+                            RequiredArgumentBuilder.argument<CommandSource, Int>("delay", IntegerArgumentType.integer(1))
                                 .executes { context ->
                                     val delay = IntegerArgumentType.getInteger(context, "delay")
                                     scheduleShutdown(delay.seconds)

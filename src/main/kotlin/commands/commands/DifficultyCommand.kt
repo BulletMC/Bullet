@@ -1,6 +1,8 @@
 package com.aznos.commands.commands
 
 import com.aznos.commands.CommandCodes
+import com.aznos.commands.CommandSource
+import com.aznos.entity.ConsoleSender
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.GameMode
 import com.aznos.entity.player.data.PermissionLevel
@@ -15,15 +17,14 @@ import net.kyori.adventure.text.format.NamedTextColor
 import java.util.concurrent.CompletableFuture
 
 class DifficultyCommand {
-    fun register(dispatcher: CommandDispatcher<Player>) {
+    fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
-            LiteralArgumentBuilder.literal<Player>("difficulty")
-                .requires { player ->
-                    player.permissionLevel == PermissionLevel.MODERATOR ||
-                            player.permissionLevel == PermissionLevel.ADMINISTRATOR
-                }
-                .then(
-                    RequiredArgumentBuilder.argument<Player, String>("value", StringArgumentType.greedyString())
+            LiteralArgumentBuilder.literal<CommandSource>("difficulty")
+                .requires { sender ->
+                    sender is Player && (sender.permissionLevel == PermissionLevel.MODERATOR ||
+                    sender.permissionLevel == PermissionLevel.ADMINISTRATOR)
+                }.then(
+                    RequiredArgumentBuilder.argument<CommandSource, String>("value", StringArgumentType.greedyString())
                         .suggests(difficultySuggestions())
                         .executes{ context ->
                             val value = StringArgumentType.getString(context, "value")
@@ -31,7 +32,7 @@ class DifficultyCommand {
 
                             for(difficulty in Difficulty.entries) {
                                 if(difficulty.name.equals(value, true)) {
-                                    player.world?.difficulty = difficulty
+                                    (player as Player).world?.difficulty = difficulty
                                     player.sendMessage(
                                         Component.text()
                                             .append(Component.text("Difficulty set to ", NamedTextColor.GRAY))
@@ -49,7 +50,7 @@ class DifficultyCommand {
         )
     }
 
-    private fun difficultySuggestions(): SuggestionProvider<Player> {
+    private fun difficultySuggestions(): SuggestionProvider<CommandSource> {
         return SuggestionProvider { context, builder ->
             Difficulty.entries.forEach { difficulty ->
                 builder.suggest(difficulty.name.lowercase())

@@ -2,6 +2,8 @@ package com.aznos.commands.commands
 
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
+import com.aznos.commands.CommandSource
+import com.aznos.entity.ConsoleSender
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.PermissionLevel
 import com.mojang.brigadier.CommandDispatcher
@@ -16,12 +18,12 @@ import java.text.DecimalFormat
 class PerformanceCommand {
     private val decimalFormat = DecimalFormat("#.##")
 
-    fun register(dispatcher: CommandDispatcher<Player>) {
+    fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
-            LiteralArgumentBuilder.literal<Player>("performance")
-                .requires { player ->
-                    player.permissionLevel == PermissionLevel.MODERATOR ||
-                            player.permissionLevel == PermissionLevel.ADMINISTRATOR
+            LiteralArgumentBuilder.literal<CommandSource>("performance")
+                .requires { sender ->
+                    (sender is Player && sender.permissionLevel == PermissionLevel.ADMINISTRATOR) ||
+                    sender is ConsoleSender
                 }.executes { context ->
                 val player = context.source
                 player.sendMessage(getPerformanceStats())
@@ -43,7 +45,6 @@ class PerformanceCommand {
         val threadCount = threadMXBean.threadCount
         val peakThreadCount = threadMXBean.peakThreadCount
         val playerCount = Bullet.players.size
-        // TODO create a server wide uptime
         val rawUptime = System.currentTimeMillis() - Bullet.startupTime
         val uptime = formatUptime(rawUptime)
 

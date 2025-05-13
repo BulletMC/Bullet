@@ -2,6 +2,8 @@ package com.aznos.commands.commands
 
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
+import com.aznos.commands.CommandSource
+import com.aznos.entity.ConsoleSender
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.PermissionLevel
 import com.mojang.brigadier.CommandDispatcher
@@ -12,14 +14,15 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 
 class SayCommand {
-    fun register(dispatcher: CommandDispatcher<Player>) {
+    fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
-            LiteralArgumentBuilder.literal<Player>("say")
-                .requires { player ->
-                    player.permissionLevel == PermissionLevel.MODERATOR ||
-                    player.permissionLevel == PermissionLevel.ADMINISTRATOR
+            LiteralArgumentBuilder.literal<CommandSource>("say")
+                .requires { sender ->
+                    (sender is Player && (sender.permissionLevel == PermissionLevel.MODERATOR ||
+                        sender.permissionLevel == PermissionLevel.ADMINISTRATOR)
+                    ) || sender is ConsoleSender
                 }.then(
-                    RequiredArgumentBuilder.argument<Player, String>("message", StringArgumentType.greedyString())
+                    RequiredArgumentBuilder.argument<CommandSource, String>("message", StringArgumentType.greedyString())
                         .executes{ context ->
                             val message = StringArgumentType.getString(context, "message")
                             if(message.isEmpty()) {

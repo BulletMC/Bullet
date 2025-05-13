@@ -2,6 +2,7 @@ package com.aznos.commands.commands
 
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
+import com.aznos.commands.CommandSource
 import com.aznos.entity.Entity
 import com.aznos.entity.livingentity.LivingEntities
 import com.aznos.entity.livingentity.LivingEntity
@@ -22,15 +23,14 @@ import net.kyori.adventure.text.format.NamedTextColor
 import java.util.concurrent.CompletableFuture
 
 class SpawnCommand {
-    fun register(dispatcher: CommandDispatcher<Player>) {
+    fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
-            LiteralArgumentBuilder.literal<Player>("spawn")
-                .requires { player ->
-                    player.permissionLevel == PermissionLevel.MODERATOR ||
-                            player.permissionLevel == PermissionLevel.ADMINISTRATOR
-                }
-                .then(
-                    RequiredArgumentBuilder.argument<Player, String>("type", StringArgumentType.word())
+            LiteralArgumentBuilder.literal<CommandSource>("spawn")
+                .requires { sender ->
+                    sender is Player && (sender.permissionLevel == PermissionLevel.MODERATOR ||
+                    sender.permissionLevel == PermissionLevel.ADMINISTRATOR)
+                }.then(
+                    RequiredArgumentBuilder.argument<CommandSource, String>("type", StringArgumentType.word())
                         .suggests(entityTypeSuggestions())
                         .executes { context ->
                             val type = StringArgumentType.getString(context, "type")
@@ -39,11 +39,11 @@ class SpawnCommand {
                             val nonLivingEntityType = findNonLivingEntityType(type)
 
                             if(livingEntityType == null && nonLivingEntityType == null) {
-                                sendInvalidEntityMessage(context.source, type)
+                                sendInvalidEntityMessage(context.source as Player, type)
                                 return@executes CommandCodes.ILLEGAL_ARGUMENT.id
                             }
 
-                            spawnEntity(context.source, livingEntityType, nonLivingEntityType)
+                            spawnEntity(context.source as Player, livingEntityType, nonLivingEntityType)
                             CommandCodes.SUCCESS.id
                         }
                 )
@@ -111,7 +111,7 @@ class SpawnCommand {
         )
     }
 
-    private fun entityTypeSuggestions(): SuggestionProvider<Player> {
+    private fun entityTypeSuggestions(): SuggestionProvider<CommandSource> {
         return SuggestionProvider { context, builder ->
             LivingEntities.entries.forEach {
                 builder.suggest(it.name.lowercase())
