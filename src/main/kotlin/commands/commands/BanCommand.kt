@@ -97,7 +97,10 @@ class BanCommand {
             reason,
             expirationDuration ?: Duration.ZERO,
             System.currentTimeMillis(),
-            if (context.source is Player) (context.source as Player).uuid.toString() else "CONSOLE"
+            if (context.source is Player) {
+                val playerSource = context.source as Player
+                playerSource.uuid.toString()
+            } else "CONSOLE"
         )
 
         Bullet.storage.writeBan(banData)
