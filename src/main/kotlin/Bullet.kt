@@ -247,26 +247,13 @@ object Bullet : AutoCloseable {
                     val res = CommandManager.dispatcher.execute(input, ConsoleSender)
 
                     when(res) {
-                        CommandCodes.ILLEGAL_ARGUMENT.id -> {
-                            ConsoleSender.sendMessage(Component.text("Illegal argument", NamedTextColor.RED))
-                        }
-
-                        CommandCodes.INVALID_PERMISSIONS.id -> {
-                            ConsoleSender.sendMessage(
-                                Component.text("You do not have permission to run this command", NamedTextColor.RED)
-                            )
-                        }
-
-                        CommandCodes.ILLEGAL_SYNTAX.id -> {
-                            ConsoleSender.sendMessage(Component.text("Illegal syntax", NamedTextColor.RED))
-                        }
-
-                        CommandCodes.UNKNOWN.id -> {
-                            ConsoleSender.sendMessage(Component.text("Unknown command", NamedTextColor.RED))
-                        }
+                        CommandCodes.ILLEGAL_ARGUMENT.id -> ConsoleSender.sendMessage(Component.text("Illegal argument", NamedTextColor.RED))
+                        CommandCodes.INVALID_PERMISSIONS.id -> ConsoleSender.sendMessage(Component.text("You do not have permission to run this command", NamedTextColor.RED))
+                        CommandCodes.ILLEGAL_SYNTAX.id -> ConsoleSender.sendMessage(Component.text("Illegal syntax", NamedTextColor.RED))
+                        CommandCodes.UNKNOWN.id -> ConsoleSender.sendMessage(Component.text("Unknown command", NamedTextColor.RED))
                     }
                 } catch(e: Exception) {
-                    logger.warn("[Console Error] ${e.message}")
+                    logger.warn("[Console Error] ${e.message}", e)
                 }
             }
         }

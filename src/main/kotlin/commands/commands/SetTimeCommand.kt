@@ -41,7 +41,8 @@ class SetTimeCommand {
                             for(player in Bullet.players) {
                                 player.setTimeOfDay(time)
                             }
-                            CommandCodes.SUCCESS.id
+
+                            return@executes CommandCodes.SUCCESS.id
                         }
                 )
         )
