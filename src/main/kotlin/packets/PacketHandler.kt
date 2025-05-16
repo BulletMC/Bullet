@@ -779,6 +779,8 @@ class PacketHandler(
 
         val (nodes, rootIndex) = buildCommandGraphFromDispatcher(CommandManager.dispatcher)
         client.sendPacket(ServerDeclareCommandsPacket(nodes, rootIndex))
+
+        player.sendScoreboard("bullet")
     }
 
     /**

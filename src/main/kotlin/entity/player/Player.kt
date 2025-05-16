@@ -199,4 +199,13 @@ class Player(
     fun removeTitle() {
         sendPacket(ServerTitlePacket(TitleAction.RESET))
     }
+
+    /**
+     * Sends a scoreboard to the player
+     *
+     * @param title The unique name for the scoreboard
+     */
+    fun sendScoreboard(title: String) {
+        sendPacket(ServerDisplayScoreboardPacket(0x1, title))
+    }
 }
