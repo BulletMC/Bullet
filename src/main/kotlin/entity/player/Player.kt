@@ -199,4 +199,39 @@ class Player(
     fun removeTitle() {
         sendPacket(ServerTitlePacket(TitleAction.RESET))
     }
+
+    /**
+     * Sends a scoreboard to the player
+     *
+     * @param objectiveName The internal name of the scoreboard (should be unique)
+     * @param displayName The display name for the scoreboard
+     * @param lines The lines to be displayed on the scoreboard
+     */
+    fun sendScoreboard(objectiveName: String, displayName: TextComponent, lines: Map<String, Int>) {
+        sendPacket(ServerScoreboardObjectivePacket(
+            objectiveName,
+            0,
+            displayName,
+            0
+        ))
+
+        sendPacket(ServerDisplayScoreboardPacket(1, objectiveName))
+        for((lineText, score) in lines) {
+            sendPacket(ServerUpdateScorePacket(
+                lineText,
+                0,
+                objectiveName,
+                score
+            ))
+        }
+    }
+
+    /**
+     * Used to remove a scoreboard for the player
+     *
+     * @param objectiveName The internal name of the scoreboard
+     */
+    fun removeScoreboard(objectiveName: String) {
+        sendPacket(ServerScoreboardObjectivePacket(objectiveName, 1))
+    }
 }
