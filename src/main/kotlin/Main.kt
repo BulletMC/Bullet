@@ -1,5 +1,7 @@
 package com.aznos
 
+import com.aznos.events.EventManager
+import com.aznos.events.PlayerJoinEvent
 import kotlinx.cli.ArgParser
 import kotlinx.cli.ArgType
 import kotlinx.cli.default
@@ -25,6 +27,11 @@ fun main(args: Array<String>) {
     ).default(25565)
 
     parser.parse(args)
+
+    EventManager.register(PlayerJoinEvent::class.java) { e ->
+        val player = e.player
+        player.sendScoreboard("bullet")
+    }
 
     Bullet.createServer(address, port)
 }
