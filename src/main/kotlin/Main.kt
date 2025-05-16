@@ -30,14 +30,5 @@ fun main(args: Array<String>) {
 
     parser.parse(args)
 
-    EventManager.register(PlayerJoinEvent::class.java) { e ->
-        val player = e.player
-        player.sendScoreboard("killsBoard", Component.text("Top Kills").color(NamedTextColor.RED), lines = mapOf(
-            "Steve" to 12,
-            "Alex" to 8,
-            "You" to 5
-        ))
-    }
-
     Bullet.createServer(address, port)
 }
