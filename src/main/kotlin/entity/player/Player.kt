@@ -203,18 +203,24 @@ class Player(
     /**
      * Sends a scoreboard to the player
      *
-     * @param title The unique name for the scoreboard
+     * @param objectName The internal name of the scoreboard (should be unique)
+     * @param displayName The display name for the scoreboard
      * @param lines The lines to be displayed on the scoreboard
      */
-    fun sendScoreboard(title: String, lines: Map<String, Int> = emptyMap()) {
-        sendPacket(ServerDisplayScoreboardPacket(0x1, title))
+    fun sendScoreboard(objectName: String, displayName: TextComponent, lines: Map<String, Int>) {
+        sendPacket(ServerScoreboardObjectivePacket(
+            objectName,
+            0,
+            displayName,
+            0
+        ))
 
-        for(line in lines) {
-            val (name, score) = line
+        sendPacket(ServerDisplayScoreboardPacket(1, objectName))
+        for((lineText, score) in lines) {
             sendPacket(ServerUpdateScorePacket(
-                username,
-                0x0,
-                name,
+                lineText,
+                0,
+                objectName,
                 score
             ))
         }
