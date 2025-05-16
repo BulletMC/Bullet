@@ -225,4 +225,13 @@ class Player(
             ))
         }
     }
+
+    /**
+     * Used to remove a scoreboard for the player
+     *
+     * @param objectiveName The internal name of the scoreboard
+     */
+    fun removeScoreboard(objectiveName: String) {
+        sendPacket(ServerScoreboardObjectivePacket(objectiveName, 1))
+    }
 }
