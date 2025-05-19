@@ -24,7 +24,7 @@ class PerformanceCommand {
             LiteralArgumentBuilder.literal<CommandSource>("performance")
                 .executes { context ->
                     val player = context.source
-                    if(!CommandManager.hasModPermission(sender)) {
+                    if(!CommandManager.hasModPermission(player)) {
                         return@executes CommandCodes.INVALID_PERMISSIONS.id
                     }
 
