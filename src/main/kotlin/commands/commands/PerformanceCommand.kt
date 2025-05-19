@@ -21,14 +21,14 @@ class PerformanceCommand {
     fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<CommandSource>("performance")
-                .requires { sender ->
-                    (sender is Player && sender.permissionLevel == PermissionLevel.ADMINISTRATOR) ||
-                    sender is ConsoleSender
-                }.executes { context ->
-                val player = context.source
-                player.sendMessage(getPerformanceStats())
+                .executes { context ->
+                    val player = context.source
+                    if(!CommandManager.hasModPermission(sender)) {
+                        return@executes CommandCodes.INVALID_PERMISSIONS.id
+                    }
 
-                return@executes CommandCodes.SUCCESS.id
+                    player.sendMessage(getPerformanceStats())
+                    return@executes CommandCodes.SUCCESS.id
             }
         )
     }

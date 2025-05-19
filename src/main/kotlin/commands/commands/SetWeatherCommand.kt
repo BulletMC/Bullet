@@ -22,9 +22,13 @@ class SetWeatherCommand {
     fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<CommandSource>("setweather")
-                .requires { sender ->
-                    sender is Player && (sender.permissionLevel == PermissionLevel.MODERATOR ||
-                        sender.permissionLevel == PermissionLevel.ADMINISTRATOR)
+                .executes { context ->
+                    val sender = context.source
+                    if(!CommandManager.hasModPermission(sender)) {
+                        return@executes CommandCodes.INVALID_PERMISSIONS.id
+                    }
+
+                    return@executes CommandCodes.SUCCESS.id
                 }.then(
                     RequiredArgumentBuilder.argument<CommandSource, String>("weather", StringArgumentType.word())
                         .suggests(weatherSuggestions())

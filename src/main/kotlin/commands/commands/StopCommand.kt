@@ -24,11 +24,12 @@ class StopCommand {
     fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<CommandSource>("stop")
-                .requires { sender ->
-                    (sender is Player && sender.permissionLevel == PermissionLevel.ADMINISTRATOR) ||
-                    sender is ConsoleSender
-                }
-                .executes { context ->
+                executes { context ->
+                    val sender = context.source
+                    if(!CommandManager.hasModPermission(sender)) {
+                        return@executes CommandCodes.INVALID_PERMISSIONS.id
+                    }
+
                     Bullet.close()
                     CommandCodes.SUCCESS.id
                 }
