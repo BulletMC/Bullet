@@ -5,6 +5,9 @@ import com.aznos.commands.data.DoubleProperties
 import com.aznos.commands.data.IntegerProperties
 import com.aznos.commands.data.StringTypes
 import com.aznos.commands.data.GraphCommandNode
+import com.aznos.commands.CommandSource
+import com.aznos.entity.player.Player
+import com.aznos.entity.player.data.PermissionLevel
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.BoolArgumentType
 import com.mojang.brigadier.arguments.DoubleArgumentType
@@ -20,6 +23,7 @@ import com.mojang.brigadier.tree.RootCommandNode
  *
  * @property dispatcher The command dispatcher
  */
+@Suppress("TooManyFunctions")
 object CommandManager {
     val dispatcher = CommandDispatcher<CommandSource>()
 
@@ -273,5 +277,18 @@ object CommandManager {
         }
 
         return min to max
+    }
+
+    fun hasModPermission(sender: CommandSource): Boolean {
+        return if(sender is Player) {
+            sender.permissionLevel == PermissionLevel.MODERATOR ||
+            sender.permissionLevel == PermissionLevel.ADMINISTRATOR
+        } else true
+    }
+
+    fun hasAdminPermission(sender: CommandSource): Boolean {
+        return if(sender is Player) {
+            sender.permissionLevel == PermissionLevel.ADMINISTRATOR
+        } else true
     }
 }

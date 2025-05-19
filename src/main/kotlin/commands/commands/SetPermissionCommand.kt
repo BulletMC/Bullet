@@ -2,6 +2,7 @@ package com.aznos.commands.commands
 
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
+import com.aznos.commands.CommandManager
 import com.aznos.commands.CommandSource
 import com.aznos.commands.commands.suggestions.PlayerSuggestions
 import com.aznos.entity.ConsoleSender
@@ -21,12 +22,14 @@ class SetPermissionCommand {
     fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<CommandSource>("setpermission")
-                .requires { source ->
-                    source is Player &&
-                    source.permissionLevel == PermissionLevel.ADMINISTRATOR ||
-                    source is ConsoleSender
-                }
-                .then(
+                .executes { context ->
+                    val sender = context.source
+                    if(!CommandManager.hasAdminPermission(sender)) {
+                        return@executes CommandCodes.INVALID_PERMISSIONS.id
+                    }
+
+                    return@executes CommandCodes.SUCCESS.id
+                }.then(
                     RequiredArgumentBuilder.argument<CommandSource, String>("target", StringArgumentType.word())
                         .suggests(PlayerSuggestions.playerNameSuggestions())
                         .then(

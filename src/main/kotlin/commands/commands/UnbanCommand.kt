@@ -2,6 +2,7 @@ package com.aznos.commands.commands
 
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
+import com.aznos.commands.CommandManager
 import com.aznos.commands.CommandSource
 import com.aznos.entity.ConsoleSender
 import com.aznos.entity.player.Player
@@ -15,14 +16,16 @@ import net.kyori.adventure.text.format.NamedTextColor
 import java.util.*
 
 class UnbanCommand {
-
     fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<CommandSource>("unban")
-                .requires { sender ->
-                    (sender is Player && (sender.permissionLevel == PermissionLevel.MODERATOR ||
-                        sender.permissionLevel == PermissionLevel.ADMINISTRATOR)
-                    ) || sender is ConsoleSender
+                .executes { context ->
+                    val sender = context.source
+                    if(!CommandManager.hasModPermission(sender)) {
+                        return@executes CommandCodes.INVALID_PERMISSIONS.id
+                    }
+
+                    return@executes CommandCodes.SUCCESS.id
                 }.then(
                     RequiredArgumentBuilder.argument<CommandSource, String>("player", StringArgumentType.word())
                         .executes { context ->

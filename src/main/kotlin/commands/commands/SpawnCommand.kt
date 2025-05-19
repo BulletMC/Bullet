@@ -3,6 +3,7 @@ package com.aznos.commands.commands
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
 import com.aznos.commands.CommandSource
+import com.aznos.commands.CommandManager
 import com.aznos.entity.Entity
 import com.aznos.entity.livingentity.LivingEntities
 import com.aznos.entity.livingentity.LivingEntity
@@ -26,9 +27,13 @@ class SpawnCommand {
     fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<CommandSource>("spawn")
-                .requires { sender ->
-                    sender is Player && (sender.permissionLevel == PermissionLevel.MODERATOR ||
-                    sender.permissionLevel == PermissionLevel.ADMINISTRATOR)
+                .executes { context ->
+                    val sender = context.source
+                    if(!CommandManager.hasModPermission(sender)) {
+                        return@executes CommandCodes.INVALID_PERMISSIONS.id
+                    }
+
+                    return@executes CommandCodes.SUCCESS.id
                 }.then(
                     RequiredArgumentBuilder.argument<CommandSource, String>("type", StringArgumentType.word())
                         .suggests(entityTypeSuggestions())

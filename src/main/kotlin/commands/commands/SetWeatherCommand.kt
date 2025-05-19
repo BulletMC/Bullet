@@ -5,6 +5,7 @@ import com.aznos.commands.CommandCodes
 import com.aznos.commands.CommandSource
 import com.aznos.entity.ConsoleSender
 import com.aznos.entity.player.Player
+import com.aznos.commands.CommandManager
 import com.aznos.entity.player.data.PermissionLevel
 import com.aznos.packets.play.out.ServerChangeGameStatePacket
 import com.aznos.world.data.Difficulty
@@ -22,9 +23,13 @@ class SetWeatherCommand {
     fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<CommandSource>("setweather")
-                .requires { sender ->
-                    sender is Player && (sender.permissionLevel == PermissionLevel.MODERATOR ||
-                        sender.permissionLevel == PermissionLevel.ADMINISTRATOR)
+                .executes { context ->
+                    val sender = context.source
+                    if(!CommandManager.hasModPermission(sender)) {
+                        return@executes CommandCodes.INVALID_PERMISSIONS.id
+                    }
+
+                    return@executes CommandCodes.SUCCESS.id
                 }.then(
                     RequiredArgumentBuilder.argument<CommandSource, String>("weather", StringArgumentType.word())
                         .suggests(weatherSuggestions())

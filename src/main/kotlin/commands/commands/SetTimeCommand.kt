@@ -3,6 +3,7 @@ package com.aznos.commands.commands
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
 import com.aznos.commands.CommandSource
+import com.aznos.commands.CommandManager
 import com.aznos.entity.ConsoleSender
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.PermissionLevel
@@ -21,10 +22,13 @@ class SetTimeCommand {
     fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<CommandSource>("settime")
-                .requires { sender ->
-                    (sender is Player && (sender.permissionLevel == PermissionLevel.MODERATOR ||
-                        sender.permissionLevel == PermissionLevel.ADMINISTRATOR)
-                    ) || sender is ConsoleSender
+                .executes { context ->
+                    val sender = context.source
+                    if(!CommandManager.hasModPermission(sender)) {
+                        return@executes CommandCodes.INVALID_PERMISSIONS.id
+                    }
+
+                    return@executes CommandCodes.SUCCESS.id
                 }.then(
                     RequiredArgumentBuilder.argument<CommandSource, Long>("time", LongArgumentType.longArg())
                         .executes { context ->

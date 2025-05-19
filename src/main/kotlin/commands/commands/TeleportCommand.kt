@@ -3,6 +3,7 @@ package com.aznos.commands.commands
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
 import com.aznos.commands.CommandSource
+import com.aznos.commands.CommandManager
 import com.aznos.commands.commands.suggestions.PlayerSuggestions
 import com.aznos.datatypes.LocationType
 import com.aznos.entity.ConsoleSender
@@ -20,9 +21,13 @@ class TeleportCommand {
     fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<CommandSource>("tp")
-                .requires { sender ->
-                    sender is Player && (sender.permissionLevel == PermissionLevel.MODERATOR ||
-                    sender.permissionLevel == PermissionLevel.ADMINISTRATOR)
+                .executes { context ->
+                    val sender = context.source
+                    if(!CommandManager.hasModPermission(sender)) {
+                        return@executes CommandCodes.INVALID_PERMISSIONS.id
+                    }
+
+                    return@executes CommandCodes.SUCCESS.id
                 }.then(
                     RequiredArgumentBuilder.argument<CommandSource, String>("target", StringArgumentType.greedyString())
                         .suggests(PlayerSuggestions.playerNameSuggestions())
