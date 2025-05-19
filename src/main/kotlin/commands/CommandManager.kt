@@ -274,4 +274,17 @@ object CommandManager {
 
         return min to max
     }
+
+    fun hasModPermission(sender: CommandSource): Boolean {
+        return if(sender is Player) {
+            sender.permissionLevel == PermissionLevel.MODERATOR ||
+            sender.permissionLevel == PermissionLevel.ADMINISTRATOR
+        } else true
+    }
+
+    fun hasAdminPermission(sender: CommandSource): Boolean {
+        return if(sender is Player) {
+            sender.permissionLevel == PermissionLevel.ADMINISTRATOR
+        } else true
+    }
 }
