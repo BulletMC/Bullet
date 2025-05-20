@@ -35,17 +35,5 @@ fun main(args: Array<String>) {
 
     parser.parse(args)
 
-    EventManager.register(PlayerSneakEvent::class.java) { e ->
-        if(e.isSneaking) {
-            e.player.sendPacket(ServerSoundEffectPacket(
-                Sounds.BLOCK_WOODEN_DOOR_OPEN,
-                SoundCategories.BLOCKS,
-                e.player.location.x.toInt(),
-                e.player.location.y.toInt(),
-                e.player.location.z.toInt(),
-            ))
-        }
-    }
-
     Bullet.createServer(address, port)
 }
