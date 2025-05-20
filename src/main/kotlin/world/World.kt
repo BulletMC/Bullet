@@ -1,13 +1,17 @@
 package com.aznos.world
 
+import com.aznos.Bullet
 import com.aznos.datatypes.BlockPositionType
 import com.aznos.entity.Entity
 import com.aznos.entity.livingentity.LivingEntity
+import com.aznos.packets.play.out.ServerSoundEffectPacket
 import com.aznos.storage.world.AbstractWorldStorage
 import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.Difficulty
 import com.aznos.world.data.EntityData
 import com.aznos.world.data.TimeOfDay
+import com.aznos.world.sounds.SoundCategories
+import com.aznos.world.sounds.Sounds
 
 /**
  * Represents a world in the game
@@ -84,6 +88,31 @@ class World(
 
         for(livingEntity in livingEntities) {
             storage.writeEntity(livingEntity.second)
+        }
+    }
+
+    /**
+     * Plays a sound at a given location in the world to all players
+     *
+     * @param sound The sound to play
+     * @param category The sound category that the sound falls under
+     * @param position The block position at where the sound should play
+     * @param volume Capped between 0.0f and 1.0f
+     * @param pitch Float between 0.5 and 2.0
+     */
+    fun playSound(
+        sound: Sounds,
+        category: SoundCategories,
+        position: BlockPositionType.BlockPosition,
+        volume: Float = 1.0f,
+        pitch: Float = 1.0f
+    ) {
+        for(player in Bullet.players) {
+            player.sendPacket(ServerSoundEffectPacket(
+                sound, category,
+                position.x.toInt(), position.y.toInt(), position.z.toInt(),
+                volume, pitch
+            ))
         }
     }
 }
