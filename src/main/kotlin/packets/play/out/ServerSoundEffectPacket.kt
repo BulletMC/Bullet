@@ -2,6 +2,8 @@ package com.aznos.packets.play.out
 
 import com.aznos.datatypes.VarInt.writeVarInt
 import com.aznos.packets.Packet
+import com.aznos.world.sounds.SoundCategories
+import com.aznos.world.sounds.Sounds
 
 /**
  * This packet is used to play a number of hardcoded sound events
@@ -15,8 +17,8 @@ import com.aznos.packets.Packet
  * @param pitch Float between 0.5 and 2.0
  */
 class ServerSoundEffectPacket(
-    soundID: Int,
-    soundCategory: Int,
+    soundID: Sounds,
+    soundCategory: SoundCategories,
     effectPosX: Int,
     effectPosY: Int,
     effectPosZ: Int,
@@ -24,8 +26,8 @@ class ServerSoundEffectPacket(
     pitch: Float = 1.0f,
 ) : Packet(0x51) {
     init {
-        wrapper.writeVarInt(soundID)
-        wrapper.writeVarInt(soundCategory)
+        wrapper.writeVarInt(soundID.id)
+        wrapper.writeVarInt(soundCategory.id)
         wrapper.writeInt(effectPosX)
         wrapper.writeInt(effectPosY)
         wrapper.writeInt(effectPosZ)
