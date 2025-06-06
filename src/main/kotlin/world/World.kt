@@ -37,6 +37,7 @@ class World(
     var difficulty: Difficulty = Difficulty.NORMAL
     val livingEntities = mutableListOf<Pair<LivingEntity, EntityData>>()
     val entities = mutableListOf<Pair<Entity, EntityData>>()
+    val orbs = mutableListOf<Entity>()
     lateinit var modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>
 
     init {

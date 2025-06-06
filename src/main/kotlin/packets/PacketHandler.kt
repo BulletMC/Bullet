@@ -27,7 +27,8 @@ import com.aznos.packets.play.`in`.*
 import com.aznos.packets.play.`in`.movement.*
 import com.aznos.packets.play.out.*
 import com.aznos.packets.play.out.movement.*
-import com.aznos.packets.play.out.packets.play.out.ServerSpawnExperienceOrb
+import com.aznos.packets.play.out.ServerCollectItemPacket
+import com.aznos.packets.play.out.ServerSpawnExperienceOrb
 import com.aznos.packets.status.`in`.ClientStatusPingPacket
 import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
@@ -62,7 +63,6 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
-import javax.swing.text.html.HTML.Tag.I
 import kotlin.experimental.and
 import kotlin.math.abs
 import kotlin.math.pow
@@ -412,9 +412,13 @@ class PacketHandler(
         if(event.isCancelled) return
 
         if(client.player.getHeldItem() == Item.EXPERIENCE_BOTTLE.id) {
+            world.orbs.add(Entity())
+            val orb = world.orbs.last()
+            orb.location = client.player.location.copy().add(0.0, 1.0, 0.0)
+
             for(player in Bullet.players) {
                 player.sendPacket(ServerSpawnExperienceOrb(
-                    Entity().entityID,
+                    orb.entityID,
                     client.player.location.toBlockPosition().add(0.0, 1.0, 0.0),
                     1
                 ))
@@ -479,8 +483,7 @@ class PacketHandler(
         player.onGround = packet.onGround
 
         for(otherPlayer in Bullet.players) {
-            if(otherPlayer == player) continue
-
+            if(otherPlayer != player) continue
             otherPlayer.clientSession.sendPacket(ServerEntityMovementPacket(player.entityID))
         }
     }
@@ -562,6 +565,7 @@ class PacketHandler(
         player.location = newLocation
         player.onGround = onGround
         checkFallDamage()
+        checkOrbs()
 
         return true
     }
@@ -1636,6 +1640,41 @@ class PacketHandler(
             }
         } else {
             false
+        }
+    }
+
+    private fun checkOrbs() {
+        for(player in players) {
+            val toRemove = mutableListOf<Entity>()
+            for(orb in world.orbs) {
+                val distance = sqrt(
+                    (player.location.x - orb.location.x).pow(2) +
+                            (player.location.y - orb.location.y).pow(2) +
+                            (player.location.z - orb.location.z).pow(2)
+                )
+
+                if(distance <= 2.0) {
+                    client.player.sendPacket(ServerCollectItemPacket(
+                        orb.entityID,
+                        client.player.entityID,
+                        1
+                    ))
+
+                    client.player.sendPacket(ServerDestroyEntitiesPacket(intArrayOf(orb.entityID)))
+
+                    client.player.sendPacket(ServerSoundEffectPacket(
+                        Sounds.ENTITY_EXPERIENCE_ORB_PICKUP,
+                        SoundCategories.PLAYER,
+                        client.player.location.x.toInt(),
+                        client.player.location.y.toInt(),
+                        client.player.location.z.toInt()
+                    ))
+
+                    toRemove.add(orb)
+                }
+            }
+
+            world.orbs.removeAll(toRemove)
         }
     }
 }

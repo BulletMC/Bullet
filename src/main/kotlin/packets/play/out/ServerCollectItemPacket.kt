@@ -1,4 +1,4 @@
-package com.aznos.packets.play.out.packets.play.out
+package com.aznos.packets.play.out
 
 import com.aznos.datatypes.VarInt.writeVarInt
 import com.aznos.packets.Packet
@@ -13,7 +13,8 @@ import com.aznos.packets.Packet
  *
  * @param collectedEntityID The entity ID for the item being collected
  * @param collectorEntityID The entity ID of the entity that collected the item
- * @param itemCount The number of items being collected, should be 1 for XP orbs, otherwise the number of items in the stack
+ * @param itemCount The number of items being collected, should be 1 for XP orbs,
+ * otherwise the number of items in the stack
  */
 class ServerCollectItemPacket(
     collectedEntityID: Int,
