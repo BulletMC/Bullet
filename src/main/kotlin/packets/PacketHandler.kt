@@ -15,6 +15,7 @@ import com.aznos.datatypes.MetadataType
 import com.aznos.datatypes.Slot
 import com.aznos.datatypes.VarInt.readVarInt
 import com.aznos.entity.Entity
+import com.aznos.entity.OrbEntity
 import com.aznos.entity.livingentity.LivingEntities
 import com.aznos.entity.livingentity.LivingEntity
 import com.aznos.entity.player.Player
@@ -412,15 +413,16 @@ class PacketHandler(
         if(event.isCancelled) return
 
         if(client.player.getHeldItem() == Item.EXPERIENCE_BOTTLE.id) {
-            world.orbs.add(Entity())
+            world.orbs.add(OrbEntity())
             val orb = world.orbs.last()
             orb.location = client.player.location.copy().add(0.0, 1.0, 0.0)
+            orb.xp = 1
 
             for(player in Bullet.players) {
                 player.sendPacket(ServerSpawnExperienceOrb(
                     orb.entityID,
                     client.player.location.toBlockPosition().add(0.0, 1.0, 0.0),
-                    1
+                    orb.xp
                 ))
 
                 player.sendPacket(ServerSoundEffectPacket(
@@ -1670,11 +1672,35 @@ class PacketHandler(
                         client.player.location.z.toInt()
                     ))
 
+                    client.player.totalXP += orb.xp
+                    var level = 0
+                    while(totalXPTillNextLevel(level + 1) <= client.player.totalXP) {
+                        level++
+                    }
+
+                    val xpIntoLevel = player.totalXP - totalXPTillNextLevel(level)
+                    val xpNeeded = xpToNextLevel(level).toFloat()
+
+                    player.level = level
+                    player.experienceBar = if(xpNeeded == 0f) 0f else xpIntoLevel / xpNeeded
+
                     toRemove.add(orb)
                 }
             }
 
             world.orbs.removeAll(toRemove)
         }
+    }
+
+    fun xpToNextLevel(level: Int): Int = when {
+        level < 16 -> 2 * level + 7
+        level < 31 -> 5 * level - 38
+        else       -> 9 * level - 158
+    }
+
+    fun totalXPTillNextLevel(level: Int): Int = when {
+        level <= 16 -> level * level + 6 * level
+        level <= 31 -> (2.5 * level * level - 40.5 * level + 360).toInt()
+        else        -> (4.5 * level * level - 162.5 * level + 2220).toInt()
     }
 }

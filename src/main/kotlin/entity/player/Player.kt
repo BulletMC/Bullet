@@ -62,6 +62,9 @@ class Player(
 
     //Combat and status
     var status = StatusEffects()
+    var experienceBar: Float = 0.0f
+    var level: Int = 0
+    var totalXP: Int = 0
 
     //Boss bars
     @Suppress("unused")
