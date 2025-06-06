@@ -60,6 +60,11 @@ object LocationType {
             )
         }
 
+        fun toBlockPosition(): BlockPositionType.BlockPosition {
+            return BlockPositionType.BlockPosition(
+                x, y, z
+            )
+        }
     }
 
 

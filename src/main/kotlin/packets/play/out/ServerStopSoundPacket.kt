@@ -1,4 +1,4 @@
-package com.aznos.packets.play.out.packets.play.out
+package com.aznos.packets.play.out
 
 import com.aznos.datatypes.StringType.writeString
 import com.aznos.datatypes.VarInt.writeVarInt

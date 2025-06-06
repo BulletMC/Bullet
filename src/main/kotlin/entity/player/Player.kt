@@ -12,7 +12,6 @@ import com.aznos.entity.player.data.PermissionLevel
 import com.aznos.packets.Packet
 import com.aznos.entity.player.data.PlayerProperty
 import com.aznos.packets.play.out.*
-import com.aznos.packets.play.out.packets.play.out.ServerEntitySoundEffectPacket
 import com.aznos.world.World
 import com.aznos.world.sounds.SoundCategories
 import com.aznos.world.sounds.Sounds
@@ -63,6 +62,9 @@ class Player(
 
     //Combat and status
     var status = StatusEffects()
+    var experienceBar: Float = 0.0f
+    var level: Int = 0
+    var totalXP: Int = 0
 
     //Boss bars
     @Suppress("unused")

@@ -3,6 +3,7 @@ package com.aznos.world
 import com.aznos.Bullet
 import com.aznos.datatypes.BlockPositionType
 import com.aznos.entity.Entity
+import com.aznos.entity.OrbEntity
 import com.aznos.entity.livingentity.LivingEntity
 import com.aznos.packets.play.out.ServerSoundEffectPacket
 import com.aznos.storage.world.AbstractWorldStorage
@@ -37,6 +38,7 @@ class World(
     var difficulty: Difficulty = Difficulty.NORMAL
     val livingEntities = mutableListOf<Pair<LivingEntity, EntityData>>()
     val entities = mutableListOf<Pair<Entity, EntityData>>()
+    val orbs = mutableListOf<OrbEntity>()
     lateinit var modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>
 
     init {

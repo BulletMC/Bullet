@@ -61,7 +61,8 @@ interface AbstractServerStorage {
                 player.status.saturation,
                 player.status.exhaustion,
                 inventory,
-                player.permissionLevel
+                player.permissionLevel,
+                player.totalXP
             )
         )
     }

@@ -14,6 +14,8 @@ import com.aznos.datatypes.LocationType
 import com.aznos.datatypes.MetadataType
 import com.aznos.datatypes.Slot
 import com.aznos.datatypes.VarInt.readVarInt
+import com.aznos.entity.Entity
+import com.aznos.entity.OrbEntity
 import com.aznos.entity.livingentity.LivingEntities
 import com.aznos.entity.livingentity.LivingEntity
 import com.aznos.entity.player.Player
@@ -26,6 +28,9 @@ import com.aznos.packets.play.`in`.*
 import com.aznos.packets.play.`in`.movement.*
 import com.aznos.packets.play.out.*
 import com.aznos.packets.play.out.movement.*
+import com.aznos.packets.play.out.ServerCollectItemPacket
+import com.aznos.packets.play.out.ServerSpawnExperienceOrb
+import com.aznos.packets.play.out.packets.play.out.ServerSetExperiencePacket
 import com.aznos.packets.status.`in`.ClientStatusPingPacket
 import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
@@ -39,6 +44,8 @@ import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.EntityData
 import com.aznos.world.data.Particles
 import com.aznos.world.items.Item
+import com.aznos.world.sounds.SoundCategories
+import com.aznos.world.sounds.Sounds
 import com.mojang.brigadier.exceptions.CommandSyntaxException
 import dev.dewy.nbt.tags.collection.CompoundTag
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -58,7 +65,6 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
-import javax.swing.text.html.HTML.Tag.I
 import kotlin.experimental.and
 import kotlin.math.abs
 import kotlin.math.pow
@@ -74,7 +80,6 @@ import kotlin.time.Duration.Companion.seconds
 class PacketHandler(
     private val client: ClientSession
 ) {
-
     val world: World
         get() = client.player.world!!
 
@@ -408,6 +413,29 @@ class PacketHandler(
         EventManager.fire(event)
         if(event.isCancelled) return
 
+        if(client.player.getHeldItem() == Item.EXPERIENCE_BOTTLE.id) {
+            world.orbs.add(OrbEntity())
+            val orb = world.orbs.last()
+            orb.location = client.player.location.copy().add(0.0, 1.0, 0.0)
+            orb.xp = (3..11).random()
+
+            for(player in Bullet.players) {
+                player.sendPacket(ServerSpawnExperienceOrb(
+                    orb.entityID,
+                    client.player.location.toBlockPosition().add(0.0, 1.0, 0.0),
+                    orb.xp
+                ))
+
+                player.sendPacket(ServerSoundEffectPacket(
+                    Sounds.ENTITY_EXPERIENCE_BOTTLE_THROW,
+                    SoundCategories.PLAYER,
+                    client.player.location.x.toInt(),
+                    client.player.location.y.toInt(),
+                    client.player.location.z.toInt()
+                ))
+            }
+        }
+
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {
                 otherPlayer.sendPacket(ServerAnimationPacket(client.player.entityID, 0))
@@ -458,8 +486,7 @@ class PacketHandler(
         player.onGround = packet.onGround
 
         for(otherPlayer in Bullet.players) {
-            if(otherPlayer == player) continue
-
+            if(otherPlayer != player) continue
             otherPlayer.clientSession.sendPacket(ServerEntityMovementPacket(player.entityID))
         }
     }
@@ -541,6 +568,7 @@ class PacketHandler(
         player.location = newLocation
         player.onGround = onGround
         checkFallDamage()
+        checkOrbs()
 
         return true
     }
@@ -1083,6 +1111,7 @@ class PacketHandler(
         player.status.exhaustion = data.exhaustionLevel
         player.location = data.location
         player.permissionLevel = data.permissionLevel
+        player.totalXP = data.totalXP
 
         val savedItems = data.inventory.associate {
             it.first to it.second
@@ -1104,6 +1133,7 @@ class PacketHandler(
 
         player.sendPacket(ServerWindowItemsPacket(0, slotDataList))
         sendHeldItemUpdate()
+        calculateXPLevels(player.totalXP)
 
         player.sendPacket(ServerUpdateHealthPacket(
             player.status.health.toFloat(),
@@ -1112,6 +1142,7 @@ class PacketHandler(
         ))
 
         player.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
+
     }
 
     private fun sendBlockChanges() {
@@ -1616,5 +1647,71 @@ class PacketHandler(
         } else {
             false
         }
+    }
+
+    private fun checkOrbs() {
+        for(player in players) {
+            val toRemove = mutableListOf<Entity>()
+            for(orb in world.orbs) {
+                val distance = sqrt(
+                    (player.location.x - orb.location.x).pow(2) +
+                            (player.location.y - orb.location.y).pow(2) +
+                            (player.location.z - orb.location.z).pow(2)
+                )
+
+                if(distance <= 1.25) {
+                    client.player.sendPacket(ServerCollectItemPacket(
+                        orb.entityID,
+                        client.player.entityID,
+                        1
+                    ))
+
+                    client.player.sendPacket(ServerDestroyEntitiesPacket(intArrayOf(orb.entityID)))
+
+                    client.player.sendPacket(ServerSoundEffectPacket(
+                        Sounds.ENTITY_EXPERIENCE_ORB_PICKUP,
+                        SoundCategories.PLAYER,
+                        client.player.location.x.toInt(),
+                        client.player.location.y.toInt(),
+                        client.player.location.z.toInt()
+                    ))
+
+                    calculateXPLevels(client.player.totalXP + orb.xp)
+                    toRemove.add(orb)
+                }
+            }
+
+            world.orbs.removeAll(toRemove)
+        }
+    }
+
+    fun xpToNextLevel(level: Int): Int = when {
+        level < 16 -> 2 * level + 7
+        level < 31 -> 5 * level - 38
+        else       -> 9 * level - 158
+    }
+
+    fun totalXPTillNextLevel(level: Int): Int = when {
+        level <= 16 -> level * level + 6 * level
+        level <= 31 -> (2.5 * level * level - 40.5 * level + 360).toInt()
+        else        -> (4.5 * level * level - 162.5 * level + 2220).toInt()
+    }
+
+    fun calculateXPLevels(totalXP: Int) {
+        val player = client.player
+        player.totalXP = totalXP
+
+        var level = 0
+        while(totalXPTillNextLevel(level + 1) <= player.totalXP) {
+            level++
+        }
+
+        val xpIntoLevel = player.totalXP - totalXPTillNextLevel(level)
+        val xpNeeded = xpToNextLevel(level).toFloat()
+
+        player.level = level
+        player.experienceBar = if(xpNeeded == 0f) 0f else xpIntoLevel / xpNeeded
+
+        player.sendPacket(ServerSetExperiencePacket(player.experienceBar, player.level, player.totalXP))
     }
 }
