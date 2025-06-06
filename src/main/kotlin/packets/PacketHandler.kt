@@ -417,7 +417,7 @@ class PacketHandler(
             world.orbs.add(OrbEntity())
             val orb = world.orbs.last()
             orb.location = client.player.location.copy().add(0.0, 1.0, 0.0)
-            orb.xp = 1
+            orb.xp = (3..11).random()
 
             for(player in Bullet.players) {
                 player.sendPacket(ServerSpawnExperienceOrb(
