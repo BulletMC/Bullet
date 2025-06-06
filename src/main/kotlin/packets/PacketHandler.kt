@@ -14,6 +14,7 @@ import com.aznos.datatypes.LocationType
 import com.aznos.datatypes.MetadataType
 import com.aznos.datatypes.Slot
 import com.aznos.datatypes.VarInt.readVarInt
+import com.aznos.entity.Entity
 import com.aznos.entity.livingentity.LivingEntities
 import com.aznos.entity.livingentity.LivingEntity
 import com.aznos.entity.player.Player
@@ -26,6 +27,7 @@ import com.aznos.packets.play.`in`.*
 import com.aznos.packets.play.`in`.movement.*
 import com.aznos.packets.play.out.*
 import com.aznos.packets.play.out.movement.*
+import com.aznos.packets.play.out.packets.play.out.ServerSpawnExperienceOrb
 import com.aznos.packets.status.`in`.ClientStatusPingPacket
 import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
@@ -39,6 +41,8 @@ import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.EntityData
 import com.aznos.world.data.Particles
 import com.aznos.world.items.Item
+import com.aznos.world.sounds.SoundCategories
+import com.aznos.world.sounds.Sounds
 import com.mojang.brigadier.exceptions.CommandSyntaxException
 import dev.dewy.nbt.tags.collection.CompoundTag
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -74,7 +78,6 @@ import kotlin.time.Duration.Companion.seconds
 class PacketHandler(
     private val client: ClientSession
 ) {
-
     val world: World
         get() = client.player.world!!
 
@@ -407,6 +410,24 @@ class PacketHandler(
         val event = PlayerArmSwingEvent(client.player)
         EventManager.fire(event)
         if(event.isCancelled) return
+
+        if(client.player.getHeldItem() == Item.EXPERIENCE_BOTTLE.id) {
+            for(player in Bullet.players) {
+                player.sendPacket(ServerSpawnExperienceOrb(
+                    Entity().entityID,
+                    client.player.location.toBlockPosition().add(0.0, 1.0, 0.0),
+                    1
+                ))
+
+                player.sendPacket(ServerSoundEffectPacket(
+                    Sounds.ENTITY_EXPERIENCE_BOTTLE_THROW,
+                    SoundCategories.PLAYER,
+                    client.player.location.x.toInt(),
+                    client.player.location.y.toInt(),
+                    client.player.location.z.toInt()
+                ))
+            }
+        }
 
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {

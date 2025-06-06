@@ -12,7 +12,6 @@ import com.aznos.entity.player.data.PermissionLevel
 import com.aznos.packets.Packet
 import com.aznos.entity.player.data.PlayerProperty
 import com.aznos.packets.play.out.*
-import com.aznos.packets.play.out.packets.play.out.ServerEntitySoundEffectPacket
 import com.aznos.world.World
 import com.aznos.world.sounds.SoundCategories
 import com.aznos.world.sounds.Sounds
