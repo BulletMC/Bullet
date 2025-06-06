@@ -1653,7 +1653,7 @@ class PacketHandler(
                             (player.location.z - orb.location.z).pow(2)
                 )
 
-                if(distance <= 2.0) {
+                if(distance <= 1.25) {
                     client.player.sendPacket(ServerCollectItemPacket(
                         orb.entityID,
                         client.player.entityID,
