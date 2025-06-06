@@ -30,6 +30,7 @@ import com.aznos.packets.play.out.*
 import com.aznos.packets.play.out.movement.*
 import com.aznos.packets.play.out.ServerCollectItemPacket
 import com.aznos.packets.play.out.ServerSpawnExperienceOrb
+import com.aznos.packets.play.out.packets.play.out.ServerSetExperiencePacket
 import com.aznos.packets.status.`in`.ClientStatusPingPacket
 import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
@@ -1683,6 +1684,8 @@ class PacketHandler(
 
                     player.level = level
                     player.experienceBar = if(xpNeeded == 0f) 0f else xpIntoLevel / xpNeeded
+
+                    player.sendPacket(ServerSetExperiencePacket(player.experienceBar, player.level, player.totalXP))
 
                     toRemove.add(orb)
                 }
