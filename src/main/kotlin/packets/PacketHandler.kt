@@ -1111,6 +1111,7 @@ class PacketHandler(
         player.status.exhaustion = data.exhaustionLevel
         player.location = data.location
         player.permissionLevel = data.permissionLevel
+        player.totalXP = data.totalXP
 
         val savedItems = data.inventory.associate {
             it.first to it.second
@@ -1132,6 +1133,7 @@ class PacketHandler(
 
         player.sendPacket(ServerWindowItemsPacket(0, slotDataList))
         sendHeldItemUpdate()
+        calculateXPLevels(player.totalXP)
 
         player.sendPacket(ServerUpdateHealthPacket(
             player.status.health.toFloat(),
@@ -1140,6 +1142,7 @@ class PacketHandler(
         ))
 
         player.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
+
     }
 
     private fun sendBlockChanges() {
@@ -1673,20 +1676,7 @@ class PacketHandler(
                         client.player.location.z.toInt()
                     ))
 
-                    client.player.totalXP += orb.xp
-                    var level = 0
-                    while(totalXPTillNextLevel(level + 1) <= client.player.totalXP) {
-                        level++
-                    }
-
-                    val xpIntoLevel = player.totalXP - totalXPTillNextLevel(level)
-                    val xpNeeded = xpToNextLevel(level).toFloat()
-
-                    player.level = level
-                    player.experienceBar = if(xpNeeded == 0f) 0f else xpIntoLevel / xpNeeded
-
-                    player.sendPacket(ServerSetExperiencePacket(player.experienceBar, player.level, player.totalXP))
-
+                    calculateXPLevels(client.player.totalXP + orb.xp)
                     toRemove.add(orb)
                 }
             }
@@ -1705,5 +1695,23 @@ class PacketHandler(
         level <= 16 -> level * level + 6 * level
         level <= 31 -> (2.5 * level * level - 40.5 * level + 360).toInt()
         else        -> (4.5 * level * level - 162.5 * level + 2220).toInt()
+    }
+
+    fun calculateXPLevels(totalXP: Int) {
+        val player = client.player
+        player.totalXP = totalXP
+
+        var level = 0
+        while(totalXPTillNextLevel(level + 1) <= player.totalXP) {
+            level++
+        }
+
+        val xpIntoLevel = player.totalXP - totalXPTillNextLevel(level)
+        val xpNeeded = xpToNextLevel(level).toFloat()
+
+        player.level = level
+        player.experienceBar = if(xpNeeded == 0f) 0f else xpIntoLevel / xpNeeded
+
+        player.sendPacket(ServerSetExperiencePacket(player.experienceBar, player.level, player.totalXP))
     }
 }

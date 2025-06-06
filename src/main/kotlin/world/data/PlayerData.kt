@@ -17,5 +17,6 @@ data class PlayerData(
     val saturation: Float,
     val exhaustionLevel: Float,
     val inventory: List<Pair<Int, Int>>,
-    val permissionLevel: PermissionLevel
+    val permissionLevel: PermissionLevel,
+    val totalXP: Int,
 )
