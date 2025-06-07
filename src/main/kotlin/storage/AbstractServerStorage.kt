@@ -56,6 +56,7 @@ interface AbstractServerStorage {
                 player.username,
                 player.uuid,
                 player.location,
+                player.gameMode.id,
                 player.status.health,
                 player.status.foodLevel,
                 player.status.saturation,

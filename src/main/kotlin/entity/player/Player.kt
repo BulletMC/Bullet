@@ -40,7 +40,7 @@ class Player(
 
     //Player attributes
     var properties = mutableListOf<PlayerProperty>()
-    var gameMode: GameMode = GameMode.CREATIVE
+    var gameMode: GameMode = GameMode.SURVIVAL
         private set
     var viewDistance: Int = 0
     var isSneaking: Boolean = false

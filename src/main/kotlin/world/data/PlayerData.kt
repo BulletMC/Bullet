@@ -12,6 +12,7 @@ data class PlayerData(
     val username: String,
     @Serializable(with = UUIDSerializer::class) val uuid: UUID,
     @Contextual val location: LocationType.Location,
+    val gameMode: Int,
     val health: Int,
     val foodLevel: Int,
     val saturation: Float,
