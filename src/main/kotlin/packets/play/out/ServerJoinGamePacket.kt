@@ -4,11 +4,8 @@ import com.aznos.datatypes.StringType.writeString
 import com.aznos.datatypes.VarInt.writeVarInt
 import com.aznos.packets.Packet
 import com.aznos.entity.player.data.GameMode
-import com.aznos.serialization.NBTJson
-import net.querz.nbt.io.NBTOutputStream
-import net.querz.nbt.tag.CompoundTag
-import net.querz.nbt.tag.Tag
-import java.io.ByteArrayOutputStream
+import dev.dewy.nbt.Nbt
+import dev.dewy.nbt.tags.collection.CompoundTag
 
 /**
  * Packet sent to the client that sends all the information needed to join the game
@@ -18,7 +15,7 @@ import java.io.ByteArrayOutputStream
  * @param gameMode The players gamemode
  * @param world The world name
  * @param codec The dimension codec
- * @param maxPlayers The maximum number of players that can join the world
+ * @param maxPlayers The maximum amount of players that can join the world
  * @param viewDistance The view distance set by the server
  * @param reducedDebugInfo Whether to have reduced debug info
  * @param isDebug Whether the server is on debug ode
@@ -45,17 +42,18 @@ class ServerJoinGamePacket(
         wrapper.writeVarInt(1)
         wrapper.writeString(world)
 
-        wrapper.write(NBTJson.toNBTBytes(codec))
+        val nbt = Nbt()
+        nbt.toStream(codec, wrapper)
 
-        val dimensionTypeRoot   = codec.getCompoundTag("minecraft:dimension_type")
-        val dimensionTypeValues = dimensionTypeRoot.getListTag("value")
+        val dimensionTypeList = codec.getCompound("minecraft:dimension_type")
+            .getList<CompoundTag>("value")
 
-        val overworld = dimensionTypeValues
-            .firstOrNull { it is CompoundTag && it.getString("name") == "minecraft:overworld" }
-            ?.let { (it as CompoundTag).getCompoundTag("element") }
-            ?: error("minecraft:overworld dimension missing from codec")
+        val overworldEntry = dimensionTypeList.first {
+            it.getString("name").value == "minecraft:overworld"
+        }
 
-        wrapper.write(NBTJson.toNBTBytes(overworld))
+        val dimension = overworldEntry.getCompound("element")
+        nbt.toStream(dimension, wrapper)
 
         wrapper.writeString(world)
         wrapper.writeLong(0)

@@ -3,8 +3,8 @@ package com.aznos.packets.play.out
 import com.aznos.datatypes.StringType.writeString
 import com.aznos.entity.player.data.GameMode
 import com.aznos.packets.Packet
-import com.aznos.serialization.NBTJson
-import net.querz.nbt.tag.CompoundTag
+import dev.dewy.nbt.Nbt
+import dev.dewy.nbt.tags.collection.CompoundTag
 
 /**
  * Sent to the client to respawn the player
@@ -30,14 +30,17 @@ class ServerRespawnPacket(
     copyMetadata: Boolean
 ) : Packet(0x39) {
     init {
-        val dimRoot = codec.getCompoundTag("minecraft:dimension_type")
-        val list = dimRoot.getListTag("value")
+        val nbt = Nbt()
 
-        val overworld = list
-            .first { (it as CompoundTag).getString("name") == "minecraft:overworld" }
-            .let { (it as CompoundTag).getCompoundTag("element") }
+        val dimensionTypeList = codec.getCompound("minecraft:dimension_type")
+            .getList<CompoundTag>("value")
 
-        wrapper.write(NBTJson.toNBTBytes(overworld))
+        val overworldEntry = dimensionTypeList.first {
+            it.getString("name").value == "minecraft:overworld"
+        }
+
+        val dimension = overworldEntry.getCompound("element")
+        nbt.toStream(dimension, wrapper)
 
         wrapper.writeString(worldName)
         wrapper.writeLong(0)

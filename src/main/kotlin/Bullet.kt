@@ -8,19 +8,19 @@ import com.aznos.datatypes.BlockPositionType
 import com.aznos.entity.ConsoleSender
 import com.aznos.entity.player.Player
 import com.aznos.packets.play.out.ServerParticlePacket
-import com.aznos.serialization.NBTJson
 import com.aznos.storage.EmptyStorage
 import com.aznos.storage.StorageManager
 import com.aznos.storage.disk.DiskServerStorage
 import com.aznos.world.data.Particles
 import com.google.gson.Gson
 import com.google.gson.JsonParser
+import dev.dewy.nbt.api.registry.TagTypeRegistry
+import dev.dewy.nbt.tags.collection.CompoundTag
 import kotlinx.coroutines.*
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.MiniMessage
-import net.querz.nbt.tag.CompoundTag
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import java.io.File
@@ -94,7 +94,7 @@ object Bullet : AutoCloseable {
         }
 
         val parsed = JsonParser.parseReader(reader).asJsonObject
-        dimensionCodec = NBTJson.toTag(parsed) as CompoundTag
+        dimensionCodec = CompoundTag().fromJson(parsed, 0, TagTypeRegistry())
 
         loadPlugins()
         CommandManager.registerCommands()

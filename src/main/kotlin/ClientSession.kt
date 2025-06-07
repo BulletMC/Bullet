@@ -290,7 +290,7 @@ class ClientSession(
         if(state == GameState.DISCONNECTED) return
         state = GameState.DISCONNECTED
 
-        if(state == GameState.PLAY) {
+        if(state == GameState.PLAY && this::player.isInitialized) {
             Bullet.storage.storage.writePlayerData(player)
 
             sendPacket(ServerPlayDisconnectPacket(message))
@@ -317,7 +317,7 @@ class ClientSession(
 
         coroutineScope.cancel()
 
-        EventManager.fire(PlayerQuitEvent(player))
+        if(this::player.isInitialized) EventManager.fire(PlayerQuitEvent(player))
         close()
     }
 

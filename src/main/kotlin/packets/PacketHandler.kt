@@ -24,6 +24,7 @@ import com.aznos.entity.player.data.GameMode
 import com.aznos.events.*
 import com.aznos.packets.data.ServerStatusResponse
 import com.aznos.packets.login.`in`.ClientLoginStartPacket
+import com.aznos.packets.login.out.ServerLoginDisconnectPacket
 import com.aznos.packets.login.out.ServerLoginSuccessPacket
 import com.aznos.packets.play.`in`.*
 import com.aznos.packets.play.`in`.movement.*
@@ -31,7 +32,7 @@ import com.aznos.packets.play.out.*
 import com.aznos.packets.play.out.movement.*
 import com.aznos.packets.play.out.ServerCollectItemPacket
 import com.aznos.packets.play.out.ServerSpawnExperienceOrb
-import com.aznos.packets.play.out.packets.play.out.ServerSetExperiencePacket
+import com.aznos.packets.play.out.ServerSetExperiencePacket
 import com.aznos.packets.status.`in`.ClientStatusPingPacket
 import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
@@ -777,10 +778,6 @@ class PacketHandler(
 
         client.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
 
-        val joinEvent = PlayerJoinEvent(client.player)
-        EventManager.fire(joinEvent)
-        if(joinEvent.isCancelled) return
-
         Bullet.players.add(player)
         readPlayerPersistentData()
         scheduleTimers()
@@ -795,6 +792,10 @@ class PacketHandler(
         sendEntities()
 
         Bullet.storage.storage.writePlayerData(player)
+
+        val joinEvent = PlayerJoinEvent(client.player)
+        EventManager.fire(joinEvent)
+        if(joinEvent.isCancelled) return
 
         val world = player.world!!
         player.setTimeOfDay(world.timeOfDay)
@@ -1062,29 +1063,32 @@ class PacketHandler(
 
     }
 
-    private fun checkLoginValidity(username: String) {
+    private fun checkLoginValidity(username: String): Boolean {
         if(client.protocol > Bullet.PROTOCOL) {
-            client.disconnect(Component.text()
+            client.sendPacket(ServerLoginDisconnectPacket(Component.text()
                 .append(Component.text("Your client is outdated, please downgrade to minecraft version"))
                 .append(Component.text(" " + Bullet.VERSION).color(NamedTextColor.GOLD))
                 .build()
-            )
+            ))
 
-            return
+            client.close()
+            return false
         } else if(client.protocol < Bullet.PROTOCOL) {
-            client.disconnect(Component.text()
+            client.sendPacket(ServerLoginDisconnectPacket(Component.text()
                 .append(Component.text("Your client is outdated, please upgrade to minecraft version"))
                 .append(Component.text(" " + Bullet.VERSION).color(NamedTextColor.GOLD))
                 .build()
-            )
+            ))
 
-            return
+            return false
         }
 
         if(!username.matches(Regex("^[a-zA-Z0-9]{3,16}$"))) {
-            client.disconnect(Component.text("Invalid username"))
-            return
+            client.sendPacket(ServerLoginDisconnectPacket(Component.text("Invalid username")))
+            return false
         }
+
+        return true
     }
 
     private fun scheduleTimers() {

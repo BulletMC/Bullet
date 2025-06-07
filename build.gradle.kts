@@ -28,6 +28,7 @@ dependencies {
 
     //Serialization
     implementation("com.google.code.gson:gson:2.12.1")
+    implementation("dev.dewy:nbt:1.5.1")
     implementation("com.github.Querz:NBT:6.1")
 
     //Kyori

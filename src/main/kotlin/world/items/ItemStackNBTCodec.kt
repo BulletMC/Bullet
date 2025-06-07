@@ -3,6 +3,7 @@ package com.aznos.world.items
 import net.querz.nbt.tag.*
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 
 object ItemStackNBTCodec {
@@ -41,16 +42,16 @@ object ItemStackNBTCodec {
         if(stack.displayName != null || stack.lore.isNotEmpty()) {
             val display = CompoundTag()
 
-            stack.displayName?.let {
-                display.putString("Name", MiniMessage.miniMessage().serialize(it))
+            stack.displayName?.let { comp ->
+                val json = GsonComponentSerializer.gson().serialize(comp)
+                display.putString("Name", json)
             }
 
             if(stack.lore.isNotEmpty()) {
                 val loreList = ListTag(StringTag::class.java)
-                stack.lore.forEach { comp ->
-                    loreList.add(StringTag(
-                        LegacyComponentSerializer.legacySection().serialize(comp)
-                    ))
+                stack.lore.forEach { line ->
+                    val json = GsonComponentSerializer.gson().serialize(line)
+                    loreList.add(StringTag(json))
                 }
 
                 display.put("Lore", loreList)

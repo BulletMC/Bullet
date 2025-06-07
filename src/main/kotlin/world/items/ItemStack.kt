@@ -93,7 +93,11 @@ data class ItemStack(
         present = item != Item.AIR,
         itemID = item.id,
         itemCount = count.toByte(),
-        nbt = nbt
+        nbt = when {
+            nbt != null -> nbt
+            displayName != null || lore.isNotEmpty() || damage != 0 -> toNBT()
+            else -> null
+        }
     )
 
     companion object {
