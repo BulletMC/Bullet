@@ -40,7 +40,7 @@ fun main(args: Array<String>) {
 
         val sword = ItemStack(
             item = Item.DIAMOND_SWORD,
-            count = 1,
+            count = 19,
             displayName = MiniMessage.miniMessage().deserialize("<yellow>Blade</yellow>"),
             lore = listOf(
                 Component.text("A sharp blade..", NamedTextColor.GRAY),

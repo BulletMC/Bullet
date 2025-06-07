@@ -35,10 +35,7 @@ object ItemStackNBTCodec {
     }
 
     fun toNbt(stack: ItemStack): CompoundTag = CompoundTag().apply {
-        putInt("id", stack.item.id)
-        putByte("Count", stack.count.toByte())
         if(stack.damage != 0) putInt("Damage", stack.damage)
-
         if(stack.displayName != null || stack.lore.isNotEmpty()) {
             val display = CompoundTag()
 
@@ -57,9 +54,7 @@ object ItemStackNBTCodec {
                 display.put("Lore", loreList)
             }
 
-            val tag = CompoundTag()
-            tag.put("display", display)
-            put("tag", tag)
+            put("display", display)
         }
     }
 }
