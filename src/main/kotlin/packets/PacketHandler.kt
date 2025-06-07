@@ -13,6 +13,7 @@ import com.aznos.datatypes.BlockPositionType
 import com.aznos.datatypes.LocationType
 import com.aznos.datatypes.MetadataType
 import com.aznos.datatypes.Slot
+import com.aznos.datatypes.Slot.toItemStack
 import com.aznos.datatypes.VarInt.readVarInt
 import com.aznos.entity.Entity
 import com.aznos.entity.OrbEntity
@@ -44,6 +45,7 @@ import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.EntityData
 import com.aznos.world.data.Particles
 import com.aznos.world.items.Item
+import com.aznos.world.items.ItemStack
 import com.aznos.world.sounds.SoundCategories
 import com.aznos.world.sounds.Sounds
 import com.mojang.brigadier.exceptions.CommandSyntaxException
@@ -251,17 +253,11 @@ class PacketHandler(
 
     @PacketReceiver
     fun onCreativeInventoryAction(packet: ClientCreativeInventoryActionPacket) {
-        if(packet.slot.present) {
-            packet.slot.itemID?.let { itemID ->
-                client.player.inventory.items[packet.slotIndex.toInt()] = itemID
-            }
-        } else {
-            client.player.inventory.items.remove(packet.slotIndex.toInt())
-        }
+        val slotIdx = packet.slotIndex.toInt()
+        val stack = if(packet.slot.present) packet.slot.toItemStack() else null
+        client.player.inventory.set(slotIdx, stack)
 
-        if(packet.slotIndex.toInt() == client.player.selectedSlot + 36) {
-            sendHeldItemUpdate()
-        }
+        if(slotIdx == client.player.selectedSlot + 36) sendHeldItemUpdate()
     }
 
     @PacketReceiver
@@ -413,7 +409,7 @@ class PacketHandler(
         EventManager.fire(event)
         if(event.isCancelled) return
 
-        if(client.player.getHeldItem() == Item.EXPERIENCE_BOTTLE.id) {
+        if(client.player.getHeldItemID() == Item.EXPERIENCE_BOTTLE.id) {
             world.orbs.add(OrbEntity())
             val orb = world.orbs.last()
             orb.location = client.player.location.copy().add(0.0, 1.0, 0.0)
@@ -470,7 +466,7 @@ class PacketHandler(
             5 -> event.blockPos.x += 1
         }
 
-        val heldItem = client.player.getHeldItem()
+        val heldItem = client.player.getHeldItemID()
 
         val block = Block.getBlockFromID(heldItem) ?: Item.getItemFromID(heldItem) ?: Block.AIR
         handlePlacement(block, event, packet.blockPos)
@@ -982,16 +978,14 @@ class PacketHandler(
     }
 
     private fun sendHeldItemUpdate() {
-        val heldItemID = client.player.getHeldItem()
-
-        val heldItemSlot = if(heldItemID == 0) Slot.SlotData(false)
-        else Slot.SlotData(true, heldItemID, 1, null)
+        val stack = client.player.getHeldItem()
+        val slotData = stack.toSlotData()
 
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {
                 otherPlayer.sendPacket(ServerEntityEquipmentPacket(
                     client.player.entityID,
-                    listOf(0 to heldItemSlot)
+                    listOf(0 to slotData)
                 ))
             }
         }
@@ -1114,22 +1108,15 @@ class PacketHandler(
 
         player.setGameMode(GameMode.entries.find { it.id == data.gameMode } ?: GameMode.SURVIVAL)
 
-        val savedItems = data.inventory.associate {
-            it.first to it.second
-        }
-        player.inventory.items.clear()
+        val savedStacks: Map<Int, ItemStack> =
+            data.inventory.associate { it.first to ItemStack.of(Item.getItemFromID(it.second) ?: Item.AIR) }
+        player.inventory.clear()
 
         val totalSlots = 45
-        val slotDataList = mutableListOf<Slot.SlotData>()
-        for(slot in 0 until totalSlots) {
-            if(savedItems.containsKey(slot)) {
-                val itemID = savedItems[slot]!!
-                player.inventory.items[slot] = itemID
-
-                slotDataList.add(Slot.SlotData(true, itemID, 1))
-            } else {
-                slotDataList.add(Slot.SlotData(false))
-            }
+        val slotDataList = (0 until totalSlots).map { idx ->
+            val stack = savedStacks[idx]
+            player.inventory.set(idx, stack)
+            stack?.toSlotData() ?: Slot.SlotData(false)
         }
 
         player.sendPacket(ServerWindowItemsPacket(0, slotDataList))

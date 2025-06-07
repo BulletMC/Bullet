@@ -2,6 +2,8 @@ package com.aznos.datatypes
 
 import com.aznos.datatypes.VarInt.readVarInt
 import com.aznos.datatypes.VarInt.writeVarInt
+import com.aznos.world.items.Item
+import com.aznos.world.items.ItemStack
 import net.querz.nbt.io.NBTInputStream
 import net.querz.nbt.io.NBTOutputStream
 import net.querz.nbt.tag.CompoundTag
@@ -29,6 +31,14 @@ object Slot {
         var nbt: CompoundTag? = null
     )
 
+    fun SlotData.toItemStack(): ItemStack =
+        if(!present) ItemStack.of(Item.AIR)
+        else ItemStack(
+            item = Item.getItemFromID(itemID!!) ?: Item.AIR,
+            count = itemCount?.toInt() ?: 0,
+            nbt = nbt
+        )
+
     /**
      * Reads a slot from the [DataInputStream]
      *
@@ -49,6 +59,7 @@ object Slot {
             null
         } else {
             reset()
+            //TODO: fix this warning
             NBTInputStream(this).use { nbtIn ->
                 val tag = nbtIn.readTag(Tag.DEFAULT_MAX_DEPTH)
                 if(tag is CompoundTag) tag

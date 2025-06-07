@@ -35,5 +35,9 @@ fun main(args: Array<String>) {
 
     parser.parse(args)
 
+    EventManager.register(PlayerJoinEvent::class.java) { e ->
+        val player = e.player
+    }
+
     Bullet.createServer(address, port)
 }

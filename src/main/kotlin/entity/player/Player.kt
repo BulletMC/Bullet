@@ -13,6 +13,7 @@ import com.aznos.packets.Packet
 import com.aznos.entity.player.data.PlayerProperty
 import com.aznos.packets.play.out.*
 import com.aznos.world.World
+import com.aznos.world.items.ItemStack
 import com.aznos.world.sounds.SoundCategories
 import com.aznos.world.sounds.Sounds
 import net.kyori.adventure.text.Component
@@ -123,7 +124,8 @@ class Player(
         }
     }
 
-    fun getHeldItem(): Int = inventory.getHeldItem(selectedSlot)
+    fun getHeldItem(): ItemStack = inventory.heldStack(selectedSlot)
+    fun getHeldItemID(): Int = getHeldItem().id
 
     fun setHeldItem(slot: Int) {
         selectedSlot = slot

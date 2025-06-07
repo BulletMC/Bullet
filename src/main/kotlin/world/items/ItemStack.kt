@@ -1,5 +1,6 @@
 package com.aznos.world.items
 
+import com.aznos.datatypes.Slot
 import net.kyori.adventure.text.Component
 import kotlin.math.min
 
@@ -21,6 +22,9 @@ data class ItemStack(
     var lore: List<Component> = emptyList(),
     var nbt: net.querz.nbt.tag.CompoundTag? = null
 ) {
+    val id: Int
+        get() = item.id
+
     /**
      * Checks if the item stack is empty or air
      *
@@ -85,6 +89,12 @@ data class ItemStack(
     fun withDamage(value: Int) = apply { damage = value }
 
     fun toNBT(): net.querz.nbt.tag.CompoundTag = ItemStackNBTCodec.toNbt(this)
+    fun toSlotData(): Slot.SlotData = Slot.SlotData(
+        present = item != Item.AIR,
+        itemID = item.id,
+        itemCount = count.toByte(),
+        nbt = nbt
+    )
 
     companion object {
         @JvmStatic fun of(item: Item, count: Int = 1) = ItemStack(item, count)
