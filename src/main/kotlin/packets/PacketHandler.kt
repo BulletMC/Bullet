@@ -1104,7 +1104,6 @@ class PacketHandler(
     private fun readPlayerPersistentData() {
         val player = client.player
         val data = Bullet.storage.storage.readPlayerData(player.uuid) ?: return
-
         player.status.health = data.health
         player.status.foodLevel = data.foodLevel
         player.status.saturation = data.saturation
@@ -1112,6 +1111,8 @@ class PacketHandler(
         player.location = data.location
         player.permissionLevel = data.permissionLevel
         player.totalXP = data.totalXP
+
+        player.setGameMode(GameMode.entries.find { it.id == data.gameMode } ?: GameMode.SURVIVAL)
 
         val savedItems = data.inventory.associate {
             it.first to it.second
