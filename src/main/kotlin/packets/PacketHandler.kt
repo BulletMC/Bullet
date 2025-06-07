@@ -47,7 +47,6 @@ import com.aznos.world.items.Item
 import com.aznos.world.sounds.SoundCategories
 import com.aznos.world.sounds.Sounds
 import com.mojang.brigadier.exceptions.CommandSyntaxException
-import dev.dewy.nbt.tags.collection.CompoundTag
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -57,6 +56,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.minimessage.MiniMessage
+import net.querz.nbt.tag.CompoundTag
 import packets.handshake.HandshakePacket
 import packets.status.out.ServerStatusResponsePacket
 import java.io.ByteArrayInputStream
@@ -85,7 +85,7 @@ class PacketHandler(
 
     @PacketReceiver
     fun onUpdateSign(packet: ClientUpdateSignPacket) {
-        val data = CompoundTag("")
+        val data = CompoundTag()
         data.putString("id", "minecraft:sign")
         data.putInt("x", packet.blockPos.x.toInt())
         data.putInt("y", packet.blockPos.y.toInt())

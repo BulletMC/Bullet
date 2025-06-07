@@ -3,14 +3,14 @@ package com.aznos.packets.play.out
 import com.aznos.datatypes.StringType.writeString
 import com.aznos.entity.player.data.GameMode
 import com.aznos.packets.Packet
-import dev.dewy.nbt.Nbt
-import dev.dewy.nbt.tags.collection.CompoundTag
+import com.aznos.serialization.NBTJson
+import net.querz.nbt.tag.CompoundTag
 
 /**
  * Sent to the client to respawn the player
  *
- * To change the players dimension, send them a respwan packet with the
- * appriopriate dimension data, followed by prechunks/chunks for the new
+ * To change the player dimension, send them a respawn packet with the
+ *  appropriate dimension data, followed by prechunks/chunks for the new
  * dimension, and finally send a position and look packet. You do not need to
  * unload chunks, the client does it automatically
  *
@@ -30,17 +30,14 @@ class ServerRespawnPacket(
     copyMetadata: Boolean
 ) : Packet(0x39) {
     init {
-        val nbt = Nbt()
+        val dimRoot = codec.getCompoundTag("minecraft:dimension_type")
+        val list = dimRoot.getListTag("value")
 
-        val dimensionTypeList = codec.getCompound("minecraft:dimension_type")
-            .getList<CompoundTag>("value")
+        val overworld = list
+            .first { (it as CompoundTag).getString("name") == "minecraft:overworld" }
+            .let { (it as CompoundTag).getCompoundTag("element") }
 
-        val overworldEntry = dimensionTypeList.first {
-            it.getString("name").value == "minecraft:overworld"
-        }
-
-        val dimension = overworldEntry.getCompound("element")
-        nbt.toStream(dimension, wrapper)
+        wrapper.write(NBTJson.toNBTBytes(overworld))
 
         wrapper.writeString(worldName)
         wrapper.writeLong(0)

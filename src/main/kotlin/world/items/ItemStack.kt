@@ -1,6 +1,5 @@
 package com.aznos.world.items
 
-import dev.dewy.nbt.tags.collection.CompoundTag
 import net.kyori.adventure.text.Component
 import kotlin.math.min
 
