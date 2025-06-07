@@ -36,8 +36,6 @@ fun main(args: Array<String>) {
 
     EventManager.register(PlayerJoinEvent::class.java) { e ->
         val player = e.player
-        val inv = player.inventory
-
         val sword = ItemStack(
             item = Item.DIAMOND_SWORD,
             count = 19,
@@ -48,15 +46,7 @@ fun main(args: Array<String>) {
             )
         )
 
-        val hotbarSlot = 0
-        val windowSlotID = 36 + hotbarSlot
-
-        inv.set(windowSlotID, sword)
-        player.sendPacket(ServerSetSlotPacket(
-            0,
-            windowSlotID,
-            sword.toSlotData()
-        ))
+        player.setSlot(36, sword)
     }
 
     Bullet.createServer(address, port)

@@ -133,6 +133,17 @@ class Player(
     }
 
     /**
+     * Puts [stack] into the player's inventory at the specified absolute [index]
+     *
+     * `index` is the raw window-slot index that the client uses, which is:
+     * (0-8 = crafting grid, 9-35 = player inventory, 36-44 = hotbar, 45 = offhand)
+     */
+    fun setSlot(index: Int, stack: ItemStack) {
+        inventory.set(index, stack)
+        sendPacket(ServerSetSlotPacket(0, index, stack.toSlotData()))
+    }
+
+    /**
      * Sets the header of the tab list for all players
      * Make this empty to remove it
      *
