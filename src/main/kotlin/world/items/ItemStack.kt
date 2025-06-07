@@ -54,7 +54,10 @@ data class ItemStack(
         val taken = min(amount, count)
         count -= taken
 
-        return ItemStack(item, taken, damage, displayName, lore.toMutableList(), nbt?.clone() as net.querz.nbt.tag.CompoundTag)
+        return ItemStack(
+            item, taken, damage,
+            displayName, lore.toMutableList(),
+            nbt?.clone() as net.querz.nbt.tag.CompoundTag)
     }
 
     /**
