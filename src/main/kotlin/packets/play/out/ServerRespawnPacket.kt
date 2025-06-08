@@ -9,8 +9,8 @@ import dev.dewy.nbt.tags.collection.CompoundTag
 /**
  * Sent to the client to respawn the player
  *
- * To change the players dimension, send them a respwan packet with the
- * appriopriate dimension data, followed by prechunks/chunks for the new
+ * To change the player dimension, send them a respawn packet with the
+ *  appropriate dimension data, followed by prechunks/chunks for the new
  * dimension, and finally send a position and look packet. You do not need to
  * unload chunks, the client does it automatically
  *

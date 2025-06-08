@@ -14,6 +14,10 @@ repositories {
     maven {
         url = uri("https://libraries.minecraft.net")
     }
+
+    maven {
+        url = uri("https://jitpack.io/")
+    }
 }
 
 dependencies {
@@ -25,12 +29,14 @@ dependencies {
     //Serialization
     implementation("com.google.code.gson:gson:2.12.1")
     implementation("dev.dewy:nbt:1.5.1")
+    implementation("com.github.Querz:NBT:6.1")
 
     //Kyori
-    implementation("net.kyori:adventure-api:4.19.0")
-    implementation("net.kyori:adventure-text-serializer-gson:4.19.0")
+    implementation("net.kyori:adventure-api:4.21.0")
+    implementation("net.kyori:adventure-text-serializer-gson:4.21.0")
     implementation("net.kyori:adventure-text-serializer-ansi:4.21.0")
-    implementation("net.kyori:adventure-text-minimessage:4.19.0")
+    implementation("net.kyori:adventure-text-minimessage:4.21.0")
+    implementation("net.kyori:adventure-text-serializer-legacy:4.21.0")
 
     //Faster collections
     implementation("it.unimi.dsi:fastutil-core:8.5.15")

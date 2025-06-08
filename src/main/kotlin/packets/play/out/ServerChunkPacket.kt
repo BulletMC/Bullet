@@ -2,9 +2,9 @@ package com.aznos.packets.play.out
 
 import com.aznos.datatypes.VarInt.writeVarInt
 import com.aznos.packets.Packet
+import com.aznos.serialization.NBTJson
 import com.aznos.world.blocks.Block
-import dev.dewy.nbt.Nbt
-import dev.dewy.nbt.tags.collection.CompoundTag
+import net.querz.nbt.tag.CompoundTag
 import java.io.ByteArrayOutputStream
 
 /**
@@ -26,12 +26,12 @@ class ServerChunkPacket(
         wrapper.writeBoolean(true) // Full chunk flag
         wrapper.writeVarInt(1)  // Primary bit mask
 
-        val tag = CompoundTag()
-        tag.putLongArray("MOTION_BLOCKING", heightmap)
-        tag.putLongArray("WORLD_SURFACE", heightmap)
+        val height = CompoundTag().apply {
+            putLongArray("MOTION_BLOCKING", heightmap)
+            putLongArray("WORLD_SURFACE", heightmap)
+        }
 
-        val nbt = Nbt()
-        nbt.toStream(tag, wrapper)
+        wrapper.write(NBTJson.toNBTBytes(height))
 
         // Biomes
         wrapper.writeVarInt(1024)

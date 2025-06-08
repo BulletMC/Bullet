@@ -2,8 +2,12 @@ package com.aznos.datatypes
 
 import com.aznos.datatypes.VarInt.readVarInt
 import com.aznos.datatypes.VarInt.writeVarInt
-import dev.dewy.nbt.Nbt
-import dev.dewy.nbt.tags.collection.CompoundTag
+import com.aznos.world.items.Item
+import com.aznos.world.items.ItemStack
+import net.querz.nbt.io.NBTInputStream
+import net.querz.nbt.io.NBTOutputStream
+import net.querz.nbt.tag.CompoundTag
+import net.querz.nbt.tag.Tag
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException
@@ -27,6 +31,14 @@ object Slot {
         var nbt: CompoundTag? = null
     )
 
+    fun SlotData.toItemStack(): ItemStack =
+        if(!present) ItemStack.of(Item.AIR)
+        else ItemStack(
+            item = Item.getItemFromID(itemID!!) ?: Item.AIR,
+            count = itemCount?.toInt() ?: 0,
+            nbt = nbt
+        )
+
     /**
      * Reads a slot from the [DataInputStream]
      *
@@ -41,10 +53,20 @@ object Slot {
         val itemID = readVarInt()
         val itemCount = readByte()
 
-        val nbt = if (readByte().toInt() == 0) null
-        else {
+        mark(512)
+        val tagId = readByte()
+        val nbt: CompoundTag? = if(tagId.toInt() == 0) {
+            null
+        } else {
             reset()
-            Nbt().fromStream(this)
+            //TODO: fix this warning
+            NBTInputStream(this).use { nbtIn ->
+                val tag = nbtIn.readTag(Tag.DEFAULT_MAX_DEPTH)
+                if(tag is CompoundTag) tag
+                else throw IOException(
+                    "Expected CompoundTag in slot but got ${tag::class.simpleName}"
+                )
+            }
         }
 
         return SlotData(true, itemID, itemCount, nbt)
@@ -68,7 +90,7 @@ object Slot {
         if(slot.nbt == null) {
             writeByte(0)
         } else {
-            Nbt().toStream(slot.nbt!!, this)
+            NBTOutputStream(this).writeTag(slot.nbt, Tag.DEFAULT_MAX_DEPTH)
         }
     }
 }

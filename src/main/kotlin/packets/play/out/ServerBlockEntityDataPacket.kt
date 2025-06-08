@@ -3,8 +3,8 @@ package com.aznos.packets.play.out
 import com.aznos.datatypes.BlockPositionType
 import com.aznos.datatypes.BlockPositionType.writeBlockPos
 import com.aznos.packets.Packet
-import dev.dewy.nbt.Nbt
-import dev.dewy.nbt.tags.collection.CompoundTag
+import com.aznos.serialization.NBTJson
+import net.querz.nbt.tag.CompoundTag
 
 /**
  * Sets the block entity associated with the block at the given position
@@ -38,8 +38,6 @@ class ServerBlockEntityDataPacket(
     init {
         wrapper.writeBlockPos(blockPos)
         wrapper.writeByte(action.toInt())
-
-        val nbt = Nbt()
-        nbt.toStream(nbtData, wrapper)
+        wrapper.write(NBTJson.toNBTBytes(nbtData))
     }
 }

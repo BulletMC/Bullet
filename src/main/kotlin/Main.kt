@@ -1,17 +1,16 @@
 package com.aznos
 
 import com.aznos.events.EventManager
-import com.aznos.events.PlayerChatEvent
 import com.aznos.events.PlayerJoinEvent
-import com.aznos.events.PlayerSneakEvent
-import com.aznos.packets.play.out.ServerSoundEffectPacket
-import com.aznos.world.sounds.SoundCategories
-import com.aznos.world.sounds.Sounds
+import com.aznos.packets.play.out.ServerSetSlotPacket
+import com.aznos.world.items.Item
+import com.aznos.world.items.ItemStack
 import kotlinx.cli.ArgParser
 import kotlinx.cli.ArgType
 import kotlinx.cli.default
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.minimessage.MiniMessage
 
 /**
  * Application entry point

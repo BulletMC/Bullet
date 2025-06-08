@@ -1,24 +1,27 @@
 package com.aznos.entity.player
 
+import com.aznos.world.items.Item
+import com.aznos.world.items.ItemStack
+
+/**
+ * Represents the player's inventory
+ *
+ * @property items A map of slot numbers to ItemStacks
+ */
 class Inventory {
-    val items: MutableMap<Int, Int> = mutableMapOf()
+    val items: MutableMap<Int, ItemStack> = mutableMapOf()
 
-    /**
-     * Returns the players held item
-     *
-     * @return The item ID
-     */
-    fun getHeldItem(slot: Int): Int {
-        val slotIndex = slot + 36
-        return items[slotIndex] ?: 0
+    fun get(slot: Int): ItemStack? = items[slot]
+    fun set(slot: Int, stack: ItemStack?) {
+        if(stack == null || stack.isAir) items.remove(slot)
+        else items[slot] = stack
     }
 
-    /**
-     * Sets the players held item slot in the hotbar (0-8)
-     *
-     * @param slot The slot to select
-     */
-    fun setHeldSlot(slot: Int, itemID: Int) {
-        items[slot] = itemID
-    }
+    fun clear() = items.clear()
+
+    fun heldStack(heldSlot: Int): ItemStack =
+        items[heldSlot + 36] ?: ItemStack.of(Item.AIR)
+
+    fun setHeldSlot(heldSlot: Int, stack: ItemStack?) =
+        set(heldSlot + 36, stack)
 }

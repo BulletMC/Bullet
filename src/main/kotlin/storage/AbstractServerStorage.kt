@@ -43,12 +43,8 @@ interface AbstractServerStorage {
      * @return Whether the operation was successful or not
      */
     fun writePlayerData(player: Player): Boolean {
-        val inventory = mutableListOf<Pair<Int, Int>>()
-        for(item in player.inventory.items) {
-            val slot = item.key
-            val id = item.value
-
-            inventory.add(Pair(slot, id))
+        val inventory = player.inventory.items.map { (slot, stack) ->
+            slot to stack.id
         }
 
         return writePlayerData(

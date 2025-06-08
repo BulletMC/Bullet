@@ -13,6 +13,7 @@ import com.aznos.datatypes.BlockPositionType
 import com.aznos.datatypes.LocationType
 import com.aznos.datatypes.MetadataType
 import com.aznos.datatypes.Slot
+import com.aznos.datatypes.Slot.toItemStack
 import com.aznos.datatypes.VarInt.readVarInt
 import com.aznos.entity.Entity
 import com.aznos.entity.OrbEntity
@@ -23,6 +24,7 @@ import com.aznos.entity.player.data.GameMode
 import com.aznos.events.*
 import com.aznos.packets.data.ServerStatusResponse
 import com.aznos.packets.login.`in`.ClientLoginStartPacket
+import com.aznos.packets.login.out.ServerLoginDisconnectPacket
 import com.aznos.packets.login.out.ServerLoginSuccessPacket
 import com.aznos.packets.play.`in`.*
 import com.aznos.packets.play.`in`.movement.*
@@ -30,7 +32,7 @@ import com.aznos.packets.play.out.*
 import com.aznos.packets.play.out.movement.*
 import com.aznos.packets.play.out.ServerCollectItemPacket
 import com.aznos.packets.play.out.ServerSpawnExperienceOrb
-import com.aznos.packets.play.out.packets.play.out.ServerSetExperiencePacket
+import com.aznos.packets.play.out.ServerSetExperiencePacket
 import com.aznos.packets.status.`in`.ClientStatusPingPacket
 import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
@@ -44,10 +46,10 @@ import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.EntityData
 import com.aznos.world.data.Particles
 import com.aznos.world.items.Item
+import com.aznos.world.items.ItemStack
 import com.aznos.world.sounds.SoundCategories
 import com.aznos.world.sounds.Sounds
 import com.mojang.brigadier.exceptions.CommandSyntaxException
-import dev.dewy.nbt.tags.collection.CompoundTag
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -57,6 +59,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.minimessage.MiniMessage
+import net.querz.nbt.tag.CompoundTag
 import packets.handshake.HandshakePacket
 import packets.status.out.ServerStatusResponsePacket
 import java.io.ByteArrayInputStream
@@ -85,7 +88,7 @@ class PacketHandler(
 
     @PacketReceiver
     fun onUpdateSign(packet: ClientUpdateSignPacket) {
-        val data = CompoundTag("")
+        val data = CompoundTag()
         data.putString("id", "minecraft:sign")
         data.putInt("x", packet.blockPos.x.toInt())
         data.putInt("y", packet.blockPos.y.toInt())
@@ -251,17 +254,11 @@ class PacketHandler(
 
     @PacketReceiver
     fun onCreativeInventoryAction(packet: ClientCreativeInventoryActionPacket) {
-        if(packet.slot.present) {
-            packet.slot.itemID?.let { itemID ->
-                client.player.inventory.items[packet.slotIndex.toInt()] = itemID
-            }
-        } else {
-            client.player.inventory.items.remove(packet.slotIndex.toInt())
-        }
+        val slotIdx = packet.slotIndex.toInt()
+        val stack = if(packet.slot.present) packet.slot.toItemStack() else null
+        client.player.inventory.set(slotIdx, stack)
 
-        if(packet.slotIndex.toInt() == client.player.selectedSlot + 36) {
-            sendHeldItemUpdate()
-        }
+        if(slotIdx == client.player.selectedSlot + 36) sendHeldItemUpdate()
     }
 
     @PacketReceiver
@@ -413,7 +410,7 @@ class PacketHandler(
         EventManager.fire(event)
         if(event.isCancelled) return
 
-        if(client.player.getHeldItem() == Item.EXPERIENCE_BOTTLE.id) {
+        if(client.player.getHeldItemID() == Item.EXPERIENCE_BOTTLE.id) {
             world.orbs.add(OrbEntity())
             val orb = world.orbs.last()
             orb.location = client.player.location.copy().add(0.0, 1.0, 0.0)
@@ -470,7 +467,7 @@ class PacketHandler(
             5 -> event.blockPos.x += 1
         }
 
-        val heldItem = client.player.getHeldItem()
+        val heldItem = client.player.getHeldItemID()
 
         val block = Block.getBlockFromID(heldItem) ?: Item.getItemFromID(heldItem) ?: Block.AIR
         handlePlacement(block, event, packet.blockPos)
@@ -781,10 +778,6 @@ class PacketHandler(
 
         client.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
 
-        val joinEvent = PlayerJoinEvent(client.player)
-        EventManager.fire(joinEvent)
-        if(joinEvent.isCancelled) return
-
         Bullet.players.add(player)
         readPlayerPersistentData()
         scheduleTimers()
@@ -799,6 +792,10 @@ class PacketHandler(
         sendEntities()
 
         Bullet.storage.storage.writePlayerData(player)
+
+        val joinEvent = PlayerJoinEvent(client.player)
+        EventManager.fire(joinEvent)
+        if(joinEvent.isCancelled) return
 
         val world = player.world!!
         player.setTimeOfDay(world.timeOfDay)
@@ -982,16 +979,14 @@ class PacketHandler(
     }
 
     private fun sendHeldItemUpdate() {
-        val heldItemID = client.player.getHeldItem()
-
-        val heldItemSlot = if(heldItemID == 0) Slot.SlotData(false)
-        else Slot.SlotData(true, heldItemID, 1, null)
+        val stack = client.player.getHeldItem()
+        val slotData = stack.toSlotData()
 
         for(otherPlayer in Bullet.players) {
             if(otherPlayer != client.player) {
                 otherPlayer.sendPacket(ServerEntityEquipmentPacket(
                     client.player.entityID,
-                    listOf(0 to heldItemSlot)
+                    listOf(0 to slotData)
                 ))
             }
         }
@@ -1068,29 +1063,32 @@ class PacketHandler(
 
     }
 
-    private fun checkLoginValidity(username: String) {
+    private fun checkLoginValidity(username: String): Boolean {
         if(client.protocol > Bullet.PROTOCOL) {
-            client.disconnect(Component.text()
+            client.sendPacket(ServerLoginDisconnectPacket(Component.text()
                 .append(Component.text("Your client is outdated, please downgrade to minecraft version"))
                 .append(Component.text(" " + Bullet.VERSION).color(NamedTextColor.GOLD))
                 .build()
-            )
+            ))
 
-            return
+            client.close()
+            return false
         } else if(client.protocol < Bullet.PROTOCOL) {
-            client.disconnect(Component.text()
+            client.sendPacket(ServerLoginDisconnectPacket(Component.text()
                 .append(Component.text("Your client is outdated, please upgrade to minecraft version"))
                 .append(Component.text(" " + Bullet.VERSION).color(NamedTextColor.GOLD))
                 .build()
-            )
+            ))
 
-            return
+            return false
         }
 
         if(!username.matches(Regex("^[a-zA-Z0-9]{3,16}$"))) {
-            client.disconnect(Component.text("Invalid username"))
-            return
+            client.sendPacket(ServerLoginDisconnectPacket(Component.text("Invalid username")))
+            return false
         }
+
+        return true
     }
 
     private fun scheduleTimers() {
@@ -1114,22 +1112,15 @@ class PacketHandler(
 
         player.setGameMode(GameMode.entries.find { it.id == data.gameMode } ?: GameMode.SURVIVAL)
 
-        val savedItems = data.inventory.associate {
-            it.first to it.second
-        }
-        player.inventory.items.clear()
+        val savedStacks: Map<Int, ItemStack> =
+            data.inventory.associate { it.first to ItemStack.of(Item.getItemFromID(it.second) ?: Item.AIR) }
+        player.inventory.clear()
 
         val totalSlots = 45
-        val slotDataList = mutableListOf<Slot.SlotData>()
-        for(slot in 0 until totalSlots) {
-            if(savedItems.containsKey(slot)) {
-                val itemID = savedItems[slot]!!
-                player.inventory.items[slot] = itemID
-
-                slotDataList.add(Slot.SlotData(true, itemID, 1))
-            } else {
-                slotDataList.add(Slot.SlotData(false))
-            }
+        val slotDataList = (0 until totalSlots).map { idx ->
+            val stack = savedStacks[idx]
+            player.inventory.set(idx, stack)
+            stack?.toSlotData() ?: Slot.SlotData(false)
         }
 
         player.sendPacket(ServerWindowItemsPacket(0, slotDataList))
