@@ -42,7 +42,7 @@ data class ItemStack(
         item, count, damage,
         displayName,
         lore.toMutableList(),
-        nbt?.clone() as net.querz.nbt.tag.CompoundTag
+        nbt?.clone() as? net.querz.nbt.tag.CompoundTag ?: net.querz.nbt.tag.CompoundTag()
     )
 
     /**
