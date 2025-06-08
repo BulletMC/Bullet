@@ -34,20 +34,5 @@ fun main(args: Array<String>) {
 
     parser.parse(args)
 
-    EventManager.register(PlayerJoinEvent::class.java) { e ->
-        val player = e.player
-        val sword = ItemStack(
-            item = Item.DIAMOND_SWORD,
-            count = 19,
-            displayName = MiniMessage.miniMessage().deserialize("<yellow>Blade</yellow>"),
-            lore = listOf(
-                Component.text("A sharp blade..", NamedTextColor.GRAY),
-                Component.text("this item will kill", NamedTextColor.GRAY)
-            )
-        )
-
-        player.setSlot(36, sword)
-    }
-
     Bullet.createServer(address, port)
 }
