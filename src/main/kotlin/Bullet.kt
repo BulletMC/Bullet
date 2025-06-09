@@ -56,7 +56,9 @@ object Bullet : AutoCloseable {
     private val pool = Executors.newCachedThreadPool()
     private var server: ServerSocket? = null
     val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+
     var shouldPersist by Delegates.notNull<Boolean>()
+    var onlineMode by Delegates.notNull<Boolean>()
 
     val loadedPlugins = mutableListOf<Plugin>()
     val players = mutableListOf<Player>()
@@ -79,6 +81,7 @@ object Bullet : AutoCloseable {
      * if set to false, nothing will save when the server is restarted
      */
     fun createServer(host: String, port: Int = 25565, onlineMode: Boolean = true, shouldPersist: Boolean = true) {
+        this.onlineMode = onlineMode
         this.shouldPersist = shouldPersist
 
         storage = StorageManager(
