@@ -2,6 +2,7 @@ package com.aznos.packets
 
 import com.aznos.GameState
 import com.aznos.packets.login.`in`.ClientLoginStartPacket
+import com.aznos.packets.login.`in`.packets.login.`in`.ClientEncryptionResponsePacket
 import com.aznos.packets.play.`in`.*
 import com.aznos.packets.play.`in`.movement.ClientEntityActionPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
@@ -39,6 +40,7 @@ object PacketRegistry {
         //LOGIN
         val loginPackets = ConcurrentHashMap<Int, Class<out Packet>>().apply {
             this[0x00] = ClientLoginStartPacket::class.java
+            this[0x01] = ClientEncryptionResponsePacket::class.java
         }
 
         packets[GameState.LOGIN] = loginPackets

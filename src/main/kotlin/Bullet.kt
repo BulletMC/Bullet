@@ -30,6 +30,7 @@ import java.net.BindException
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.URLClassLoader
+import java.security.KeyPair
 import java.security.KeyPairGenerator
 import java.util.Base64
 import java.util.concurrent.Executors
@@ -60,7 +61,9 @@ object Bullet : AutoCloseable {
 
     var shouldPersist by Delegates.notNull<Boolean>()
     var onlineMode by Delegates.notNull<Boolean>()
-    var publicKey: ByteArray? = null
+    lateinit var keyPair: KeyPair
+    val publicKey: ByteArray
+        get() = keyPair.public.encoded
 
     val loadedPlugins = mutableListOf<Plugin>()
     val players = mutableListOf<Player>()
@@ -142,11 +145,9 @@ object Bullet : AutoCloseable {
     @Suppress("TooGenericExceptionCaught")
     private fun generatePublicKey() {
         try {
-            val keyPair = KeyPairGenerator.getInstance("RSA").apply {
+            keyPair = KeyPairGenerator.getInstance("RSA").apply {
                 initialize(1024)
             }.generateKeyPair()
-
-            publicKey = keyPair.public.encoded
         } catch(e: Exception) {
             logger.error("Failed to generate public key for the server", e)
         }

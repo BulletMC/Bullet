@@ -2,7 +2,7 @@ package com.aznos.packets.login.out
 
 import com.aznos.datatypes.StringType.writeString
 import com.aznos.datatypes.VarInt.writeVarInt
-import com.aznos.datatypes.datatypes.ByteArrays.writeBytes
+import com.aznos.datatypes.ByteArrays.writeBytes
 import com.aznos.packets.Packet
 
 /**

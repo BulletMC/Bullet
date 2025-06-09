@@ -53,6 +53,7 @@ class ClientSession(
     var protocol = -1
 
     lateinit var player: Player
+    lateinit var verifyToken: ByteArray
 
     /**
      * This timer will keep track of when to send the keep alive packet to the client

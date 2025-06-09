@@ -24,6 +24,7 @@ import com.aznos.entity.player.data.GameMode
 import com.aznos.events.*
 import com.aznos.packets.data.ServerStatusResponse
 import com.aznos.packets.login.`in`.ClientLoginStartPacket
+import com.aznos.packets.login.`in`.packets.login.`in`.ClientEncryptionResponsePacket
 import com.aznos.packets.login.out.ServerEncryptionRequestPacket
 import com.aznos.packets.login.out.ServerLoginDisconnectPacket
 import com.aznos.packets.login.out.ServerLoginSuccessPacket
@@ -70,6 +71,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
+import javax.crypto.Cipher
 import kotlin.experimental.and
 import kotlin.math.abs
 import kotlin.math.pow
@@ -734,6 +736,31 @@ class PacketHandler(
                 2,
                 client.player
             ))
+        }
+    }
+
+    @PacketReceiver
+    fun onEncryptionResponse(packet: ClientEncryptionResponsePacket) {
+        val cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding")
+        cipher.init(Cipher.DECRYPT_MODE, Bullet.keyPair.private)
+
+        val secretKey = cipher.doFinal(packet.secretKey)
+        val verifyToken = cipher.doFinal(packet.verifyToken)
+
+        if(client.verifyToken.contentEquals(verifyToken)) {
+            client.sendPacket(ServerLoginDisconnectPacket(Component.text()
+                .append(Component.text("Encryption successful!").color(NamedTextColor.GREEN))
+                .build()
+            ))
+        } else {
+            client.sendPacket(ServerLoginDisconnectPacket(Component.text()
+                .append(Component.text("Invalid verify token: $verifyToken").color(NamedTextColor.RED))
+                .append(Component.text("Expected: ${client.verifyToken.joinToString(", ")}").color(NamedTextColor.GRAY))
+                .build()
+            ))
+
+            client.close()
+            return
         }
     }
 
@@ -1711,14 +1738,15 @@ class PacketHandler(
     }
 
     fun handleOnlineModeJoin(packet: ClientLoginStartPacket) {
-        if(Bullet.onlineMode && Bullet.publicKey != null) {
+        if(Bullet.onlineMode) {
             val verifyToken = ByteArray(4).apply {
                 SecureRandom().nextBytes(this)
             }
 
+            client.verifyToken = verifyToken
             client.player.sendPacket(ServerEncryptionRequestPacket(
                 "",
-                Bullet.publicKey!!,
+                Bullet.publicKey,
                 verifyToken
             ))
         }
