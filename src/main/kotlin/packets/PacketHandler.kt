@@ -65,6 +65,7 @@ import packets.handshake.HandshakePacket
 import packets.status.out.ServerStatusResponsePacket
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
+import java.security.SecureRandom
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -1711,7 +1712,9 @@ class PacketHandler(
 
     fun handleOnlineModeJoin(packet: ClientLoginStartPacket) {
         if(Bullet.onlineMode && Bullet.publicKey != null) {
-            val verifyToken = null as ByteArray
+            val verifyToken = ByteArray(4).apply {
+                SecureRandom().nextBytes(this)
+            }
 
             client.player.sendPacket(ServerEncryptionRequestPacket(
                 "",
