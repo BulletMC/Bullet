@@ -1,8 +1,8 @@
 package com.aznos.packets.login.out
 
+import com.aznos.Bullet
 import com.aznos.datatypes.StringType.writeString
 import com.aznos.datatypes.VarInt.writeVarInt
-import com.aznos.datatypes.ByteArrays.writeBytes
 import com.aznos.packets.Packet
 
 /**
@@ -21,8 +21,8 @@ class ServerEncryptionRequestPacket(
     init {
         wrapper.writeString(serverID)
         wrapper.writeVarInt(publicKey.size)
-        wrapper.writeBytes(publicKey)
+        wrapper.write(publicKey, 0, publicKey.size)
         wrapper.writeVarInt(verifyToken.size)
-        wrapper.writeBytes(verifyToken)
+        wrapper.write(verifyToken, 0, verifyToken.size)
     }
 }

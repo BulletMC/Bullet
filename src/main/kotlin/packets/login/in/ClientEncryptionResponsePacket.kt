@@ -1,4 +1,4 @@
-package com.aznos.packets.login.`in`.packets.login.`in`
+package com.aznos.packets.login.`in`
 
 import com.aznos.datatypes.VarInt.readVarInt
 import com.aznos.packets.Packet

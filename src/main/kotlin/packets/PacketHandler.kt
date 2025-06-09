@@ -24,7 +24,7 @@ import com.aznos.entity.player.data.GameMode
 import com.aznos.events.*
 import com.aznos.packets.data.ServerStatusResponse
 import com.aznos.packets.login.`in`.ClientLoginStartPacket
-import com.aznos.packets.login.`in`.packets.login.`in`.ClientEncryptionResponsePacket
+import com.aznos.packets.login.`in`.ClientEncryptionResponsePacket
 import com.aznos.packets.login.out.ServerEncryptionRequestPacket
 import com.aznos.packets.login.out.ServerLoginDisconnectPacket
 import com.aznos.packets.login.out.ServerLoginSuccessPacket
@@ -752,6 +752,62 @@ class PacketHandler(
                 .append(Component.text("Encryption successful!").color(NamedTextColor.GREEN))
                 .build()
             ))
+
+            return
+
+            val player = client.player
+            val username = player.username
+            val uuid = player.uuid
+
+            client.sendPacket(ServerLoginSuccessPacket(uuid, username))
+            client.state = GameState.PLAY
+
+            if(checkForBan()) return
+
+            client.sendPacket(
+                ServerJoinGamePacket(
+                    player.entityID,
+                    false,
+                    player.gameMode,
+                    "minecraft:overworld",
+                    Bullet.dimensionCodec!!,
+                    Bullet.max_players,
+                    32,
+                    reducedDebugInfo = false,
+                    enableRespawnScreen = true,
+                    isDebug = false,
+                    isFlat = true
+                )
+            )
+
+            client.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
+
+            Bullet.players.add(player)
+            readPlayerPersistentData()
+            scheduleTimers()
+
+            client.sendPacket(ServerChunkPacket(0, 0))
+            sendSpawnPlayerPackets(player)
+
+            client.sendPacket(ServerUpdateViewPositionPacket(player.chunkX, player.chunkZ))
+            client.updatePlayerChunks(player.chunkX, player.chunkZ)
+
+            sendBlockChanges()
+            sendEntities()
+
+            Bullet.storage.storage.writePlayerData(player)
+
+            val joinEvent = PlayerJoinEvent(client.player)
+            EventManager.fire(joinEvent)
+            if(joinEvent.isCancelled) return
+
+            val world = player.world!!
+            player.setTimeOfDay(world.timeOfDay)
+            if(world.weather == 1) player.sendPacket(ServerChangeGameStatePacket(2, 0f))
+            else player.sendPacket(ServerChangeGameStatePacket(1, 0f))
+
+            val (nodes, rootIndex) = buildCommandGraphFromDispatcher(CommandManager.dispatcher)
+            client.sendPacket(ServerDeclareCommandsPacket(nodes, rootIndex))
         } else {
             client.sendPacket(ServerLoginDisconnectPacket(Component.text()
                 .append(Component.text("Invalid verify token: $verifyToken").color(NamedTextColor.RED))
@@ -784,56 +840,6 @@ class PacketHandler(
 
         val player = initializePlayer(username, uuid)
         handleOnlineModeJoin(packet)
-
-        client.sendPacket(ServerLoginSuccessPacket(uuid, username))
-        client.state = GameState.PLAY
-
-        if(checkForBan()) return
-
-        client.sendPacket(
-            ServerJoinGamePacket(
-                player.entityID,
-                false,
-                player.gameMode,
-                "minecraft:overworld",
-                Bullet.dimensionCodec!!,
-                Bullet.max_players,
-                32,
-                reducedDebugInfo = false,
-                enableRespawnScreen = true,
-                isDebug = false,
-                isFlat = true
-            )
-        )
-
-        client.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
-
-        Bullet.players.add(player)
-        readPlayerPersistentData()
-        scheduleTimers()
-
-        client.sendPacket(ServerChunkPacket(0, 0))
-        sendSpawnPlayerPackets(player)
-
-        client.sendPacket(ServerUpdateViewPositionPacket(player.chunkX, player.chunkZ))
-        client.updatePlayerChunks(player.chunkX, player.chunkZ)
-
-        sendBlockChanges()
-        sendEntities()
-
-        Bullet.storage.storage.writePlayerData(player)
-
-        val joinEvent = PlayerJoinEvent(client.player)
-        EventManager.fire(joinEvent)
-        if(joinEvent.isCancelled) return
-
-        val world = player.world!!
-        player.setTimeOfDay(world.timeOfDay)
-        if(world.weather == 1) player.sendPacket(ServerChangeGameStatePacket(2, 0f))
-        else player.sendPacket(ServerChangeGameStatePacket(1, 0f))
-
-        val (nodes, rootIndex) = buildCommandGraphFromDispatcher(CommandManager.dispatcher)
-        client.sendPacket(ServerDeclareCommandsPacket(nodes, rootIndex))
     }
 
     /**

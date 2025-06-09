@@ -2,7 +2,7 @@ package com.aznos.packets
 
 import com.aznos.GameState
 import com.aznos.packets.login.`in`.ClientLoginStartPacket
-import com.aznos.packets.login.`in`.packets.login.`in`.ClientEncryptionResponsePacket
+import com.aznos.packets.login.`in`.ClientEncryptionResponsePacket
 import com.aznos.packets.play.`in`.*
 import com.aznos.packets.play.`in`.movement.ClientEntityActionPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
