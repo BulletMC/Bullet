@@ -59,6 +59,7 @@ object Bullet : AutoCloseable {
 
     var shouldPersist by Delegates.notNull<Boolean>()
     var onlineMode by Delegates.notNull<Boolean>()
+    var publicKey: ByteArray? = null
 
     val loadedPlugins = mutableListOf<Plugin>()
     val players = mutableListOf<Player>()
@@ -76,13 +77,17 @@ object Bullet : AutoCloseable {
      *
      * @param host - The IP address of the server for local development set this to 0.0.0.0
      * @param port - The port the server will run on, this defaults at 25565
-     * @param onlineMode - If set to false, the server will not check if players are authenticated with a microsoft account. This means anyone with the same username can have access to the same account, and skins will not be loaded
-     * @param shouldPersist - If set to true, the server will save world data and block data to disk for persistent storage
-     * if set to false, nothing will save when the server is restarted
+     * @param onlineMode - If set to false, the server will not check if players are
+     * authenticated with a microsoft account.
+     * This means anyone with the same username can have access to the same account, and skins will not be loaded
+     * @param shouldPersist - If set to true, the server will save world data and block data to disk
+     * for persistent storage, if set to false, nothing will save when the server is restarted
      */
     fun createServer(host: String, port: Int = 25565, onlineMode: Boolean = true, shouldPersist: Boolean = true) {
         this.onlineMode = onlineMode
         this.shouldPersist = shouldPersist
+
+        generatePublicKey()
 
         storage = StorageManager(
             if(shouldPersist) DiskServerStorage()
@@ -127,6 +132,23 @@ object Bullet : AutoCloseable {
                     ClientSession(it).handle()
                 }
             }
+        }
+    }
+
+    /**
+     * Generates the 1024-bit RSA public key for the server to be used for encryption
+     */
+    @Suppress("TooGenericExceptionCaught")
+    private fun generatePublicKey() {
+        try {
+            val keyPair = java.security.KeyPairGenerator.getInstance("RSA").apply {
+                initialize(1024)
+            }.generateKeyPair()
+
+            publicKey = keyPair.public.encoded
+            logger.info("Public key generated: ${Base64.getEncoder().encodeToString(publicKey)}")
+        } catch(e: Exception) {
+            logger.error("Failed to generate public key for the server", e)
         }
     }
 

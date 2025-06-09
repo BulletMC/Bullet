@@ -24,6 +24,7 @@ import com.aznos.entity.player.data.GameMode
 import com.aznos.events.*
 import com.aznos.packets.data.ServerStatusResponse
 import com.aznos.packets.login.`in`.ClientLoginStartPacket
+import com.aznos.packets.login.out.ServerEncryptionRequestPacket
 import com.aznos.packets.login.out.ServerLoginDisconnectPacket
 import com.aznos.packets.login.out.ServerLoginSuccessPacket
 import com.aznos.packets.play.`in`.*
@@ -754,6 +755,7 @@ class PacketHandler(
         checkLoginValidity(username)
 
         val player = initializePlayer(username, uuid)
+        handleOnlineModeJoin(packet)
 
         client.sendPacket(ServerLoginSuccessPacket(uuid, username))
         client.state = GameState.PLAY
@@ -1705,5 +1707,17 @@ class PacketHandler(
         player.experienceBar = if(xpNeeded == 0f) 0f else xpIntoLevel / xpNeeded
 
         player.sendPacket(ServerSetExperiencePacket(player.experienceBar, player.level, player.totalXP))
+    }
+
+    fun handleOnlineModeJoin(packet: ClientLoginStartPacket) {
+        if(Bullet.onlineMode && Bullet.publicKey != null) {
+            val verifyToken = null as ByteArray
+
+            client.player.sendPacket(ServerEncryptionRequestPacket(
+                "",
+                Bullet.publicKey!!,
+                verifyToken
+            ))
+        }
     }
 }
