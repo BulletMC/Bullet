@@ -769,12 +769,6 @@ class PacketHandler(
         }
 
         client.enableEncryption(decrypt, encrypt)
-        client.sendPacket(ServerLoginDisconnectPacket(Component.text()
-            .append(Component.text("Encryption successful!").color(NamedTextColor.GREEN))
-            .build()
-        ))
-
-        return
 
         val player = client.player
         val username = player.username
