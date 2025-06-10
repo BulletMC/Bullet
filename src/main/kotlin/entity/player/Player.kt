@@ -19,6 +19,9 @@ import com.aznos.world.sounds.Sounds
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
 import java.util.UUID
+import kotlin.collections.get
+import kotlin.collections.minusAssign
+import kotlin.text.set
 
 /**
  * Represents a player in the game
@@ -276,22 +279,54 @@ class Player(
      * @return True if the item was added successfully, false if the inventory is full
      */
     fun addItem(stack: ItemStack): Boolean {
-        for(slot in 36..44) {
+        var toAdd = stack.count
+
+        toAdd = tryStackInSlots(stack, toAdd, 36..44)
+        if(toAdd > 0) toAdd = tryStackInSlots(stack, toAdd, 9..35)
+        if(toAdd > 0) toAdd = tryAddToEmptySlots(stack, toAdd, 36..44)
+        if(toAdd > 0) toAdd = tryAddToEmptySlots(stack, toAdd, 9..35)
+
+        return toAdd == 0
+    }
+
+    private fun canStack(a: ItemStack?, b: ItemStack): Boolean {
+        if(a == null || a.isAir) return false
+        return a.id == b.id && a.displayName == b.displayName && a.lore == b.lore && a.damage == b.damage &&
+                a.nbt == b.nbt && a.isStackable
+    }
+
+    private fun tryAddToEmptySlots(stack: ItemStack, toAdd: Int, slots: IntRange): Int {
+        var toAdd = toAdd
+        for(slot in slots) {
             if(inventory.items[slot] == null || inventory.items[slot]?.isAir == true) {
-                inventory.set(slot, stack)
-                sendPacket(ServerSetSlotPacket(0, slot, stack.toSlotData()))
-                return true
+                val add = minOf(stack.maxStackSize, toAdd)
+                val newStack = stack.copy(count = add)
+
+                inventory.set(slot, newStack)
+                sendPacket(ServerSetSlotPacket(0, slot, newStack.toSlotData()))
+                toAdd -= add
+                if(toAdd == 0) return 0
             }
         }
 
-        for(slot in 9..35) {
-            if(inventory.items[slot] == null || inventory.items[slot]?.isAir == true) {
-                inventory.set(slot, stack)
-                sendPacket(ServerSetSlotPacket(0, slot, stack.toSlotData()))
-                return true
+        return toAdd
+    }
+
+    private fun tryStackInSlots(stack: ItemStack, toAdd: Int, slots: IntRange): Int {
+        var toAdd = toAdd
+        for(slot in slots) {
+            val existing = inventory.items[slot]
+            if(existing != null && canStack(existing, stack) && existing.count < existing.maxStackSize) {
+                val space = existing.maxStackSize - existing.count
+                val add = minOf(space, toAdd)
+
+                existing.count += add
+                sendPacket(ServerSetSlotPacket(0, slot, existing.toSlotData()))
+                toAdd -= add
+                if(toAdd == 0) return 0
             }
         }
 
-        return false
+        return toAdd
     }
 }

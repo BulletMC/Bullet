@@ -100,6 +100,12 @@ data class ItemStack(
         }
     )
 
+    val isStackable: Boolean
+        get() = Item.isStackable(item)
+
+    val maxStackSize: Int
+        get() = Item.getMaxStackSize(item)
+
     companion object {
         @JvmStatic fun of(item: Item, count: Int = 1) = ItemStack(item, count)
         @JvmStatic fun empty() = ItemStack(Item.AIR, 0)
