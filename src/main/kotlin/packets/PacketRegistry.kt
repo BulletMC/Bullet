@@ -9,6 +9,7 @@ import com.aznos.packets.play.`in`.movement.ClientPlayerMovement
 import com.aznos.packets.play.`in`.movement.ClientPlayerPositionAndRotation
 import com.aznos.packets.play.`in`.movement.ClientPlayerPositionPacket
 import com.aznos.packets.play.`in`.movement.ClientPlayerRotation
+import com.aznos.packets.play.`in`.packets.play.`in`.ClientClickWindowPacket
 import com.aznos.packets.status.`in`.ClientStatusPingPacket
 import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import packets.handshake.HandshakePacket
@@ -52,6 +53,7 @@ object PacketRegistry {
             this[0x04] = ClientStatusPacket::class.java
             this[0x05] = ClientSettingsPacket::class.java
             this[0x06] = ClientTabCompletePacket::class.java
+            this[0x09] = ClientClickWindowPacket::class.java
             this[0x10] = ClientKeepAlivePacket::class.java
             this[0xb] = ClientPluginMessagePacket::class.java
             this[0x0E] = ClientInteractEntityPacket::class.java
