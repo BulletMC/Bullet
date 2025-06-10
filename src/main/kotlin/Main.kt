@@ -32,7 +32,21 @@ fun main(args: Array<String>) {
         description = "Server port"
     ).default(25565)
 
+    val onlineMode by parser.option(
+        ArgType.Boolean,
+        shortName = "o",
+        fullName = "online-mode",
+        description = "Disable online mode"
+    ).default(true)
+
+    val shouldPersist by parser.option(
+        ArgType.Boolean,
+        shortName = "s",
+        fullName = "persist",
+        description = "Persist the world to save world/player data"
+    ).default(true)
+
     parser.parse(args)
 
-    Bullet.createServer(address, port)
+    Bullet.createServer(address, port, onlineMode, shouldPersist)
 }

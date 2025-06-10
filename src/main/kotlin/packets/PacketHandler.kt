@@ -21,9 +21,12 @@ import com.aznos.entity.livingentity.LivingEntities
 import com.aznos.entity.livingentity.LivingEntity
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.GameMode
+import com.aznos.entity.player.data.PlayerProfile
 import com.aznos.events.*
 import com.aznos.packets.data.ServerStatusResponse
 import com.aznos.packets.login.`in`.ClientLoginStartPacket
+import com.aznos.packets.login.`in`.ClientEncryptionResponsePacket
+import com.aznos.packets.login.out.ServerEncryptionRequestPacket
 import com.aznos.packets.login.out.ServerLoginDisconnectPacket
 import com.aznos.packets.login.out.ServerLoginSuccessPacket
 import com.aznos.packets.play.`in`.*
@@ -38,6 +41,8 @@ import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
 import com.aznos.world.blocks.Block
 import com.aznos.util.DurationFormat
+import com.aznos.util.Hashes
+import com.aznos.util.MojangNetworking
 import com.aznos.world.World
 import com.aznos.world.blocks.BlockTags
 import com.aznos.world.data.Axis
@@ -54,6 +59,7 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -64,10 +70,14 @@ import packets.handshake.HandshakePacket
 import packets.status.out.ServerStatusResponsePacket
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
+import java.security.SecureRandom
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
+import javax.crypto.Cipher
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.SecretKeySpec
 import kotlin.experimental.and
 import kotlin.math.abs
 import kotlin.math.pow
@@ -735,50 +745,60 @@ class PacketHandler(
         }
     }
 
-    /**
-     * Handles when the client tells the server it's ready to log in
-     *
-     * The server first checks for a valid version and uuid, then sends a login success packet
-     * It'll then transition the game state into play mode
-     * and send a join game and player position/look packet to get past all loading screens
-     */
     @PacketReceiver
-    fun onLoginStart(packet: ClientLoginStartPacket) {
-        val preJoinEvent = PlayerPreJoinEvent()
-        EventManager.fire(preJoinEvent)
-        if(preJoinEvent.isCancelled) return
+    fun onEncryptionResponse(packet: ClientEncryptionResponsePacket) {
+        val rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding")
+        rsa.init(Cipher.DECRYPT_MODE, Bullet.keyPair.private)
 
-        val username = packet.username
-        val uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:$username").toByteArray())
+        val sharedSecret = rsa.doFinal(packet.secretKey)
+        val verifyToken = rsa.doFinal(packet.verifyToken)
 
-        checkLoginValidity(username)
+        verifyPlayerToken(verifyToken)
 
-        val player = initializePlayer(username, uuid)
+        val secretKey = SecretKeySpec(sharedSecret, "AES")
+        val iv = IvParameterSpec(sharedSecret)
 
-        client.sendPacket(ServerLoginSuccessPacket(uuid, username))
+        val decrypt = Cipher.getInstance("AES/CFB8/NoPadding").apply {
+            init(Cipher.DECRYPT_MODE, secretKey, iv)
+        }
+        val encrypt = Cipher.getInstance("AES/CFB8/NoPadding").apply {
+            init(Cipher.ENCRYPT_MODE, secretKey, iv)
+        }
+
+        client.enableEncryption(decrypt, encrypt)
+
+        val player = client.player
+
+        val hash = Hashes.makeServerIDHash(sharedSecret, Bullet.publicKey)
+        val prof = runBlocking { MojangNetworking.querySessionServer(player, hash) }
+
+        if(prof == null) {
+            client.sendPacket(ServerLoginDisconnectPacket(Component.text(
+                "Failed to verify username with Mojang servers, please try again later",
+                NamedTextColor.RED))
+            )
+
+            client.close()
+            return
+        }
+
+        val uuidWithDashes = prof.id.replaceFirst(
+            "(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)".toRegex(),
+            "$1-$2-$3-$4-$5"
+        )
+
+        client.player.uuid = UUID.fromString(uuidWithDashes)
+        client.player.username = prof.name
+
+        client.sendPacket(ServerLoginSuccessPacket(player.uuid, player.username))
         client.state = GameState.PLAY
 
         if(checkForBan()) return
 
-        client.sendPacket(
-            ServerJoinGamePacket(
-                player.entityID,
-                false,
-                player.gameMode,
-                "minecraft:overworld",
-                Bullet.dimensionCodec!!,
-                Bullet.max_players,
-                32,
-                reducedDebugInfo = false,
-                enableRespawnScreen = true,
-                isDebug = false,
-                isFlat = true
-            )
-        )
-
+        sendJoinGamePacket()
         client.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
 
-        Bullet.players.add(player)
+        players.add(player)
         readPlayerPersistentData()
         scheduleTimers()
 
@@ -804,6 +824,28 @@ class PacketHandler(
 
         val (nodes, rootIndex) = buildCommandGraphFromDispatcher(CommandManager.dispatcher)
         client.sendPacket(ServerDeclareCommandsPacket(nodes, rootIndex))
+    }
+
+    /**
+     * Handles when the client tells the server it's ready to log in
+     *
+     * The server first checks for a valid version and uuid, then sends a login success packet
+     * It'll then transition the game state into play mode
+     * and send a join game and player position/look packet to get past all loading screens
+     */
+    @PacketReceiver
+    fun onLoginStart(packet: ClientLoginStartPacket) {
+        val preJoinEvent = PlayerPreJoinEvent()
+        EventManager.fire(preJoinEvent)
+        if(preJoinEvent.isCancelled) return
+
+        val username = packet.username
+        val uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:$username").toByteArray())
+
+        checkLoginValidity(username)
+
+        val player = initializePlayer(username, uuid)
+        handleOnlineModeJoin(packet)
     }
 
     /**
@@ -1705,5 +1747,50 @@ class PacketHandler(
         player.experienceBar = if(xpNeeded == 0f) 0f else xpIntoLevel / xpNeeded
 
         player.sendPacket(ServerSetExperiencePacket(player.experienceBar, player.level, player.totalXP))
+    }
+
+    fun handleOnlineModeJoin(packet: ClientLoginStartPacket) {
+        if(Bullet.onlineMode) {
+            val verifyToken = ByteArray(4).apply {
+                SecureRandom().nextBytes(this)
+            }
+
+            client.verifyToken = verifyToken
+            client.player.sendPacket(ServerEncryptionRequestPacket(
+                "",
+                Bullet.publicKey,
+                verifyToken
+            ))
+        }
+    }
+
+    private fun sendJoinGamePacket() {
+        val player = client.player
+        client.sendPacket(
+            ServerJoinGamePacket(
+                player.entityID,
+                false,
+                player.gameMode,
+                "minecraft:overworld",
+                Bullet.dimensionCodec!!,
+                Bullet.max_players,
+                32,
+                reducedDebugInfo = false,
+                enableRespawnScreen = true,
+                isDebug = false,
+                isFlat = true
+            )
+        )
+    }
+
+    private fun verifyPlayerToken(verifyToken: ByteArray) {
+        if(!client.verifyToken.contentEquals(verifyToken)) {
+            client.sendPacket(ServerLoginDisconnectPacket(Component
+                .text("Invalid verification token", NamedTextColor.RED))
+            )
+
+            client.close()
+            return
+        }
     }
 }
