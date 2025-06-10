@@ -11,6 +11,7 @@ import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.Difficulty
 import com.aznos.world.data.EntityData
 import com.aznos.world.data.TimeOfDay
+import com.aznos.world.items.ItemStack
 import com.aznos.world.sounds.SoundCategories
 import com.aznos.world.sounds.Sounds
 
@@ -24,7 +25,7 @@ import com.aznos.world.sounds.Sounds
  * @property timeOfDay The time of day in the server, 0-24000
  * @property difficulty The difficulty of the world
  * @property modifiedBlocks A map of all the blocks that have been modified in the world
- * besides the default grass chunks that spawn in
+ * beside the default grass chunks that spawn in
  */
 @Suppress("TooManyFunctions")
 class World(
@@ -36,9 +37,12 @@ class World(
     var timeOfDay: Long = TimeOfDay.SUNRISE.time
     var sleepingPlayers: Int = 0
     var difficulty: Difficulty = Difficulty.NORMAL
+
     val livingEntities = mutableListOf<Pair<LivingEntity, EntityData>>()
     val entities = mutableListOf<Pair<Entity, EntityData>>()
     val orbs = mutableListOf<OrbEntity>()
+    val items = mutableListOf<Pair<Entity, ItemStack>>()
+
     lateinit var modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>
 
     init {

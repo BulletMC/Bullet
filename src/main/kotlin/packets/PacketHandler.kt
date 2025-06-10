@@ -579,6 +579,7 @@ class PacketHandler(
         player.onGround = onGround
         checkFallDamage()
         checkOrbs()
+        checkItems()
 
         return true
     }
@@ -1801,10 +1802,13 @@ class PacketHandler(
         val drop = ItemStack.of(Item.getItemFromID(item) ?: Item.AIR)
         val itemEntity = Entity()
 
-        val vx = ((Math.random() - 0.5) * 0.2 * 8000).toInt().toShort()
-        val vy = (0.2 * 8000).toInt().toShort()
-        val vz = ((Math.random() - 0.5) * 0.2 * 8000).toInt().toShort()
+        val vx = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
+        val vy = (0.1 * 8000).toInt().toShort()
+        val vz = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
         val loc = LocationType.Location(blockPos.x + 0.5, blockPos.y + 0.5, blockPos.z + 0.5, 0f, 0f)
+        itemEntity.location = loc
+
+        world.items.add(Pair(itemEntity, drop))
 
         for(player in players) {
             player.sendPacket(ServerSpawnEntityPacket(
@@ -1820,5 +1824,41 @@ class PacketHandler(
                 listOf(MetadataType.MetadataEntry(7, 6, drop.toSlotData()))
             ))
         }
+    }
+
+    private fun checkItems() {
+        val player = client.player
+        val picked = mutableListOf<Pair<Entity, ItemStack>>()
+
+        for(item in world.items) {
+            val distance = sqrt(
+                (player.location.x - item.first.location.x).pow(2) +
+                        (player.location.y - item.first.location.y).pow(2) +
+                        (player.location.z - item.first.location.z).pow(2)
+            )
+
+            if(distance <= 1.25) {
+                player.sendPacket(ServerCollectItemPacket(
+                    item.first.entityID,
+                    player.entityID,
+                    1
+                ))
+
+                player.sendPacket(ServerDestroyEntitiesPacket(intArrayOf(item.first.entityID)))
+
+                player.sendPacket(ServerSoundEffectPacket(
+                    Sounds.ENTITY_ITEM_PICKUP,
+                    SoundCategories.PLAYER,
+                    player.location.x.toInt(),
+                    player.location.y.toInt(),
+                    player.location.z.toInt()
+                ))
+
+                player.addItem(item.second)
+                picked += item
+            }
+        }
+
+        world.items.removeAll(picked)
     }
 }

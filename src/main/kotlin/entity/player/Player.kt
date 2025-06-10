@@ -268,4 +268,30 @@ class Player(
             volume, pitch
         ))
     }
+
+    /**
+     * Adds an item to the inventory, searching first in the hotbar (slots 36-44) then the main inventory (slots 9-35).
+     *
+     * @param stack The ItemStack to add to the inventory
+     * @return True if the item was added successfully, false if the inventory is full
+     */
+    fun addItem(stack: ItemStack): Boolean {
+        for(slot in 36..44) {
+            if(inventory.items[slot] == null || inventory.items[slot]?.isAir == true) {
+                inventory.set(slot, stack)
+                sendPacket(ServerSetSlotPacket(0, slot, stack.toSlotData()))
+                return true
+            }
+        }
+
+        for(slot in 9..35) {
+            if(inventory.items[slot] == null || inventory.items[slot]?.isAir == true) {
+                inventory.set(slot, stack)
+                sendPacket(ServerSetSlotPacket(0, slot, stack.toSlotData()))
+                return true
+            }
+        }
+
+        return false
+    }
 }
