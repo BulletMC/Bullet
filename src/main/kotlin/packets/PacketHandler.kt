@@ -753,14 +753,7 @@ class PacketHandler(
         val sharedSecret = rsa.doFinal(packet.secretKey)
         val verifyToken = rsa.doFinal(packet.verifyToken)
 
-        if(!client.verifyToken.contentEquals(verifyToken)) {
-            client.sendPacket(ServerLoginDisconnectPacket(Component
-                .text("Invalid verification token", NamedTextColor.RED))
-            )
-
-            client.close()
-            return
-        }
+        verifyPlayerToken(verifyToken)
 
         val secretKey = SecretKeySpec(sharedSecret, "AES")
         val iv = IvParameterSpec(sharedSecret)
@@ -780,7 +773,11 @@ class PacketHandler(
         val prof = runBlocking { MojangNetworking.querySessionServer(player, hash) }
 
         if(prof == null) {
-            client.sendPacket(ServerLoginDisconnectPacket(Component.text("Failed to verify username with Mojang servers, please try again later", NamedTextColor.RED)))
+            client.sendPacket(ServerLoginDisconnectPacket(Component.text(
+                "Failed to verify username with Mojang servers, please try again later",
+                NamedTextColor.RED))
+            )
+
             client.close()
             return
         }
@@ -798,25 +795,10 @@ class PacketHandler(
 
         if(checkForBan()) return
 
-        client.sendPacket(
-            ServerJoinGamePacket(
-                player.entityID,
-                false,
-                player.gameMode,
-                "minecraft:overworld",
-                Bullet.dimensionCodec!!,
-                Bullet.max_players,
-                32,
-                reducedDebugInfo = false,
-                enableRespawnScreen = true,
-                isDebug = false,
-                isFlat = true
-            )
-        )
-
+        sendJoinGamePacket()
         client.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
 
-        Bullet.players.add(player)
+        players.add(player)
         readPlayerPersistentData()
         scheduleTimers()
 
@@ -1779,6 +1761,36 @@ class PacketHandler(
                 Bullet.publicKey,
                 verifyToken
             ))
+        }
+    }
+
+    private fun sendJoinGamePacket() {
+        val player = client.player
+        client.sendPacket(
+            ServerJoinGamePacket(
+                player.entityID,
+                false,
+                player.gameMode,
+                "minecraft:overworld",
+                Bullet.dimensionCodec!!,
+                Bullet.max_players,
+                32,
+                reducedDebugInfo = false,
+                enableRespawnScreen = true,
+                isDebug = false,
+                isFlat = true
+            )
+        )
+    }
+
+    private fun verifyPlayerToken(verifyToken: ByteArray) {
+        if(!client.verifyToken.contentEquals(verifyToken)) {
+            client.sendPacket(ServerLoginDisconnectPacket(Component
+                .text("Invalid verification token", NamedTextColor.RED))
+            )
+
+            client.close()
+            return
         }
     }
 }
