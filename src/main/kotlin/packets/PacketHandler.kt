@@ -15,6 +15,7 @@ import com.aznos.datatypes.MetadataType
 import com.aznos.datatypes.Slot
 import com.aznos.datatypes.Slot.toItemStack
 import com.aznos.datatypes.VarInt.readVarInt
+import com.aznos.entity.DroppedItem
 import com.aznos.entity.Entity
 import com.aznos.entity.OrbEntity
 import com.aznos.entity.livingentity.LivingEntities
@@ -476,7 +477,7 @@ class PacketHandler(
                     val yaw = Math.toRadians(client.player.location.yaw.toDouble())
                     val pitch = Math.toRadians(client.player.location.pitch.toDouble())
                     val forwardSpeed = 10
-
+                    //todo: add pickup delay
                     val dx = -sin(yaw) * cos(pitch) * forwardSpeed
                     val dy = -sin(pitch) * forwardSpeed + 0.2225
                     val dz = cos(yaw) * cos(pitch) * forwardSpeed
@@ -1874,7 +1875,7 @@ class PacketHandler(
 
     private fun dropItem(blockPos: BlockPositionType.BlockPosition, item: Int, vx: Short = 0, vy: Short = 0, vz: Short = 0) {
         val drop = ItemStack.of(Item.getItemFromID(item) ?: Item.AIR)
-        val itemEntity = Entity()
+        val itemEntity = DroppedItem()
 
         val loc = LocationType.Location(blockPos.x + 0.5, blockPos.y + 0.5, blockPos.z + 0.5, 0f, 0f)
         itemEntity.location = loc
@@ -1898,10 +1899,13 @@ class PacketHandler(
     }
 
     private fun checkItems() {
+        val now = System.currentTimeMillis()
         val player = client.player
         val picked = mutableListOf<Pair<Entity, ItemStack>>()
 
         for(item in world.items) {
+            if(now - item.first.spawnTimeMs < item.first.pickupDelayMs) continue
+
             val distance = sqrt(
                 (player.location.x - item.first.location.x).pow(2) +
                         (player.location.y - item.first.location.y).pow(2) +
