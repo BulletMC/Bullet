@@ -100,6 +100,10 @@ class PacketHandler(
 
     @PacketReceiver
     fun onWindowClick(packet: ClientClickWindowPacket) {
+        Bullet.logger.info(
+            "Received window click packet.\n Window ID: ${packet.windowID},\n Slot: ${packet.slot},\n Button: ${packet.button},\n Action Number: ${packet.actionNumber},\n Mode: ${packet.mode}"
+        )
+
         if(packet.windowID.toInt() == 0 && packet.mode == 4) {
             val player = client.player
             val held = player.inventory.heldStack(player.selectedSlot)
@@ -120,6 +124,10 @@ class PacketHandler(
                 0, player.selectedSlot + 36,
                 player.inventory.heldStack(player.selectedSlot).toSlotData())
             )
+
+            client.sendPacket(ServerWindowConfirmationPacket(
+                0, packet.actionNumber, true
+            ))
 
             dropItem(player.location.toBlockPosition(), toDrop.id)
         }
