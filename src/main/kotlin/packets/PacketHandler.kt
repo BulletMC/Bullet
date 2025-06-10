@@ -72,6 +72,8 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
 import javax.crypto.Cipher
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.SecretKeySpec
 import kotlin.experimental.and
 import kotlin.math.abs
 import kotlin.math.pow
@@ -741,83 +743,92 @@ class PacketHandler(
 
     @PacketReceiver
     fun onEncryptionResponse(packet: ClientEncryptionResponsePacket) {
-        val cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding")
-        cipher.init(Cipher.DECRYPT_MODE, Bullet.keyPair.private)
+        val rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding")
+        rsa.init(Cipher.DECRYPT_MODE, Bullet.keyPair.private)
 
-        val secretKey = cipher.doFinal(packet.secretKey)
-        val verifyToken = cipher.doFinal(packet.verifyToken)
+        val sharedSecret = rsa.doFinal(packet.secretKey)
+        val verifyToken = rsa.doFinal(packet.verifyToken)
 
-        if(client.verifyToken.contentEquals(verifyToken)) {
-            client.sendPacket(ServerLoginDisconnectPacket(Component.text()
-                .append(Component.text("Encryption successful!").color(NamedTextColor.GREEN))
-                .build()
-            ))
-
-            return
-
-            val player = client.player
-            val username = player.username
-            val uuid = player.uuid
-
-            client.sendPacket(ServerLoginSuccessPacket(uuid, username))
-            client.state = GameState.PLAY
-
-            if(checkForBan()) return
-
-            client.sendPacket(
-                ServerJoinGamePacket(
-                    player.entityID,
-                    false,
-                    player.gameMode,
-                    "minecraft:overworld",
-                    Bullet.dimensionCodec!!,
-                    Bullet.max_players,
-                    32,
-                    reducedDebugInfo = false,
-                    enableRespawnScreen = true,
-                    isDebug = false,
-                    isFlat = true
-                )
+        if(!client.verifyToken.contentEquals(verifyToken)) {
+            client.sendPacket(ServerLoginDisconnectPacket(Component
+                .text("Invalid verification token", NamedTextColor.RED))
             )
-
-            client.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
-
-            Bullet.players.add(player)
-            readPlayerPersistentData()
-            scheduleTimers()
-
-            client.sendPacket(ServerChunkPacket(0, 0))
-            sendSpawnPlayerPackets(player)
-
-            client.sendPacket(ServerUpdateViewPositionPacket(player.chunkX, player.chunkZ))
-            client.updatePlayerChunks(player.chunkX, player.chunkZ)
-
-            sendBlockChanges()
-            sendEntities()
-
-            Bullet.storage.storage.writePlayerData(player)
-
-            val joinEvent = PlayerJoinEvent(client.player)
-            EventManager.fire(joinEvent)
-            if(joinEvent.isCancelled) return
-
-            val world = player.world!!
-            player.setTimeOfDay(world.timeOfDay)
-            if(world.weather == 1) player.sendPacket(ServerChangeGameStatePacket(2, 0f))
-            else player.sendPacket(ServerChangeGameStatePacket(1, 0f))
-
-            val (nodes, rootIndex) = buildCommandGraphFromDispatcher(CommandManager.dispatcher)
-            client.sendPacket(ServerDeclareCommandsPacket(nodes, rootIndex))
-        } else {
-            client.sendPacket(ServerLoginDisconnectPacket(Component.text()
-                .append(Component.text("Invalid verify token: $verifyToken").color(NamedTextColor.RED))
-                .append(Component.text("Expected: ${client.verifyToken.joinToString(", ")}").color(NamedTextColor.GRAY))
-                .build()
-            ))
 
             client.close()
             return
         }
+
+        val secretKey = SecretKeySpec(sharedSecret, "AES")
+        val iv = IvParameterSpec(sharedSecret)
+
+        val decrypt = Cipher.getInstance("AES/CFB8/NoPadding").apply {
+            init(Cipher.DECRYPT_MODE, secretKey, iv)
+        }
+        val encrypt = Cipher.getInstance("AES/CFB8/NoPadding").apply {
+            init(Cipher.ENCRYPT_MODE, secretKey, iv)
+        }
+
+        client.enableEncryption(decrypt, encrypt)
+        client.sendPacket(ServerLoginDisconnectPacket(Component.text()
+            .append(Component.text("Encryption successful!").color(NamedTextColor.GREEN))
+            .build()
+        ))
+
+        return
+
+        val player = client.player
+        val username = player.username
+        val uuid = player.uuid
+
+        client.sendPacket(ServerLoginSuccessPacket(uuid, username))
+        client.state = GameState.PLAY
+
+        if(checkForBan()) return
+
+        client.sendPacket(
+            ServerJoinGamePacket(
+                player.entityID,
+                false,
+                player.gameMode,
+                "minecraft:overworld",
+                Bullet.dimensionCodec!!,
+                Bullet.max_players,
+                32,
+                reducedDebugInfo = false,
+                enableRespawnScreen = true,
+                isDebug = false,
+                isFlat = true
+            )
+        )
+
+        client.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
+
+        Bullet.players.add(player)
+        readPlayerPersistentData()
+        scheduleTimers()
+
+        client.sendPacket(ServerChunkPacket(0, 0))
+        sendSpawnPlayerPackets(player)
+
+        client.sendPacket(ServerUpdateViewPositionPacket(player.chunkX, player.chunkZ))
+        client.updatePlayerChunks(player.chunkX, player.chunkZ)
+
+        sendBlockChanges()
+        sendEntities()
+
+        Bullet.storage.storage.writePlayerData(player)
+
+        val joinEvent = PlayerJoinEvent(client.player)
+        EventManager.fire(joinEvent)
+        if(joinEvent.isCancelled) return
+
+        val world = player.world!!
+        player.setTimeOfDay(world.timeOfDay)
+        if(world.weather == 1) player.sendPacket(ServerChangeGameStatePacket(2, 0f))
+        else player.sendPacket(ServerChangeGameStatePacket(1, 0f))
+
+        val (nodes, rootIndex) = buildCommandGraphFromDispatcher(CommandManager.dispatcher)
+        client.sendPacket(ServerDeclareCommandsPacket(nodes, rootIndex))
     }
 
     /**

@@ -21,6 +21,9 @@ import java.io.EOFException
 import java.io.IOException
 import java.net.Socket
 import java.net.SocketException
+import javax.crypto.Cipher
+import javax.crypto.CipherInputStream
+import javax.crypto.CipherOutputStream
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.time.Duration.Companion.seconds
@@ -45,8 +48,8 @@ import kotlin.time.Duration.Companion.seconds
 class ClientSession(
     private val socket: Socket,
 ) : AutoCloseable {
-    private val out = socket.getOutputStream()
-    val input = DataInputStream(BufferedInputStream(socket.getInputStream()))
+    private var out = socket.getOutputStream()
+    var input = DataInputStream(BufferedInputStream(socket.getInputStream()))
     private val handler = PacketHandler(this)
 
     var state = GameState.HANDSHAKE
@@ -118,6 +121,11 @@ class ClientSession(
         } catch(e: SocketException) {
             disconnect(Component.text("Connection lost"))
         }
+    }
+
+    fun enableEncryption(dec: Cipher, enc: Cipher) {
+        input = DataInputStream(CipherInputStream(socket.inputStream, dec))
+        out = CipherOutputStream(socket.outputStream, enc)
     }
 
     /**
