@@ -21,6 +21,7 @@ import com.aznos.entity.livingentity.LivingEntities
 import com.aznos.entity.livingentity.LivingEntity
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.GameMode
+import com.aznos.entity.player.data.PlayerProfile
 import com.aznos.events.*
 import com.aznos.packets.data.ServerStatusResponse
 import com.aznos.packets.login.`in`.ClientLoginStartPacket
@@ -776,8 +777,7 @@ class PacketHandler(
         val player = client.player
 
         val hash = Hashes.makeServerIDHash(sharedSecret, Bullet.publicKey)
-        val prof = runBlocking { MojangNetworking.querySessionServer(player.username, hash) }
-        Bullet.logger.info("Player ${player.username} has UUID ${prof?.id} and name ${prof?.name}")
+        val prof = runBlocking { MojangNetworking.querySessionServer(player, hash) }
 
         if(prof == null) {
             client.sendPacket(ServerLoginDisconnectPacket(Component.text("Failed to verify username with Mojang servers, please try again later", NamedTextColor.RED)))

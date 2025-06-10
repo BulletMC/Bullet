@@ -1,6 +1,7 @@
 package com.aznos.util
 
 import com.aznos.Bullet
+import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.PlayerProfile
 import com.aznos.entity.player.data.PlayerProperty
 import kotlinx.coroutines.future.await
@@ -26,10 +27,10 @@ object MojangNetworking {
      * @param ip Optional IP address of the player.
      * @return A PlayerProfile object if found, null otherwise.
      */
-    suspend fun querySessionServer(username: String, hash: String, ip: String? = null): PlayerProfile? {
+    suspend fun querySessionServer(player: Player, hash: String, ip: String? = null): PlayerProfile? {
         val url = buildString {
             append("$SESSION_SERVER_URL/hasJoined")
-            append("?username=$username")
+            append("?username=${player.username}")
             append("&serverId=$hash")
             if(ip != null) {
                 append("&ip=$ip")
@@ -45,9 +46,21 @@ object MojangNetworking {
             .await()
             .body()
 
-        Bullet.logger.info("Response from Mojang session server: $body")
-
         if(body.isEmpty()) return null
-        return json.decodeFromString<PlayerProfile>(body)
+        val profile = json.decodeFromString<PlayerProfile>(body)
+
+        val props = profile.properties.map {
+            PlayerProperty(
+                name = it.name,
+                value = it.value,
+                isSigned = it.signature != null,
+                signature = it.signature
+            )
+        }
+
+        player.properties.clear()
+        player.properties.addAll(props)
+
+        return profile
     }
 }
