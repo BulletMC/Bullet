@@ -82,7 +82,9 @@ import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 import kotlin.experimental.and
 import kotlin.math.abs
+import kotlin.math.cos
 import kotlin.math.pow
+import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.time.Duration.Companion.seconds
 
@@ -439,10 +441,51 @@ class PacketHandler(
                     client.player.status.exhaustion += 0.005f
                     val block = world.modifiedBlocks[event.blockPos]?.stateID ?: Block.GRASS_BLOCK.id
 
+                    val vx = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
+                    val vy = (0.1 * 8000).toInt().toShort()
+                    val vz = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
+
                     stopBlockBreak(event.blockPos)
                     sendBlockBreakParticles(client.player, block, event.blockPos)
                     removeBlock(event.blockPos)
-                    dropItem(event.blockPos, block)
+                    dropItem(event.blockPos, block, vx, vy, vz)
+                }
+
+                BlockStatus.DROP_ITEM.id, BlockStatus.DROP_ITEM_STACK.id -> {
+                    val held = client.player.inventory.heldStack(client.player.selectedSlot)
+                    if(held.isAir) return
+
+                    val dropAll = packet.status == 5
+                    val toDrop = if(dropAll) held else held.copy(count = 1)
+
+                    if(dropAll) {
+                        client.player.inventory.setHeldSlot(client.player.selectedSlot, null)
+                    } else {
+                        val newCount = held.count - 1
+                        client.player.inventory.setHeldSlot(
+                            client.player.selectedSlot,
+                            if(newCount > 0) held.copy(count = newCount) else null
+                        )
+                    }
+
+                    client.sendPacket(ServerSetSlotPacket(
+                        0, client.player.selectedSlot + 36,
+                        client.player.inventory.heldStack(client.player.selectedSlot).toSlotData()
+                    ))
+
+                    val yaw = Math.toRadians(client.player.location.yaw.toDouble())
+                    val pitch = Math.toRadians(client.player.location.pitch.toDouble())
+                    val forwardSpeed = 10
+
+                    val dx = -sin(yaw) * cos(pitch) * forwardSpeed
+                    val dy = -sin(pitch) * forwardSpeed + 0.2225
+                    val dz = cos(yaw) * cos(pitch) * forwardSpeed
+
+                    val vx = (dx * 8000).toInt().toShort()
+                    val vy = (dy * 8000).toInt().toShort()
+                    val vz = (dz * 8000).toInt().toShort()
+
+                    dropItem(client.player.location.toBlockPosition(), toDrop.id, vx, vy, vz)
                 }
             }
         }
@@ -1829,13 +1872,10 @@ class PacketHandler(
         }
     }
 
-    private fun dropItem(blockPos: BlockPositionType.BlockPosition, item: Int) {
+    private fun dropItem(blockPos: BlockPositionType.BlockPosition, item: Int, vx: Short = 0, vy: Short = 0, vz: Short = 0) {
         val drop = ItemStack.of(Item.getItemFromID(item) ?: Item.AIR)
         val itemEntity = Entity()
 
-        val vx = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
-        val vy = (0.1 * 8000).toInt().toShort()
-        val vz = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
         val loc = LocationType.Location(blockPos.x + 0.5, blockPos.y + 0.5, blockPos.z + 0.5, 0f, 0f)
         itemEntity.location = loc
 
