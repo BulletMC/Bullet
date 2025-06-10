@@ -116,7 +116,11 @@ class PacketHandler(
                 else player.inventory.setHeldSlot(player.selectedSlot, held.copy(count = newCount))
             }
 
-            client.sendPacket(ServerSetSlotPacket(0, player.selectedSlot + 36, player.inventory.heldStack(player.selectedSlot).toSlotData()))
+            client.sendPacket(ServerSetSlotPacket(
+                0, player.selectedSlot + 36,
+                player.inventory.heldStack(player.selectedSlot).toSlotData())
+            )
+
             dropItem(player.location.toBlockPosition(), toDrop.id)
         }
     }
