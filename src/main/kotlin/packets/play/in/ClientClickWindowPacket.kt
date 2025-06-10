@@ -32,7 +32,7 @@ import com.aznos.packets.Packet
  * - Mode 3, Button 2, normal slot: Middle mouse click
  *
  * - Mode 4, Button 0, normal slot*: Drop key (Q)
- * - Mode 4, Button 0, normal slot*: Ctrl + Drop Key (Ctrl-Q)
+ * - Mode 4, Button 1, normal slot*: Ctrl + Drop Key (Ctrl-Q)
  * - Mode 4, Button 0, -999: Left click outside inventory holding nothing
  * - Mode 4, Button 1, -999: Right click outside inventory holding nothing
  *
