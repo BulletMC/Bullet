@@ -40,6 +40,8 @@ import com.aznos.packets.status.`in`.ClientStatusRequestPacket
 import com.aznos.packets.status.out.ServerStatusPongPacket
 import com.aznos.world.blocks.Block
 import com.aznos.util.DurationFormat
+import com.aznos.util.Hashes
+import com.aznos.util.MojangNetworking
 import com.aznos.world.World
 import com.aznos.world.blocks.BlockTags
 import com.aznos.world.data.Axis
@@ -56,6 +58,7 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -771,10 +774,26 @@ class PacketHandler(
         client.enableEncryption(decrypt, encrypt)
 
         val player = client.player
-        val username = player.username
-        val uuid = player.uuid
 
-        client.sendPacket(ServerLoginSuccessPacket(uuid, username))
+        val hash = Hashes.makeServerIDHash(sharedSecret, Bullet.publicKey)
+        val prof = runBlocking { MojangNetworking.querySessionServer(player.username, hash) }
+        Bullet.logger.info("Player ${player.username} has UUID ${prof?.id} and name ${prof?.name}")
+
+        if(prof == null) {
+            client.sendPacket(ServerLoginDisconnectPacket(Component.text("Failed to verify username with Mojang servers, please try again later", NamedTextColor.RED)))
+            client.close()
+            return
+        }
+
+        val uuidWithDashes = prof.id.replaceFirst(
+            "(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)".toRegex(),
+            "$1-$2-$3-$4-$5"
+        )
+
+        client.player.uuid = UUID.fromString(uuidWithDashes)
+        client.player.username = prof.name
+
+        client.sendPacket(ServerLoginSuccessPacket(player.uuid, player.username))
         client.state = GameState.PLAY
 
         if(checkForBan()) return

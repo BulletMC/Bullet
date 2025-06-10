@@ -1,5 +1,6 @@
 package com.aznos.util
 
+import com.aznos.Bullet
 import com.aznos.entity.player.data.PlayerProfile
 import com.aznos.entity.player.data.PlayerProperty
 import kotlinx.coroutines.future.await
@@ -39,11 +40,14 @@ object MojangNetworking {
         val request = HttpRequest.newBuilder()
             .uri(URI.create(url)).GET().build()
 
+        val json = Json { ignoreUnknownKeys = true }
         val body = client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
             .await()
             .body()
 
+        Bullet.logger.info("Response from Mojang session server: $body")
+
         if(body.isEmpty()) return null
-        return Json.decodeFromString<PlayerProfile>(body)
+        return json.decodeFromString<PlayerProfile>(body)
     }
 }
