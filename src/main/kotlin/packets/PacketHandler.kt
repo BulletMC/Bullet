@@ -19,6 +19,7 @@ import com.aznos.entity.Entity
 import com.aznos.entity.OrbEntity
 import com.aznos.entity.livingentity.LivingEntities
 import com.aznos.entity.livingentity.LivingEntity
+import com.aznos.entity.nonliving.Entities
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.GameMode
 import com.aznos.entity.player.data.PlayerProfile
@@ -55,6 +56,7 @@ import com.aznos.world.items.ItemStack
 import com.aznos.world.sounds.SoundCategories
 import com.aznos.world.sounds.Sounds
 import com.mojang.brigadier.exceptions.CommandSyntaxException
+import com.sun.source.doctree.EntityTree
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -409,6 +411,7 @@ class PacketHandler(
                     stopBlockBreak(event.blockPos)
                     sendBlockBreakParticles(client.player, block, event.blockPos)
                     removeBlock(event.blockPos)
+                    dropItem(event.blockPos, block)
                 }
             }
         }
@@ -1791,6 +1794,31 @@ class PacketHandler(
 
             client.close()
             return
+        }
+    }
+
+    private fun dropItem(blockPos: BlockPositionType.BlockPosition, item: Int) {
+        val drop = ItemStack.of(Item.getItemFromID(item) ?: Item.AIR)
+        val itemEntity = Entity()
+
+        val vx = ((Math.random() - 0.5) * 0.2 * 8000).toInt().toShort()
+        val vy = (0.2 * 8000).toInt().toShort()
+        val vz = ((Math.random() - 0.5) * 0.2 * 8000).toInt().toShort()
+        val loc = LocationType.Location(blockPos.x + 0.5, blockPos.y + 0.5, blockPos.z + 0.5, 0f, 0f)
+
+        for(player in players) {
+            player.sendPacket(ServerSpawnEntityPacket(
+                itemEntity.entityID, itemEntity.uuid,
+                37,
+                loc,
+                vx, vy, vz,
+                1
+            ))
+
+            player.sendPacket(ServerEntityMetadataPacket(
+                itemEntity.entityID,
+                listOf(MetadataType.MetadataEntry(7, 6, drop.toSlotData()))
+            ))
         }
     }
 }

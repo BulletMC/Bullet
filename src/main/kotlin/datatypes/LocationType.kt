@@ -96,8 +96,8 @@ object LocationType {
         writeDouble(location.x)
         writeDouble(location.y)
         writeDouble(location.z)
-        writeByte((location.yaw * 256.0f / 360.0f).toInt())
         writeByte((location.pitch * 256.0f / 360.0f).toInt())
+        writeByte((location.yaw * 256.0f / 360.0f).toInt())
     }
 
     /**
