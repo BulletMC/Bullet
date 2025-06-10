@@ -451,7 +451,9 @@ class PacketHandler(
                     removeBlock(event.blockPos)
                     dropItem(event.blockPos, block, vx, vy, vz)
                 }
+            }
 
+            when(event.status) {
                 BlockStatus.DROP_ITEM.id, BlockStatus.DROP_ITEM_STACK.id -> {
                     val held = client.player.inventory.heldStack(client.player.selectedSlot)
                     if(held.isAir) return
@@ -477,7 +479,6 @@ class PacketHandler(
                     val yaw = Math.toRadians(client.player.location.yaw.toDouble())
                     val pitch = Math.toRadians(client.player.location.pitch.toDouble())
                     val forwardSpeed = 10
-                    //todo: add pickup delay
                     val dx = -sin(yaw) * cos(pitch) * forwardSpeed
                     val dy = -sin(pitch) * forwardSpeed + 0.2225
                     val dz = cos(yaw) * cos(pitch) * forwardSpeed
