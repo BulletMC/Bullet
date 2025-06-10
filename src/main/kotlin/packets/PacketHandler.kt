@@ -305,6 +305,15 @@ class PacketHandler(
         client.player.inventory.set(slotIdx, stack)
 
         if(slotIdx == client.player.selectedSlot + 36) sendHeldItemUpdate()
+        if(slotIdx == -1) { //drop item
+            if (stack != null && !stack.isAir) {
+                val vx = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
+                val vy = (0.1 * 8000).toInt().toShort()
+                val vz = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
+
+                dropItem(client.player.location.toBlockPosition(), stack.id, vx, vy, vz)
+            }
+        }
     }
 
     @PacketReceiver
