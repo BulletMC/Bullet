@@ -1,4 +1,4 @@
-package com.aznos.packets.play.`in`.packets.play.`in`
+package com.aznos.packets.play.`in`
 
 import com.aznos.datatypes.Slot
 import com.aznos.datatypes.Slot.readSlot

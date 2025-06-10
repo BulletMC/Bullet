@@ -1,4 +1,4 @@
-package com.aznos.packets.play.out.packets.play.out
+package com.aznos.packets.play.out
 
 import com.aznos.packets.Packet
 
