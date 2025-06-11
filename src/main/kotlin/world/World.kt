@@ -131,7 +131,8 @@ class World(
     }
 
     /**
-     * Periodically cleans up items for lag purposes, items will be removed if they are below y = -128 or have been dropped for more than 5 minutes
+     * Periodically cleans up items for lag purposes, items will be removed if they are below y = -128
+     * or have been dropped for more than 5 minutes
      */
     private fun cleanItems() {
         Bullet.scope.launch {
