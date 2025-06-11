@@ -2,17 +2,25 @@ package com.aznos.world
 
 import com.aznos.Bullet
 import com.aznos.datatypes.BlockPositionType
+import com.aznos.entity.DroppedItem
 import com.aznos.entity.Entity
 import com.aznos.entity.OrbEntity
 import com.aznos.entity.livingentity.LivingEntity
+import com.aznos.packets.play.out.ServerDestroyEntitiesPacket
 import com.aznos.packets.play.out.ServerSoundEffectPacket
 import com.aznos.storage.world.AbstractWorldStorage
 import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.Difficulty
 import com.aznos.world.data.EntityData
 import com.aznos.world.data.TimeOfDay
+import com.aznos.world.items.ItemStack
 import com.aznos.world.sounds.SoundCategories
 import com.aznos.world.sounds.Sounds
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Represents a world in the game
@@ -24,7 +32,7 @@ import com.aznos.world.sounds.Sounds
  * @property timeOfDay The time of day in the server, 0-24000
  * @property difficulty The difficulty of the world
  * @property modifiedBlocks A map of all the blocks that have been modified in the world
- * besides the default grass chunks that spawn in
+ * beside the default grass chunks that spawn in
  */
 @Suppress("TooManyFunctions")
 class World(
@@ -36,13 +44,17 @@ class World(
     var timeOfDay: Long = TimeOfDay.SUNRISE.time
     var sleepingPlayers: Int = 0
     var difficulty: Difficulty = Difficulty.NORMAL
+
     val livingEntities = mutableListOf<Pair<LivingEntity, EntityData>>()
     val entities = mutableListOf<Pair<Entity, EntityData>>()
     val orbs = mutableListOf<OrbEntity>()
+    val items = mutableListOf<Pair<DroppedItem, ItemStack>>()
+
     lateinit var modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>
 
     init {
         loadWorldsData()
+        cleanItems()
     }
 
     private fun loadWorldsData() {
@@ -115,6 +127,31 @@ class World(
                 position.x.toInt(), position.y.toInt(), position.z.toInt(),
                 volume, pitch
             ))
+        }
+    }
+
+    /**
+     * Periodically cleans up items for lag purposes, items will be removed if they are below y = -128
+     * or have been dropped for more than 5 minutes
+     */
+    private fun cleanItems() {
+        Bullet.scope.launch {
+            while(isActive) {
+                delay(10.seconds)
+                val now = System.currentTimeMillis()
+                val toRemove = mutableListOf<Pair<DroppedItem, ItemStack>>()
+                for(item in items) {
+                    if(item.first.location.y < -128 || now - item.first.spawnTimeMs > 5 * 60 * 1000) {
+                        for(player in Bullet.players) {
+                            player.sendPacket(ServerDestroyEntitiesPacket(intArrayOf(item.first.entityID)))
+                        }
+
+                        toRemove += item
+                    }
+                }
+
+                items.removeAll(toRemove)
+            }
         }
     }
 }

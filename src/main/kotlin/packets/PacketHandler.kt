@@ -15,10 +15,12 @@ import com.aznos.datatypes.MetadataType
 import com.aznos.datatypes.Slot
 import com.aznos.datatypes.Slot.toItemStack
 import com.aznos.datatypes.VarInt.readVarInt
+import com.aznos.entity.DroppedItem
 import com.aznos.entity.Entity
 import com.aznos.entity.OrbEntity
 import com.aznos.entity.livingentity.LivingEntities
 import com.aznos.entity.livingentity.LivingEntity
+import com.aznos.entity.nonliving.Entities
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.GameMode
 import com.aznos.entity.player.data.PlayerProfile
@@ -55,6 +57,7 @@ import com.aznos.world.items.ItemStack
 import com.aznos.world.sounds.SoundCategories
 import com.aznos.world.sounds.Sounds
 import com.mojang.brigadier.exceptions.CommandSyntaxException
+import com.sun.source.doctree.EntityTree
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -80,7 +83,9 @@ import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 import kotlin.experimental.and
 import kotlin.math.abs
+import kotlin.math.cos
 import kotlin.math.pow
+import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.time.Duration.Companion.seconds
 
@@ -95,6 +100,37 @@ class PacketHandler(
 ) {
     val world: World
         get() = client.player.world!!
+
+    @PacketReceiver
+    fun onWindowClick(packet: ClientClickWindowPacket) {
+        if(packet.windowID.toInt() == 0 && packet.mode == 4) {
+            val player = client.player
+            val held = player.inventory.heldStack(player.selectedSlot)
+            if(held.isAir) return
+
+            val dropAll = (packet.button.toInt() == 1)
+            val toDrop = if(dropAll) held else held.copy(count = 1)
+
+            if(dropAll) {
+                player.inventory.setHeldSlot(player.selectedSlot, null)
+            } else {
+                val newCount = held.count - 1
+                if(newCount <= 0) player.inventory.setHeldSlot(player.selectedSlot, null)
+                else player.inventory.setHeldSlot(player.selectedSlot, held.copy(count = newCount))
+            }
+
+            client.sendPacket(ServerSetSlotPacket(
+                0, player.selectedSlot + 36,
+                player.inventory.heldStack(player.selectedSlot).toSlotData())
+            )
+
+            client.sendPacket(ServerWindowConfirmationPacket(
+                0, packet.actionNumber, true
+            ))
+
+            dropItem(player.location.toBlockPosition(), toDrop.id)
+        }
+    }
 
     @PacketReceiver
     fun onUpdateSign(packet: ClientUpdateSignPacket) {
@@ -269,6 +305,15 @@ class PacketHandler(
         client.player.inventory.set(slotIdx, stack)
 
         if(slotIdx == client.player.selectedSlot + 36) sendHeldItemUpdate()
+        if(slotIdx == -1) { //drop item
+            if (stack != null && !stack.isAir) {
+                val vx = ((Math.random() - 0.5) * 0.2 * 8000).toInt().toShort()
+                val vy = (0.1 * 8000).toInt().toShort()
+                val vz = ((Math.random() - 0.5) * 0.2 * 8000).toInt().toShort()
+
+                dropItem(client.player.location.toBlockPosition(), stack.id, vx, vy, vz)
+            }
+        }
     }
 
     @PacketReceiver
@@ -406,10 +451,21 @@ class PacketHandler(
                     client.player.status.exhaustion += 0.005f
                     val block = world.modifiedBlocks[event.blockPos]?.stateID ?: Block.GRASS_BLOCK.id
 
+                    val vx = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
+                    val vy = (0.1 * 8000).toInt().toShort()
+                    val vz = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
+
                     stopBlockBreak(event.blockPos)
                     sendBlockBreakParticles(client.player, block, event.blockPos)
                     removeBlock(event.blockPos)
+                    dropItem(event.blockPos, block, vx, vy, vz)
                 }
+            }
+        }
+
+        when(event.status) {
+            BlockStatus.DROP_ITEM.id, BlockStatus.DROP_ITEM_STACK.id -> {
+                handleBlockDrop(event.blockPos, event.status)
             }
         }
     }
@@ -576,6 +632,7 @@ class PacketHandler(
         player.onGround = onGround
         checkFallDamage()
         checkOrbs()
+        checkItems()
 
         return true
     }
@@ -1792,5 +1849,109 @@ class PacketHandler(
             client.close()
             return
         }
+    }
+
+    private fun dropItem(
+        blockPos: BlockPositionType.BlockPosition,
+        item: Int,
+        vx: Short = 0, vy: Short = 0, vz: Short = 0
+    ) {
+        val drop = ItemStack.of(Item.getItemFromID(item) ?: Item.AIR)
+        val itemEntity = DroppedItem()
+
+        val loc = LocationType.Location(blockPos.x + 0.5, blockPos.y + 0.5, blockPos.z + 0.5, 0f, 0f)
+        itemEntity.location = loc
+
+        world.items.add(Pair(itemEntity, drop))
+
+        for(player in players) {
+            player.sendPacket(ServerSpawnEntityPacket(
+                itemEntity.entityID, itemEntity.uuid,
+                37,
+                loc,
+                vx, vy, vz,
+                1
+            ))
+
+            player.sendPacket(ServerEntityMetadataPacket(
+                itemEntity.entityID,
+                listOf(MetadataType.MetadataEntry(7, 6, drop.toSlotData()))
+            ))
+        }
+    }
+
+    private fun checkItems() {
+        val now = System.currentTimeMillis()
+        val player = client.player
+        val picked = mutableListOf<Pair<Entity, ItemStack>>()
+
+        for(item in world.items) {
+            if(now - item.first.spawnTimeMs < item.first.pickupDelayMs) continue
+
+            val distance = sqrt(
+                (player.location.x - item.first.location.x).pow(2) +
+                        (player.location.y - item.first.location.y).pow(2) +
+                        (player.location.z - item.first.location.z).pow(2)
+            )
+
+            if(distance <= 1.25) {
+                player.sendPacket(ServerCollectItemPacket(
+                    item.first.entityID,
+                    player.entityID,
+                    1
+                ))
+
+                player.sendPacket(ServerDestroyEntitiesPacket(intArrayOf(item.first.entityID)))
+
+                player.sendPacket(ServerSoundEffectPacket(
+                    Sounds.ENTITY_ITEM_PICKUP,
+                    SoundCategories.PLAYER,
+                    player.location.x.toInt(),
+                    player.location.y.toInt(),
+                    player.location.z.toInt()
+                ))
+
+                player.addItem(item.second)
+                picked += item
+            }
+        }
+
+        world.items.removeAll(picked)
+    }
+
+    private fun handleBlockDrop(blockPos: BlockPositionType.BlockPosition, status: Int) {
+        val held = client.player.inventory.heldStack(client.player.selectedSlot)
+        if(held.isAir) return
+
+        val dropAll = status == 5
+        val toDrop = if(dropAll) held else held.copy(count = 1)
+
+        if(dropAll) {
+            client.player.inventory.setHeldSlot(client.player.selectedSlot, null)
+        } else {
+            val newCount = held.count - 1
+            client.player.inventory.setHeldSlot(
+                client.player.selectedSlot,
+                if(newCount > 0) held.copy(count = newCount) else null
+            )
+        }
+
+        client.sendPacket(ServerSetSlotPacket(
+            0, client.player.selectedSlot + 36,
+            client.player.inventory.heldStack(client.player.selectedSlot).toSlotData()
+        ))
+
+        val yaw = Math.toRadians(client.player.location.yaw.toDouble())
+        val pitch = Math.toRadians(client.player.location.pitch.toDouble())
+        val forwardSpeed = 10
+        val dx = -sin(yaw) * cos(pitch) * forwardSpeed
+        val dy = -sin(pitch) * forwardSpeed + 0.2225
+        val dz = cos(yaw) * cos(pitch) * forwardSpeed
+
+        val vx = (dx * 8000).toInt().toShort()
+        val vy = (dy * 8000).toInt().toShort()
+        val vz = (dz * 8000).toInt().toShort()
+
+        dropItem(client.player.location.toBlockPosition(), toDrop.id, vx, vy, vz)
     }
 }

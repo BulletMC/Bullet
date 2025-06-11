@@ -29,19 +29,14 @@ class ServerSpawnEntityPacket(
     velocityX: Short,
     velocityY: Short,
     velocityZ: Short,
-    data: Int? = null,
+    data: Int = 0,
 ) : Packet(0x00) {
     init {
         wrapper.writeVarInt(entityID)
         wrapper.writeUUID(entityUUID)
         wrapper.writeVarInt(type)
-
         wrapper.writeLocationAngle(location)
-
-        if(data != null) {
-            wrapper.writeInt(data)
-        }
-
+        wrapper.writeInt(data)
         wrapper.writeShort(velocityX.toInt())
         wrapper.writeShort(velocityY.toInt())
         wrapper.writeShort(velocityZ.toInt())

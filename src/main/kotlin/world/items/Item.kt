@@ -4,7 +4,7 @@ import com.aznos.world.blocks.Block
 import com.google.gson.JsonParser
 import java.io.InputStreamReader
 
-enum class Item(val id: Int) {
+enum class Item(val id: Int, val maxStackSize: Int = 64) {
     ACACIA_BOAT(902),
     ACACIA_BUTTON(309),
     ACACIA_DOOR(562),
@@ -1068,6 +1068,14 @@ enum class Item(val id: Int) {
             }
 
             throw IllegalArgumentException("No item found for state ID $stateID")
+        }
+
+        fun isStackable(item: Item): Boolean {
+            return item.maxStackSize > 1
+        }
+
+        fun getMaxStackSize(item: Item): Int {
+            return item.maxStackSize
         }
     }
 }

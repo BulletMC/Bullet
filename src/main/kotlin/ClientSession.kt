@@ -65,6 +65,8 @@ class ClientSession(
     private var lastKeepAliveTimestamp: Long = 0
     var respondedToKeepAlive: Boolean = true
 
+    private val sendLock = Any()
+
     /**
      * Reads and processes incoming packets from the client
      * It reads the packet length, ID, and data, then dispatches the packet to the handler
@@ -336,17 +338,19 @@ class ClientSession(
      * @param packet The packet to be sent
      */
     fun sendPacket(packet: Packet) {
-        if(isClosed()) {
-            Bullet.logger.warn("Tried to send a packet to a closed connection")
-            return
-        }
+        synchronized(sendLock) {
+            if(isClosed()) {
+                Bullet.logger.warn("Tried to send a packet to a closed connection")
+                return
+            }
 
-        try {
-            out.write(packet.retrieveData())
-            out.flush()
-        } catch(e: IOException) {
-            Bullet.logger.warn("Failed to send packet to client: ${e.message}")
-            disconnect(Component.text("Connection lost"))
+            try {
+                out.write(packet.retrieveData())
+                out.flush()
+            } catch(e: IOException) {
+                Bullet.logger.warn("Failed to send packet to client: ${e.message}")
+                disconnect(Component.text("Connection lost"))
+            }
         }
     }
 
