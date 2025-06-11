@@ -1,5 +1,6 @@
 package com.aznos.commands
 
+import StopCommand
 import com.aznos.commands.commands.*
 import com.aznos.commands.data.DoubleProperties
 import com.aznos.commands.data.IntegerProperties

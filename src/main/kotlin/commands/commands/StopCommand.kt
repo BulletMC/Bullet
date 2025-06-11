@@ -1,3 +1,4 @@
+import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
 import com.aznos.commands.CommandManager
 import com.aznos.commands.CommandSource
@@ -5,8 +6,13 @@ import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.builder.RequiredArgumentBuilder
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 class StopCommand {
@@ -64,6 +70,7 @@ class StopCommand {
                     Bullet.broadcast(Component.text("Server will shutdown in $interval seconds", NamedTextColor.RED))
                 }
             }
+
             delay((delay.inWholeSeconds % 60).seconds)
             Bullet.close()
         }
