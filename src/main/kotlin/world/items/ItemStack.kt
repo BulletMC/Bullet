@@ -1,6 +1,8 @@
 package com.aznos.world.items
 
 import com.aznos.datatypes.Slot
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 import net.kyori.adventure.text.Component
 import kotlin.math.min
 
@@ -14,12 +16,14 @@ import kotlin.math.min
  * @param lore Optional list of components to display as lore
  * @param nbt Any optional NBT data associated with the item stack
  */
+@Serializable
 data class ItemStack(
     val item: Item,
     var count: Int = 1,
     var damage: Int = 0,
     var displayName: Component? = null,
     var lore: List<Component> = emptyList(),
+    @Contextual
     var nbt: net.querz.nbt.tag.CompoundTag? = null
 ) {
     val id: Int

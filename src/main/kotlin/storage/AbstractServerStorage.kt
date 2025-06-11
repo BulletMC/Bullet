@@ -44,7 +44,7 @@ interface AbstractServerStorage {
      */
     fun writePlayerData(player: Player): Boolean {
         val inventory = player.inventory.items.map { (slot, stack) ->
-            slot to stack.id
+            slot to stack
         }
 
         return writePlayerData(
