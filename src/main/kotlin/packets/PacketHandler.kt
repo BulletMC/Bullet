@@ -847,40 +847,26 @@ class PacketHandler(
         client.player.uuid = UUID.fromString(uuidWithDashes)
         client.player.username = prof.name
 
-        client.sendPacket(ServerLoginSuccessPacket(player.uuid, player.username))
-        client.state = GameState.PLAY
+        for(player in players) {
+            if(player.uuid == client.player.uuid || player.username == client.player.username) {
+                players.find { it.uuid == client.player.uuid }?.let {
+                    it.sendPacket(
+                        ServerPlayDisconnectPacket(Component.text()
+                            .append(Component.text("You logged in from another location", NamedTextColor.RED))
+                            .append(Component.text(
+                                "\n\nIf this was not you, your account may have been compromised" +
+                                        " if you're using an authenticated account.", NamedTextColor.GRAY))
+                            .build()
+                        )
+                    )
 
-        if(checkForBan()) return
+                    it.clientSession.close()
+                    players.remove(it)
+                }
+            }
+        }
 
-        sendJoinGamePacket()
-        client.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
-
-        players.add(player)
-        readPlayerPersistentData()
-        scheduleTimers()
-
-        client.sendPacket(ServerChunkPacket(0, 0))
-        sendSpawnPlayerPackets(player)
-
-        client.sendPacket(ServerUpdateViewPositionPacket(player.chunkX, player.chunkZ))
-        client.updatePlayerChunks(player.chunkX, player.chunkZ)
-
-        sendBlockChanges()
-        sendEntities()
-
-        Bullet.storage.storage.writePlayerData(player)
-
-        val joinEvent = PlayerJoinEvent(client.player)
-        EventManager.fire(joinEvent)
-        if(joinEvent.isCancelled) return
-
-        val world = player.world!!
-        player.setTimeOfDay(world.timeOfDay)
-        if(world.weather == 1) player.sendPacket(ServerChangeGameStatePacket(2, 0f))
-        else player.sendPacket(ServerChangeGameStatePacket(1, 0f))
-
-        val (nodes, rootIndex) = buildCommandGraphFromDispatcher(CommandManager.dispatcher)
-        client.sendPacket(ServerDeclareCommandsPacket(nodes, rootIndex))
+        loginPlayer()
     }
 
     /**
@@ -902,6 +888,25 @@ class PacketHandler(
         checkLoginValidity(username)
 
         val player = initializePlayer(username, uuid)
+        if(!Bullet.onlineMode) {
+            for(player in players) {
+                if(player.username == username || player.uuid == uuid) {
+                    player.sendPacket(
+                        ServerLoginDisconnectPacket(Component.text(
+                            "You are already logged in from another location",
+                            NamedTextColor.RED
+                        ))
+                    )
+
+                    player.clientSession.close()
+                    players.remove(player)
+                }
+            }
+
+            players.add(player)
+            loginPlayer()
+        }
+
         handleOnlineModeJoin(packet)
     }
 
@@ -1953,5 +1958,43 @@ class PacketHandler(
         val vz = (dz * 8000).toInt().toShort()
 
         dropItem(client.player.location.toBlockPosition(), toDrop.id, vx, vy, vz)
+    }
+
+    private fun loginPlayer() {
+        val player = client.player
+        client.sendPacket(ServerLoginSuccessPacket(player.uuid, player.username))
+        client.state = GameState.PLAY
+
+        if(checkForBan()) return
+
+        sendJoinGamePacket()
+        client.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
+
+        players.add(player)
+        readPlayerPersistentData()
+        scheduleTimers()
+
+        client.sendPacket(ServerChunkPacket(0, 0))
+        sendSpawnPlayerPackets(player)
+
+        client.sendPacket(ServerUpdateViewPositionPacket(player.chunkX, player.chunkZ))
+        client.updatePlayerChunks(player.chunkX, player.chunkZ)
+
+        sendBlockChanges()
+        sendEntities()
+
+        Bullet.storage.storage.writePlayerData(player)
+
+        val joinEvent = PlayerJoinEvent(client.player)
+        EventManager.fire(joinEvent)
+        if(joinEvent.isCancelled) return
+
+        val world = player.world!!
+        player.setTimeOfDay(world.timeOfDay)
+        if(world.weather == 1) player.sendPacket(ServerChangeGameStatePacket(2, 0f))
+        else player.sendPacket(ServerChangeGameStatePacket(1, 0f))
+
+        val (nodes, rootIndex) = buildCommandGraphFromDispatcher(CommandManager.dispatcher)
+        client.sendPacket(ServerDeclareCommandsPacket(nodes, rootIndex))
     }
 }
