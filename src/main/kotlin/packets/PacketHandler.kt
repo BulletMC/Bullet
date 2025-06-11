@@ -847,23 +847,18 @@ class PacketHandler(
         client.player.uuid = UUID.fromString(uuidWithDashes)
         client.player.username = prof.name
 
-        for(player in players) {
-            if(player.uuid == client.player.uuid || player.username == client.player.username) {
-                players.find { it.uuid == client.player.uuid }?.let {
-                    it.sendPacket(
-                        ServerPlayDisconnectPacket(Component.text()
-                            .append(Component.text("You logged in from another location", NamedTextColor.RED))
-                            .append(Component.text(
-                                "\n\nIf this was not you, your account may have been compromised" +
-                                        " if you're using an authenticated account.", NamedTextColor.GRAY))
-                            .build()
-                        )
-                    )
+        val dupes = players.filter { it.uuid == client.player.uuid || it.username == client.player.username }
+        players.removeAll(dupes)
 
-                    it.clientSession.close()
-                    players.remove(it)
-                }
-            }
+        for(old in dupes) {
+            old.disconnect(Component.text()
+                .append(Component.text("You logged in from another location", NamedTextColor.RED))
+                .append(Component.text(
+                    "\n\nIf this wasn’t you, your account may have been compromised.",
+                    NamedTextColor.GRAY))
+                .build())
+
+            old.clientSession.close()
         }
 
         loginPlayer()
@@ -889,18 +884,17 @@ class PacketHandler(
 
         val player = initializePlayer(username, uuid)
         if(!Bullet.onlineMode) {
-            for(player in players) {
-                if(player.username == username || player.uuid == uuid) {
-                    player.sendPacket(
-                        ServerLoginDisconnectPacket(Component.text(
-                            "You are already logged in from another location",
-                            NamedTextColor.RED
-                        ))
-                    )
+            val dupes = players.filter {
+                it.username == username || it.uuid == uuid
+            }
 
-                    player.clientSession.close()
-                    players.remove(player)
-                }
+            players.removeAll(dupes)
+            dupes.forEach { old ->
+                old.sendPacket(ServerLoginDisconnectPacket(
+                    Component.text("You are already logged in from another location", NamedTextColor.RED)
+                ))
+
+                old.clientSession.close()
             }
 
             players.add(player)
