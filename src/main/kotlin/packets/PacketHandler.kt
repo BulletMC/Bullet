@@ -1212,7 +1212,7 @@ class PacketHandler(
         player.setGameMode(GameMode.entries.find { it.id == data.gameMode } ?: GameMode.SURVIVAL)
 
         val savedStacks: Map<Int, ItemStack> =
-            data.inventory.associate { it.first to ItemStack.of(Item.getItemFromID(it.second) ?: Item.AIR) }
+            data.inventory.associate { it.first to it.second }
         player.inventory.clear()
 
         val totalSlots = 45
