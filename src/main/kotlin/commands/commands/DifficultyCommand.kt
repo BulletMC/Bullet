@@ -21,17 +21,14 @@ class DifficultyCommand {
     fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<CommandSource>("difficulty")
-                .executes { context ->
-                    val sender = context.source
-                    if(!CommandManager.hasModPermission(sender)) {
-                        return@executes CommandCodes.INVALID_PERMISSIONS.id
-                    }
-
-                    return@executes CommandCodes.SUCCESS.id
-                }.then(
+                .then(
                     RequiredArgumentBuilder.argument<CommandSource, String>("value", StringArgumentType.greedyString())
                         .suggests(difficultySuggestions())
                         .executes{ context ->
+                            if(!CommandManager.hasModPermission(context.source)) {
+                                return@executes CommandCodes.INVALID_PERMISSIONS.id
+                            }
+
                             val value = StringArgumentType.getString(context, "value")
                             val player = context.source
 

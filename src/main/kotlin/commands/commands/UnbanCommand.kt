@@ -19,16 +19,14 @@ class UnbanCommand {
     fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<CommandSource>("unban")
-                .executes { context ->
-                    val sender = context.source
-                    if(!CommandManager.hasModPermission(sender)) {
-                        return@executes CommandCodes.INVALID_PERMISSIONS.id
-                    }
-
-                    return@executes CommandCodes.SUCCESS.id
-                }.then(
+                .then(
                     RequiredArgumentBuilder.argument<CommandSource, String>("player", StringArgumentType.word())
                         .executes { context ->
+                            val sender = context.source
+                            if(!CommandManager.hasModPermission(sender)) {
+                                return@executes CommandCodes.INVALID_PERMISSIONS.id
+                            }
+
                             val username = StringArgumentType.getString(context, "player")
                             val uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:$username").toByteArray())
 

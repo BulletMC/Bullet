@@ -27,14 +27,7 @@ class BanCommand {
     fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<CommandSource>("ban")
-                .executes { context ->
-                    val sender = context.source
-                    if(!CommandManager.hasModPermission(sender)) {
-                        return@executes CommandCodes.INVALID_PERMISSIONS.id
-                    }
-
-                    return@executes CommandCodes.SUCCESS.id
-                }.then(
+                .then(
                     RequiredArgumentBuilder.argument<CommandSource, String>("player", StringArgumentType.word())
                         .suggests(PlayerSuggestions.playerNameSuggestions())
                         .then(
@@ -43,6 +36,11 @@ class BanCommand {
                                 StringArgumentType.greedyString()
                             )
                                 .executes { context ->
+                                    val sender = context.source
+                                    if(!CommandManager.hasModPermission(sender)) {
+                                        return@executes CommandCodes.INVALID_PERMISSIONS.id
+                                    }
+
                                     val username = StringArgumentType.getString(context, "player")
                                     val fullReason = StringArgumentType.getString(context, "reason")
                                     val (reason, durationStr) = parseReasonAndDuration(fullReason)
@@ -53,6 +51,11 @@ class BanCommand {
                         )
 
                         .executes { context ->
+                            val sender = context.source
+                            if(!CommandManager.hasModPermission(sender)) {
+                                return@executes CommandCodes.INVALID_PERMISSIONS.id
+                            }
+
                             val username = StringArgumentType.getString(context, "player")
                             banPlayer(username, "No reason specified", null, context)
                             CommandCodes.SUCCESS.id

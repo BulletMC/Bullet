@@ -21,14 +21,7 @@ class TeleportCommand {
     fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<CommandSource>("tp")
-                .executes { context ->
-                    val sender = context.source
-                    if(!CommandManager.hasModPermission(sender)) {
-                        return@executes CommandCodes.INVALID_PERMISSIONS.id
-                    }
-
-                    return@executes CommandCodes.SUCCESS.id
-                }.then(
+                .then(
                     RequiredArgumentBuilder.argument<CommandSource, String>("target", StringArgumentType.greedyString())
                         .suggests(PlayerSuggestions.playerNameSuggestions())
                         .executes {
@@ -53,6 +46,12 @@ class TeleportCommand {
     }
 
     private fun executeTeleport(sender: Player, arg: String): Int {
+        if(!CommandManager.hasModPermission(sender)) {
+            sender.sendMessage(Component.text("You do not have permission to use this command.")
+                .color(NamedTextColor.RED))
+            return CommandCodes.INVALID_PERMISSIONS.id
+        }
+
         val coords = parseCoordinates(arg, sender.location)
         if(coords != null) {
             sender.location = coords
@@ -94,6 +93,12 @@ class TeleportCommand {
     }
 
     private fun executeTeleportToDestination(sender: Player, targetArg: String, destArg: String): Int {
+        if(!CommandManager.hasModPermission(sender)) {
+            sender.sendMessage(Component.text("You do not have permission to use this command.")
+                .color(NamedTextColor.RED))
+            return CommandCodes.INVALID_PERMISSIONS.id
+        }
+
         val targetPlayer = Bullet.players.find { it.username.equals(targetArg, ignoreCase = true) }
         if(targetPlayer == null) {
             sender.sendMessage(Component.text("Player not found: $targetArg").color(NamedTextColor.RED))

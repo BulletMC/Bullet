@@ -1,15 +1,9 @@
-package com.aznos.commands.commands
-
 import com.aznos.Bullet
 import com.aznos.commands.CommandCodes
 import com.aznos.commands.CommandManager
 import com.aznos.commands.CommandSource
-import com.aznos.entity.ConsoleSender
-import com.aznos.entity.player.Player
-import com.aznos.entity.player.data.PermissionLevel
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.IntegerArgumentType
-import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -25,20 +19,16 @@ class StopCommand {
     fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<CommandSource>("stop")
-                .executes { context ->
-                    val sender = context.source
-                    if(!CommandManager.hasModPermission(sender)) {
-                        return@executes CommandCodes.INVALID_PERMISSIONS.id
-                    }
-
-                    Bullet.close()
-                    CommandCodes.SUCCESS.id
-                }
                 .then(
                     LiteralArgumentBuilder.literal<CommandSource>("broadcast")
                         .executes { context ->
+                            val sender = context.source
+                            if(!CommandManager.hasAdminPermission(sender)) {
+                                return@executes CommandCodes.INVALID_PERMISSIONS.id
+                            }
+
                             scheduleShutdown(60.seconds)
-                            context.source.sendMessage(Component.text(
+                            sender.sendMessage(Component.text(
                                 "Server will shutdown in 60 seconds",
                                 NamedTextColor.RED
                             ))
@@ -51,9 +41,14 @@ class StopCommand {
                                 IntegerArgumentType.integer(1)
                             )
                                 .executes { context ->
+                                    val sender = context.source
+                                    if(!CommandManager.hasAdminPermission(sender)) {
+                                        return@executes CommandCodes.INVALID_PERMISSIONS.id
+                                    }
+
                                     val delay = IntegerArgumentType.getInteger(context, "delay")
                                     scheduleShutdown(delay.seconds)
-                                    context.source.sendMessage(Component.text(
+                                    sender.sendMessage(Component.text(
                                         "Server will shutdown in $delay seconds",
                                         NamedTextColor.RED
                                     ))
@@ -65,9 +60,6 @@ class StopCommand {
         )
     }
 
-    /**
-     * Schedules a shutdown of the server after a given delay
-     */
     @OptIn(DelicateCoroutinesApi::class)
     private fun scheduleShutdown(delay: Duration) {
         GlobalScope.launch {

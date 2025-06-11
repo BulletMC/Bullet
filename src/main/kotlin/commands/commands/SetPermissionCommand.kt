@@ -22,14 +22,7 @@ class SetPermissionCommand {
     fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<CommandSource>("setpermission")
-                .executes { context ->
-                    val sender = context.source
-                    if(!CommandManager.hasAdminPermission(sender)) {
-                        return@executes CommandCodes.INVALID_PERMISSIONS.id
-                    }
-
-                    return@executes CommandCodes.SUCCESS.id
-                }.then(
+                .then(
                     RequiredArgumentBuilder.argument<CommandSource, String>("target", StringArgumentType.word())
                         .suggests(PlayerSuggestions.playerNameSuggestions())
                         .then(
@@ -40,6 +33,10 @@ class SetPermissionCommand {
                                 .suggests(permissionSuggestions())
                                 .executes { context ->
                                     val sender = context.source
+                                    if(!CommandManager.hasAdminPermission(sender)) {
+                                        return@executes CommandCodes.INVALID_PERMISSIONS.id
+                                    }
+
                                     val targetName = StringArgumentType.getString(context, "target")
                                     val permissionInput =
                                         StringArgumentType.getString(context, "permission").lowercase()
