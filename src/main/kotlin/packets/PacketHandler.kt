@@ -847,40 +847,21 @@ class PacketHandler(
         client.player.uuid = UUID.fromString(uuidWithDashes)
         client.player.username = prof.name
 
-        client.sendPacket(ServerLoginSuccessPacket(player.uuid, player.username))
-        client.state = GameState.PLAY
+        val dupes = players.filter { it.uuid == client.player.uuid || it.username == client.player.username }
+        players.removeAll(dupes)
 
-        if(checkForBan()) return
+        for(old in dupes) {
+            old.disconnect(Component.text()
+                .append(Component.text("You logged in from another location", NamedTextColor.RED))
+                .append(Component.text(
+                    "\n\nIf this wasn’t you, your account may have been compromised.",
+                    NamedTextColor.GRAY))
+                .build())
 
-        sendJoinGamePacket()
-        client.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
+            old.clientSession.close()
+        }
 
-        players.add(player)
-        readPlayerPersistentData()
-        scheduleTimers()
-
-        client.sendPacket(ServerChunkPacket(0, 0))
-        sendSpawnPlayerPackets(player)
-
-        client.sendPacket(ServerUpdateViewPositionPacket(player.chunkX, player.chunkZ))
-        client.updatePlayerChunks(player.chunkX, player.chunkZ)
-
-        sendBlockChanges()
-        sendEntities()
-
-        Bullet.storage.storage.writePlayerData(player)
-
-        val joinEvent = PlayerJoinEvent(client.player)
-        EventManager.fire(joinEvent)
-        if(joinEvent.isCancelled) return
-
-        val world = player.world!!
-        player.setTimeOfDay(world.timeOfDay)
-        if(world.weather == 1) player.sendPacket(ServerChangeGameStatePacket(2, 0f))
-        else player.sendPacket(ServerChangeGameStatePacket(1, 0f))
-
-        val (nodes, rootIndex) = buildCommandGraphFromDispatcher(CommandManager.dispatcher)
-        client.sendPacket(ServerDeclareCommandsPacket(nodes, rootIndex))
+        loginPlayer()
     }
 
     /**
@@ -902,6 +883,24 @@ class PacketHandler(
         checkLoginValidity(username)
 
         val player = initializePlayer(username, uuid)
+        if(!Bullet.onlineMode) {
+            val dupes = players.filter {
+                it.username == username || it.uuid == uuid
+            }
+
+            players.removeAll(dupes)
+            dupes.forEach { old ->
+                old.sendPacket(ServerLoginDisconnectPacket(
+                    Component.text("You are already logged in from another location", NamedTextColor.RED)
+                ))
+
+                old.clientSession.close()
+            }
+
+            players.add(player)
+            loginPlayer()
+        }
+
         handleOnlineModeJoin(packet)
     }
 
@@ -1953,5 +1952,43 @@ class PacketHandler(
         val vz = (dz * 8000).toInt().toShort()
 
         dropItem(client.player.location.toBlockPosition(), toDrop.id, vx, vy, vz)
+    }
+
+    private fun loginPlayer() {
+        val player = client.player
+        client.sendPacket(ServerLoginSuccessPacket(player.uuid, player.username))
+        client.state = GameState.PLAY
+
+        if(checkForBan()) return
+
+        sendJoinGamePacket()
+        client.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
+
+        players.add(player)
+        readPlayerPersistentData()
+        scheduleTimers()
+
+        client.sendPacket(ServerChunkPacket(0, 0))
+        sendSpawnPlayerPackets(player)
+
+        client.sendPacket(ServerUpdateViewPositionPacket(player.chunkX, player.chunkZ))
+        client.updatePlayerChunks(player.chunkX, player.chunkZ)
+
+        sendBlockChanges()
+        sendEntities()
+
+        Bullet.storage.storage.writePlayerData(player)
+
+        val joinEvent = PlayerJoinEvent(client.player)
+        EventManager.fire(joinEvent)
+        if(joinEvent.isCancelled) return
+
+        val world = player.world!!
+        player.setTimeOfDay(world.timeOfDay)
+        if(world.weather == 1) player.sendPacket(ServerChangeGameStatePacket(2, 0f))
+        else player.sendPacket(ServerChangeGameStatePacket(1, 0f))
+
+        val (nodes, rootIndex) = buildCommandGraphFromDispatcher(CommandManager.dispatcher)
+        client.sendPacket(ServerDeclareCommandsPacket(nodes, rootIndex))
     }
 }
