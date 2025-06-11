@@ -27,17 +27,15 @@ class SpawnCommand {
     fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<CommandSource>("spawn")
-                .executes { context ->
-                    val sender = context.source
-                    if(!CommandManager.hasModPermission(sender)) {
-                        return@executes CommandCodes.INVALID_PERMISSIONS.id
-                    }
-
-                    return@executes CommandCodes.SUCCESS.id
-                }.then(
+                .then(
                     RequiredArgumentBuilder.argument<CommandSource, String>("type", StringArgumentType.word())
                         .suggests(entityTypeSuggestions())
                         .executes { context ->
+                            val sender = context.source
+                            if(!CommandManager.hasModPermission(sender)) {
+                                return@executes CommandCodes.INVALID_PERMISSIONS.id
+                            }
+
                             val type = StringArgumentType.getString(context, "type")
 
                             val livingEntityType = findLivingEntityType(type)

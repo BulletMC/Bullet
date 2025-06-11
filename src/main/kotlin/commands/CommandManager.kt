@@ -281,8 +281,7 @@ object CommandManager {
 
     fun hasModPermission(sender: CommandSource): Boolean {
         return if(sender is Player) {
-            sender.permissionLevel == PermissionLevel.MODERATOR ||
-            sender.permissionLevel == PermissionLevel.ADMINISTRATOR
+            sender.permissionLevel >= PermissionLevel.MODERATOR
         } else true
     }
 

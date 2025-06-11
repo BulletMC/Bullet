@@ -18,19 +18,17 @@ class SayCommand {
     fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<CommandSource>("say")
-                .executes { context ->
-                    val sender = context.source
-                    if(!CommandManager.hasModPermission(sender)) {
-                        return@executes CommandCodes.INVALID_PERMISSIONS.id
-                    }
-
-                    return@executes CommandCodes.SUCCESS.id
-                }.then(
+                .then(
                     RequiredArgumentBuilder.argument<CommandSource, String>(
                         "message",
                         StringArgumentType.greedyString()
                     )
                         .executes{ context ->
+                            val sender = context.source
+                            if(!CommandManager.hasModPermission(sender)) {
+                                return@executes CommandCodes.INVALID_PERMISSIONS.id
+                            }
+
                             val message = StringArgumentType.getString(context, "message")
                             if(message.isEmpty()) {
                                 context.source.sendMessage(

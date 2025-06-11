@@ -22,16 +22,14 @@ class SetTimeCommand {
     fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<CommandSource>("settime")
-                .executes { context ->
-                    val sender = context.source
-                    if(!CommandManager.hasModPermission(sender)) {
-                        return@executes CommandCodes.INVALID_PERMISSIONS.id
-                    }
-
-                    return@executes CommandCodes.SUCCESS.id
-                }.then(
+                .then(
                     RequiredArgumentBuilder.argument<CommandSource, Long>("time", LongArgumentType.longArg())
                         .executes { context ->
+                            val sender = context.source
+                            if(!CommandManager.hasModPermission(sender)) {
+                                return@executes CommandCodes.INVALID_PERMISSIONS.id
+                            }
+
                             val time = LongArgumentType.getLong(context, "time")
 
                             if(time < 0 || time > 24000) {

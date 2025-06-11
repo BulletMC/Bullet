@@ -22,16 +22,15 @@ class GameModeCommand {
     fun register(dispatcher: CommandDispatcher<CommandSource>) {
         dispatcher.register(
             LiteralArgumentBuilder.literal<CommandSource>("gamemode")
-                .executes { context ->
-                    val sender = context.source
-                    if(!CommandManager.hasModPermission(sender)) {
-                        return@executes CommandCodes.INVALID_PERMISSIONS.id
-                    }
-
-                    return@executes CommandCodes.SUCCESS.id
-                }.then(
+                .then(
                     RequiredArgumentBuilder.argument<CommandSource, String>("mode", StringArgumentType.word())
-                        .suggests(gameModeSuggestions()).executes { context ->
+                        .suggests(gameModeSuggestions())
+                        .executes { context ->
+                            val sender = context.source
+                            if(!CommandManager.hasModPermission(sender)) {
+                                return@executes CommandCodes.INVALID_PERMISSIONS.id
+                            }
+
                             val input = StringArgumentType.getString(context, "mode")
                             val mode = parseGameMode(input)
                             if(mode == null) {
