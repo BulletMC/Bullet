@@ -682,4 +682,38 @@ object BlockTags {
         Block.PURPUR_SLAB,
         Item.PURPUR_SLAB,
     )
+
+    val ROCK_2 = listOf( //Stone+ pickaxe required to collect block
+        Block.LAPIS_ORE,
+        Item.LAPIS_ORE,
+        Item.IRON_ORE,
+    )
+
+    val ROCK_3 = listOf( //Iron+ pickaxe required to collect block
+        Item.GOLD_ORE,
+        Block.GOLD_ORE,
+        Block.GOLD_BLOCK,
+        Item.GOLD_BLOCK,
+        Item.DIAMOND_ORE,
+        Item.DIAMOND_BLOCK,
+        Item.EMERALD_ORE,
+        Block.EMERALD_ORE,
+        Item.EMERALD_BLOCK,
+        Block.EMERALD_BLOCK,
+        Block.REDSTONE,
+        Item.REDSTONE,
+        Item.REDSTONE_ORE,
+        Item.REDSTONE_BLOCK,
+    )
+
+    val ROCK_4 = listOf( //Diamond+ pickaxe required to collect block
+        Item.ANCIENT_DEBRIS,
+        Block.ANCIENT_DEBRIS,
+        Item.CRYING_OBSIDIAN,
+        Block.CRYING_OBSIDIAN,
+        Item.OBSIDIAN,
+        Block.OBSIDIAN,
+        Item.RESPAWN_ANCHOR,
+        Block.RESPAWN_ANCHOR
+    )
 }
