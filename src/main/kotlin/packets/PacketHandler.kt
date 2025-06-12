@@ -797,7 +797,8 @@ class PacketHandler(
         for(player in Bullet.players) {
             player.sendPacket(ServerPlayerInfoPacket(
                 2,
-                client.player
+                client.player.uuid,
+                ping = client.player.ping
             ))
         }
     }

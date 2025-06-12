@@ -123,7 +123,7 @@ class Player(
         sendPacket(ServerChangeGameStatePacket(3, mode.id.toFloat()))
 
         for(player in Bullet.players) {
-            player.sendPacket(ServerPlayerInfoPacket(1, this))
+            player.sendPacket(ServerPlayerInfoPacket(1, uuid, gameMode = mode.id))
         }
     }
 
