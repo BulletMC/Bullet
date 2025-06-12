@@ -1192,7 +1192,7 @@ class PacketHandler(
             } != null) {
             world.modifiedBlocks.remove(blockPos)
         } else {
-            world.modifiedBlocks[blockPos] = BlockWithMetadata(0)
+            world.modifiedBlocks[blockPos] = BlockWithMetadata(0, 0)
         }
 
     }
@@ -1362,15 +1362,15 @@ class PacketHandler(
                 val entry = when {
                     block is Item && block in BlockTags.SIGNS -> {
                         client.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
-                        BlockWithMetadata(stateID, listOf("", "", "", ""))
+                        BlockWithMetadata(block.id, stateID, listOf("", "", "", ""))
                     }
 
                     block is Item && block in BlockTags.SPAWN_EGGS -> {
                         handleSpawnEgg(block, event)
-                        BlockWithMetadata(stateID)
+                        BlockWithMetadata(block.id, stateID)
                     }
 
-                    else -> BlockWithMetadata(stateID)
+                    else -> BlockWithMetadata(clickedItemID, stateID)
                 }
 
                 world.modifiedBlocks[event.blockPos] = entry
@@ -1576,7 +1576,7 @@ class PacketHandler(
                 props["occupied"] = "false"
 
                 val stateID = Item.getStateID(block, props)
-                world.modifiedBlocks[headPos] = BlockWithMetadata(stateID)
+                world.modifiedBlocks[headPos] = BlockWithMetadata(block.id, stateID)
 
                 for(player in Bullet.players) {
                     player.sendPacket(ServerBlockChangePacket(headPos, stateID))
