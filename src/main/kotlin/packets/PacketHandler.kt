@@ -1069,7 +1069,7 @@ class PacketHandler(
         val heldItem = player.getHeldItem().item
         val blockObj = when(block) {
             is Block -> block
-            is Item -> Block.getBlockFromID(block.id) ?: return 0
+            is Item -> Block.getBlockFromID(block.id) ?: return 1
             else -> return 0
         }
 
@@ -1083,7 +1083,37 @@ class PacketHandler(
             BlockTags.SWORD.contains(blockObj) && BlockTags.SWORDS.contains(heldItem) -> true
             else -> false
         }
-        val canHarvest = isBestTool
+
+        val canHarvest = (
+            BlockTags.ROCK_1.contains(blockObj) &&
+            BlockTags.TOOLS.contains(heldItem) &&
+            BlockTags.ABOVE_HAND.contains(heldItem) ||
+
+            BlockTags.ROCK_2.contains(blockObj) &&
+            BlockTags.TOOLS.contains(heldItem) &&
+            BlockTags.ABOVE_WOODEN.contains(heldItem) ||
+
+            BlockTags.ROCK_3.contains(blockObj) &&
+            BlockTags.TOOLS.contains(heldItem) &&
+            BlockTags.ABOVE_STONE.contains(heldItem) ||
+
+            BlockTags.ROCK_4.contains(blockObj) &&
+            BlockTags.TOOLS.contains(heldItem) &&
+            BlockTags.ABOVE_IRON.contains(heldItem) ||
+
+            BlockTags.METAL_1.contains(blockObj) &&
+            BlockTags.TOOLS.contains(heldItem) &&
+            BlockTags.ABOVE_HAND.contains(heldItem) ||
+
+            BlockTags.METAL_2.contains(blockObj) &&
+            BlockTags.TOOLS.contains(heldItem) &&
+            BlockTags.ABOVE_WOODEN.contains(heldItem) ||
+
+            BlockTags.METAL_3.contains(blockObj) &&
+            BlockTags.TOOLS.contains(heldItem) &&
+            BlockTags.ABOVE_STONE.contains(heldItem)
+        )
+
 
         val toolMultiplier = when(heldItem) {
             Item.WOODEN_PICKAXE, Item.WOODEN_AXE, Item.WOODEN_SHOVEL, Item.WOODEN_HOE -> 2.0

@@ -392,9 +392,7 @@ object BlockTags {
         Block.EMERALD_BLOCK
     )
 
-    val METAL_4 = listOf( //Diamond+ pickaxe required to collect block
-        Item.NETHERITE_BLOCK
-    )
+    val METAL_4 = Item.NETHERITE_BLOCK //Diamond+ pickaxe required to collect block
 
     val PISTONS = listOf(
         Item.PISTON,
@@ -822,5 +820,58 @@ object BlockTags {
         Item.NETHERITE_SWORD
     )
 
+    val WOODEN_TOOLS = listOf(
+        Item.WOODEN_AXE,
+        Item.WOODEN_PICKAXE,
+        Item.WOODEN_SHOVEL,
+        Item.WOODEN_SWORD,
+        Item.WOODEN_HOE
+    )
+
+    val STONE_TOOLS = listOf(
+        Item.STONE_AXE,
+        Item.STONE_PICKAXE,
+        Item.STONE_SHOVEL,
+        Item.STONE_SWORD,
+        Item.STONE_HOE
+    )
+
+    val IRON_TOOLS = listOf(
+        Item.IRON_AXE,
+        Item.IRON_PICKAXE,
+        Item.IRON_SHOVEL,
+        Item.IRON_SWORD,
+        Item.IRON_HOE
+    )
+
+    val GOLDEN_TOOLS = listOf(
+        Item.GOLDEN_AXE,
+        Item.GOLDEN_PICKAXE,
+        Item.GOLDEN_SHOVEL,
+        Item.GOLDEN_SWORD,
+        Item.GOLDEN_HOE
+    )
+
+    val DIAMOND_TOOLS = listOf(
+        Item.DIAMOND_AXE,
+        Item.DIAMOND_PICKAXE,
+        Item.DIAMOND_SHOVEL,
+        Item.DIAMOND_SWORD,
+        Item.DIAMOND_HOE
+    )
+
+    val NETHERITE_TOOLS = listOf(
+        Item.NETHERITE_AXE,
+        Item.NETHERITE_PICKAXE,
+        Item.NETHERITE_SHOVEL,
+        Item.NETHERITE_SWORD,
+        Item.NETHERITE_HOE
+    )
+
     val TOOLS = AXES + PICKAXES + SHOVELS + SWORDS
+    val ABOVE_HAND = WOODEN_TOOLS + STONE_TOOLS + IRON_TOOLS + GOLDEN_TOOLS + DIAMOND_TOOLS
+    val ABOVE_WOODEN = STONE_TOOLS + IRON_TOOLS + GOLDEN_TOOLS + DIAMOND_TOOLS
+    val ABOVE_STONE = IRON_TOOLS + GOLDEN_TOOLS + DIAMOND_TOOLS
+    val ABOVE_IRON = DIAMOND_TOOLS
+    val ABOVE_DIAMOND = NETHERITE_TOOLS
 }
