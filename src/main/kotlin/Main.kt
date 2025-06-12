@@ -1,6 +1,7 @@
 package com.aznos
 
 import com.aznos.events.EventManager
+import com.aznos.events.PlayerArmSwingEvent
 import com.aznos.events.PlayerJoinEvent
 import com.aznos.packets.play.out.ServerSetSlotPacket
 import com.aznos.world.items.Item
@@ -47,6 +48,10 @@ fun main(args: Array<String>) {
     ).default(true)
 
     parser.parse(args)
+
+    EventManager.register(PlayerArmSwingEvent::class.java) { e ->
+        e.player.world?.spawnNPC(e.player.location, ItemStack(Item.STONE))
+    }
 
     Bullet.createServer(address, port, onlineMode, shouldPersist)
 }

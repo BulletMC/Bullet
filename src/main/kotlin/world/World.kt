@@ -2,12 +2,15 @@ package com.aznos.world
 
 import com.aznos.Bullet
 import com.aznos.datatypes.BlockPositionType
+import com.aznos.datatypes.LocationType
 import com.aznos.entity.DroppedItem
 import com.aznos.entity.Entity
 import com.aznos.entity.OrbEntity
 import com.aznos.entity.livingentity.LivingEntity
+import com.aznos.entity.livingentity.NPCEntity
 import com.aznos.packets.play.out.ServerDestroyEntitiesPacket
 import com.aznos.packets.play.out.ServerSoundEffectPacket
+import com.aznos.packets.play.out.ServerSpawnPlayerPacket
 import com.aznos.storage.world.AbstractWorldStorage
 import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.Difficulty
@@ -47,6 +50,7 @@ class World(
 
     val livingEntities = mutableListOf<Pair<LivingEntity, EntityData>>()
     val entities = mutableListOf<Pair<Entity, EntityData>>()
+    val npcs = mutableListOf<NPCEntity>()
     val orbs = mutableListOf<OrbEntity>()
     val items = mutableListOf<Pair<DroppedItem, ItemStack>>()
 
@@ -128,6 +132,30 @@ class World(
                 volume, pitch
             ))
         }
+    }
+
+    /**
+     * Spawns an NPC at a given location in the world, optionally holding an item
+     * This method creates a new NPCEntity, sets its properties, and sends a spawn packet to all players in the world
+     *
+     * @param location The location where the NPC should spawn
+     * @param heldItem An optional item that the NPC should hold, default is null
+     * @return The spawned NPCEntity
+     */
+    fun spawnNPC(location: LocationType.Location, heldItem: ItemStack? = null): NPCEntity {
+        val npc = NPCEntity()
+
+        npc.world = this
+        npc.location = location
+        npc.heldItem = heldItem
+
+        for(player in Bullet.players) {
+            player.sendPacket(ServerSpawnPlayerPacket(
+                npc.entityID, npc.uuid, npc.location,
+            ))
+        }
+
+        return npc
     }
 
     /**
