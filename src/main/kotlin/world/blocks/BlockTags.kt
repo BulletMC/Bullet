@@ -2,6 +2,7 @@ package com.aznos.world.blocks
 
 import com.aznos.world.items.Item
 
+@Suppress("LargeClass")
 object BlockTags {
     val SIGNS = listOf(
         Item.OAK_SIGN,

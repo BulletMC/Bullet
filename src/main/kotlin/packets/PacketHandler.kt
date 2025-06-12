@@ -1076,54 +1076,9 @@ class PacketHandler(
         val hardness = blockObj.hardness
         if (hardness <= 0) return 0
 
-        val isBestTool = when {
-            BlockTags.PICKAXE.contains(blockObj) && BlockTags.PICKAXES.contains(heldItem) -> true
-            BlockTags.AXE.contains(blockObj) && BlockTags.AXES.contains(heldItem) -> true
-            BlockTags.SHOVEL.contains(blockObj) && BlockTags.SHOVELS.contains(heldItem) -> true
-            BlockTags.SWORD.contains(blockObj) && BlockTags.SWORDS.contains(heldItem) -> true
-            else -> false
-        }
-
-        val canHarvest = (
-            BlockTags.ROCK_1.contains(blockObj) &&
-            BlockTags.TOOLS.contains(heldItem) &&
-            BlockTags.ABOVE_HAND.contains(heldItem) ||
-
-            BlockTags.ROCK_2.contains(blockObj) &&
-            BlockTags.TOOLS.contains(heldItem) &&
-            BlockTags.ABOVE_WOODEN.contains(heldItem) ||
-
-            BlockTags.ROCK_3.contains(blockObj) &&
-            BlockTags.TOOLS.contains(heldItem) &&
-            BlockTags.ABOVE_STONE.contains(heldItem) ||
-
-            BlockTags.ROCK_4.contains(blockObj) &&
-            BlockTags.TOOLS.contains(heldItem) &&
-            BlockTags.ABOVE_IRON.contains(heldItem) ||
-
-            BlockTags.METAL_1.contains(blockObj) &&
-            BlockTags.TOOLS.contains(heldItem) &&
-            BlockTags.ABOVE_HAND.contains(heldItem) ||
-
-            BlockTags.METAL_2.contains(blockObj) &&
-            BlockTags.TOOLS.contains(heldItem) &&
-            BlockTags.ABOVE_WOODEN.contains(heldItem) ||
-
-            BlockTags.METAL_3.contains(blockObj) &&
-            BlockTags.TOOLS.contains(heldItem) &&
-            BlockTags.ABOVE_STONE.contains(heldItem)
-        )
-
-
-        val toolMultiplier = when(heldItem) {
-            Item.WOODEN_PICKAXE, Item.WOODEN_AXE, Item.WOODEN_SHOVEL, Item.WOODEN_HOE -> 2.0
-            Item.STONE_PICKAXE, Item.STONE_AXE, Item.STONE_SHOVEL, Item.STONE_HOE -> 4.0
-            Item.IRON_PICKAXE, Item.IRON_AXE, Item.IRON_SHOVEL, Item.IRON_HOE -> 6.0
-            Item.GOLDEN_PICKAXE, Item.GOLDEN_AXE, Item.GOLDEN_SHOVEL, Item.GOLDEN_HOE -> 12.0
-            Item.DIAMOND_PICKAXE, Item.DIAMOND_AXE, Item.DIAMOND_SHOVEL, Item.DIAMOND_HOE -> 8.0
-            Item.NETHERITE_PICKAXE, Item.NETHERITE_AXE, Item.NETHERITE_SHOVEL, Item.NETHERITE_HOE -> 9.0
-            else -> 1.0
-        }
+        val isBestTool = getBestTool(blockObj, heldItem)
+        val canHarvest = canHarvestBlock(blockObj, heldItem)
+        val toolMultiplier = getToolMultiplier(heldItem)
 
         var speedMultiplier = if(isBestTool) toolMultiplier else 1.0
         if(!player.onGround) {
@@ -2071,5 +2026,78 @@ class PacketHandler(
 
         val (nodes, rootIndex) = buildCommandGraphFromDispatcher(CommandManager.dispatcher)
         client.sendPacket(ServerDeclareCommandsPacket(nodes, rootIndex))
+    }
+
+    private fun getToolMultiplier(heldItem: Item): Double {
+        when(heldItem) {
+            Item.WOODEN_PICKAXE, Item.WOODEN_AXE, Item.WOODEN_SHOVEL, Item.WOODEN_HOE -> 2.0
+            Item.STONE_PICKAXE, Item.STONE_AXE, Item.STONE_SHOVEL, Item.STONE_HOE -> 4.0
+            Item.IRON_PICKAXE, Item.IRON_AXE, Item.IRON_SHOVEL, Item.IRON_HOE -> 6.0
+            Item.GOLDEN_PICKAXE, Item.GOLDEN_AXE, Item.GOLDEN_SHOVEL, Item.GOLDEN_HOE -> 12.0
+            Item.DIAMOND_PICKAXE, Item.DIAMOND_AXE, Item.DIAMOND_SHOVEL, Item.DIAMOND_HOE -> 8.0
+            Item.NETHERITE_PICKAXE, Item.NETHERITE_AXE, Item.NETHERITE_SHOVEL, Item.NETHERITE_HOE -> 9.0
+            else -> 1.0
+        }
+
+        return 1.0
+    }
+
+    private fun canHarvestBlock(blockObj: Block, heldItem: Item): Boolean {
+        if(canHarvestRock(blockObj, heldItem) && canHarvestMetal(blockObj, heldItem)) return true else false
+        return false
+    }
+
+    @Suppress("ComplexCondition")
+    private fun canHarvestRock(blockObj: Block, heldItem: Item): Boolean {
+        if(
+            BlockTags.ROCK_1.contains(blockObj) &&
+            BlockTags.TOOLS.contains(heldItem) &&
+            BlockTags.ABOVE_HAND.contains(heldItem) ||
+
+            BlockTags.ROCK_2.contains(blockObj) &&
+            BlockTags.TOOLS.contains(heldItem) &&
+            BlockTags.ABOVE_WOODEN.contains(heldItem) ||
+
+            BlockTags.ROCK_3.contains(blockObj) &&
+            BlockTags.TOOLS.contains(heldItem) &&
+            BlockTags.ABOVE_STONE.contains(heldItem) ||
+
+            BlockTags.ROCK_4.contains(blockObj) &&
+            BlockTags.TOOLS.contains(heldItem) &&
+            BlockTags.ABOVE_IRON.contains(heldItem)
+        ) return true else false
+
+        return false
+    }
+
+    @Suppress("ComplexCondition")
+    private fun canHarvestMetal(blockObj: Block, heldItem: Item): Boolean {
+        if(
+            BlockTags.METAL_1.contains(blockObj) &&
+            BlockTags.TOOLS.contains(heldItem) &&
+            BlockTags.ABOVE_HAND.contains(heldItem) ||
+
+            BlockTags.METAL_2.contains(blockObj) &&
+            BlockTags.TOOLS.contains(heldItem) &&
+            BlockTags.ABOVE_WOODEN.contains(heldItem) ||
+
+            BlockTags.METAL_3.contains(blockObj) &&
+            BlockTags.TOOLS.contains(heldItem) &&
+            BlockTags.ABOVE_STONE.contains(heldItem)
+        ) return true else false
+
+        return false
+    }
+
+    private fun getBestTool(blockObj: Block, heldItem: Item): Boolean {
+        when {
+            BlockTags.PICKAXE.contains(blockObj) && BlockTags.PICKAXES.contains(heldItem) -> true
+            BlockTags.AXE.contains(blockObj) && BlockTags.AXES.contains(heldItem) -> true
+            BlockTags.SHOVEL.contains(blockObj) && BlockTags.SHOVELS.contains(heldItem) -> true
+            BlockTags.SWORD.contains(blockObj) && BlockTags.SWORDS.contains(heldItem) -> true
+            else -> false
+        }
+
+        return false
     }
 }
