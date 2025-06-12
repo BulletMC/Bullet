@@ -350,4 +350,49 @@ object BlockTags {
         Item.CARVED_PUMPKIN,
         Item.VINE,
     )
+
+    val ICE = listOf(
+        Block.BLUE_ICE,
+        Block.ICE,
+        Block.PACKED_ICE
+    )
+
+    val METAL_1 = listOf( //Pickaxe required to collect a block
+        Block.ANVIL,
+        Block.CHIPPED_ANVIL,
+        Block.DAMAGED_ANVIL,
+        Item.BELL,
+        Block.REDSTONE,
+        Block.BREWING_STAND,
+        Block.CAULDRON,
+        Block.CHAIN,
+        Block.HOPPER,
+        Item.IRON_BARS,
+        Item.IRON_DOOR,
+        Item.IRON_TRAPDOOR,
+        Item.LANTERN,
+        Item.SOUL_LANTERN,
+        Item.LIGHT_WEIGHTED_PRESSURE_PLATE,
+        Item.HEAVY_WEIGHTED_PRESSURE_PLATE,
+        Block.LIGHT_WEIGHTED_PRESSURE_PLATE,
+        Block.HEAVY_WEIGHTED_PRESSURE_PLATE,
+    )
+
+    val METAL_2 = listOf( //Stone+ pickaxe required to collect block
+        Item.IRON_BLOCK,
+        Item.LAPIS_BLOCK,
+        Block.LAPIS_BLOCK
+    )
+
+    val METAL_3 = listOf( //Iron+ pickaxe required to collect block
+        Item.DIAMOND_BLOCK,
+        Item.EMERALD_BLOCK,
+        Item.GOLD_BLOCK,
+        Block.GOLD_BLOCK,
+        Block.EMERALD_BLOCK
+    )
+
+    val METAL_4 = listOf( //Diamond+ pickaxe required to collect block
+        Item.NETHERITE_BLOCK
+    )
 }
