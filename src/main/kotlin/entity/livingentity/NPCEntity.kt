@@ -4,6 +4,7 @@ import com.aznos.Bullet
 import com.aznos.entity.Entity
 import com.aznos.world.World
 import com.aznos.world.items.ItemStack
+import java.util.UUID
 
 /**
  * Represents a Non-Player Character (NPC) entity in the game.
@@ -15,6 +16,7 @@ import com.aznos.world.items.ItemStack
  * @property isSneaking Indicates whether the NPC is currently sneaking.
  */
 class NPCEntity : Entity() {
+    override lateinit var uuid: UUID
     var world: World? = Bullet.storage.getWorlds()[0]
     var heldItem: ItemStack? = null
     var isSneaking: Boolean = false

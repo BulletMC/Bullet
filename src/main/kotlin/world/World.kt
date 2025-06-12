@@ -9,6 +9,7 @@ import com.aznos.entity.OrbEntity
 import com.aznos.entity.livingentity.LivingEntity
 import com.aznos.entity.livingentity.NPCEntity
 import com.aznos.packets.play.out.ServerDestroyEntitiesPacket
+import com.aznos.packets.play.out.ServerPlayerInfoPacket
 import com.aznos.packets.play.out.ServerSoundEffectPacket
 import com.aznos.packets.play.out.ServerSpawnPlayerPacket
 import com.aznos.storage.world.AbstractWorldStorage
@@ -19,9 +20,12 @@ import com.aznos.world.data.TimeOfDay
 import com.aznos.world.items.ItemStack
 import com.aznos.world.sounds.SoundCategories
 import com.aznos.world.sounds.Sounds
+import com.github.f4b6a3.uuid.UuidCreator
+import com.github.f4b6a3.uuid.enums.UuidLocalDomain
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.util.UUID
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -145,9 +149,12 @@ class World(
     fun spawnNPC(location: LocationType.Location, heldItem: ItemStack? = null): NPCEntity {
         val npc = NPCEntity()
 
+        npc.uuid = UuidCreator.getDceSecurity(UuidLocalDomain.LOCAL_DOMAIN_PERSON, npc.entityID)
         npc.world = this
         npc.location = location
         npc.heldItem = heldItem
+
+        npcs.add(npc)
 
         for(player in Bullet.players) {
             player.sendPacket(ServerSpawnPlayerPacket(

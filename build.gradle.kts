@@ -31,6 +31,7 @@ dependencies {
     implementation("com.google.code.gson:gson:2.12.1")
     implementation("dev.dewy:nbt:1.5.1")
     implementation("com.github.Querz:NBT:6.1")
+    implementation("com.github.f4b6a3:uuid-creator:5.3.2")
 
     //Kyori
     implementation("net.kyori:adventure-api:4.21.0")
