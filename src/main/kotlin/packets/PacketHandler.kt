@@ -81,8 +81,10 @@ import java.util.*
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
+import kotlin.compareTo
 import kotlin.experimental.and
 import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.sin
@@ -1063,19 +1065,53 @@ class PacketHandler(
     }
 
     private fun getBlockBreakTime(block: Any): Long {
-        val toolSpeed = when(client.player.getHeldItem().item) {
-            Item.WOODEN_PICKAXE -> 2.0
-            Item.STONE_PICKAXE -> 4.0
-            Item.IRON_PICKAXE -> 6.0
-            Item.GOLDEN_PICKAXE -> 12.0
-            Item.DIAMOND_PICKAXE -> 8.0
-            Item.NETHERITE_PICKAXE -> 9.0
+        val player = client.player
+        val heldItem = player.getHeldItem().item
+        val blockObj = when(block) {
+            is Block -> block
+            is Item -> Block.getBlockFromID(block.id) ?: return 0
+            else -> return 0
+        }
+
+        val hardness = blockObj.hardness
+        if (hardness <= 0) return 0
+
+        val isBestTool = when {
+            BlockTags.PICKAXE.contains(blockObj) && BlockTags.PICKAXES.contains(heldItem) -> true
+            BlockTags.AXE.contains(blockObj) && BlockTags.AXES.contains(heldItem) -> true
+            BlockTags.SHOVEL.contains(blockObj) && BlockTags.SHOVELS.contains(heldItem) -> true
+            BlockTags.SWORD.contains(blockObj) && BlockTags.SWORDS.contains(heldItem) -> true
+            else -> false
+        }
+        val canHarvest = isBestTool
+
+        val toolMultiplier = when(heldItem) {
+            Item.WOODEN_PICKAXE, Item.WOODEN_AXE, Item.WOODEN_SHOVEL, Item.WOODEN_HOE -> 2.0
+            Item.STONE_PICKAXE, Item.STONE_AXE, Item.STONE_SHOVEL, Item.STONE_HOE -> 4.0
+            Item.IRON_PICKAXE, Item.IRON_AXE, Item.IRON_SHOVEL, Item.IRON_HOE -> 6.0
+            Item.GOLDEN_PICKAXE, Item.GOLDEN_AXE, Item.GOLDEN_SHOVEL, Item.GOLDEN_HOE -> 12.0
+            Item.DIAMOND_PICKAXE, Item.DIAMOND_AXE, Item.DIAMOND_SHOVEL, Item.DIAMOND_HOE -> 8.0
+            Item.NETHERITE_PICKAXE, Item.NETHERITE_AXE, Item.NETHERITE_SHOVEL, Item.NETHERITE_HOE -> 9.0
             else -> 1.0
         }
 
+        var speedMultiplier = if(isBestTool) toolMultiplier else 1.0
+        if(!player.onGround) {
+            speedMultiplier /= 5.0
+        }
 
+        var damage = speedMultiplier / hardness
+        damage /= if(canHarvest) {
+            30.0
+        } else {
+            100.0
+        }
 
-        return 0
+        if(damage > 1.0) return 0
+        val ticks = ceil(1.0 / damage)
+        val seconds = ticks / 20.0
+
+        return seconds.toLong()
     }
 
     private fun updateEntityMetadata(player: Player, index: Int, value: Int) {

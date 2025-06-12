@@ -777,4 +777,50 @@ object BlockTags {
         Block.SNOW,
         Item.SNOW,
     )
+
+    val AXE = PLANTS + WOOD_PRODUCTS + LOGS
+    val PICKAXE = ICE + METAL_1 + METAL_2 + METAL_3 + METAL_4 + PISTONS + RAILS + ROCK_1 + ROCK_2 + ROCK_3 + ROCK_4
+    val SHOVEL = GROUND
+    val SWORD = listOf(
+        Block.COBWEB,
+        Item.COBWEB
+    )
+
+    val AXES = listOf(
+        Item.WOODEN_AXE,
+        Item.STONE_AXE,
+        Item.IRON_AXE,
+        Item.GOLDEN_AXE,
+        Item.DIAMOND_AXE,
+        Item.NETHERITE_AXE
+    )
+
+    val PICKAXES = listOf(
+        Item.WOODEN_PICKAXE,
+        Item.STONE_PICKAXE,
+        Item.IRON_PICKAXE,
+        Item.GOLDEN_PICKAXE,
+        Item.DIAMOND_PICKAXE,
+        Item.NETHERITE_PICKAXE
+    )
+
+    val SHOVELS = listOf(
+        Item.WOODEN_SHOVEL,
+        Item.STONE_SHOVEL,
+        Item.IRON_SHOVEL,
+        Item.GOLDEN_SHOVEL,
+        Item.DIAMOND_SHOVEL,
+        Item.NETHERITE_SHOVEL
+    )
+
+    val SWORDS = listOf(
+        Item.WOODEN_SWORD,
+        Item.STONE_SWORD,
+        Item.IRON_SWORD,
+        Item.GOLDEN_SWORD,
+        Item.DIAMOND_SWORD,
+        Item.NETHERITE_SWORD
+    )
+
+    val TOOLS = AXES + PICKAXES + SHOVELS + SWORDS
 }
