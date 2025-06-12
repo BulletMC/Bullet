@@ -31,6 +31,7 @@ import kotlinx.coroutines.launch
 import net.kyori.adventure.text.Component
 import java.net.Socket
 import java.util.UUID
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -143,7 +144,11 @@ class World(
         }
     }
 
-    fun spawnNPC(name: String, location: LocationType.Location, skinProps: List<PlayerProperty>): NPCEntity {
+    fun spawnNPC(
+        name: String, location: LocationType.Location,
+        skinProps: List<PlayerProperty>,
+        appearInTab: Boolean = false
+    ): NPCEntity {
         val npc = NPCEntity().apply {
             this.username = name
             this.uuid = UuidCreator.getDceSecurity(UuidLocalDomain.LOCAL_DOMAIN_PERSON, entityID)
@@ -152,7 +157,7 @@ class World(
         }
 
         npcs += npc
-        broadcastSpawn(npc)
+        broadcastSpawn(npc, appearInTab)
         return npc
     }
 
@@ -181,15 +186,26 @@ class World(
         }
     }
 
-    private fun broadcastSpawn(npc: NPCEntity) {
+    private fun broadcastSpawn(npc: NPCEntity, appearInTab: Boolean = false) {
         val addEntry = ServerPlayerInfoPacket(
             0, npc.uuid, npc.username, npc.properties
+        )
+
+        val removeEntry = ServerPlayerInfoPacket(
+            4, npc.uuid
         )
 
         val spawn = ServerSpawnPlayerPacket(npc.entityID, npc.uuid, npc.location)
         for(player in Bullet.players) {
             player.sendPacket(addEntry)
             player.sendPacket(spawn)
+
+            if(!appearInTab) {
+                Bullet.scope.launch {
+                    delay(50.milliseconds)
+                    player.sendPacket(removeEntry)
+                }
+            }
         }
     }
 }
