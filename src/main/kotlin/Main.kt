@@ -50,7 +50,7 @@ fun main(args: Array<String>) {
     parser.parse(args)
 
     EventManager.register(PlayerArmSwingEvent::class.java) { e ->
-        e.player.world?.spawnNPC(e.player.location, ItemStack(Item.STONE))
+        e.player.world?.spawnNPC("NPC", e.player.location, emptyList())
     }
 
     Bullet.createServer(address, port, onlineMode, shouldPersist)

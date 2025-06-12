@@ -310,7 +310,7 @@ class ClientSession(
                 plr.sendPacket(
                     ServerPlayerInfoPacket(
                         4,
-                        plr
+                        plr.uuid
                     )
                 )
 
@@ -360,7 +360,12 @@ class ClientSession(
     fun sendPlayerSpawnPacket() {
         for(otherPlayer in Bullet.players) {
             if(otherPlayer.clientSession != this) {
-                otherPlayer.sendPacket(ServerPlayerInfoPacket(0, player))
+                otherPlayer.sendPacket(ServerPlayerInfoPacket(
+                    0,
+                    player.uuid, player.username,
+                    player.properties,
+                    player.gameMode.id, player.ping)
+                )
 
                 otherPlayer.sendPacket(
                     ServerSpawnPlayerPacket(
@@ -370,7 +375,12 @@ class ClientSession(
                     )
                 )
 
-                sendPacket(ServerPlayerInfoPacket(0, otherPlayer))
+                sendPacket(ServerPlayerInfoPacket(
+                    0,
+                    otherPlayer.uuid, otherPlayer.username,
+                    otherPlayer.properties,
+                    otherPlayer.gameMode.id, otherPlayer.ping)
+                )
 
                 sendPacket(
                     ServerSpawnPlayerPacket(
@@ -382,7 +392,12 @@ class ClientSession(
             }
         }
 
-        sendPacket(ServerPlayerInfoPacket(0, player))
+        sendPacket(ServerPlayerInfoPacket(
+            0,
+            player.uuid, player.username,
+            player.properties,
+            player.gameMode.id, player.ping)
+        )
     }
 
     /**

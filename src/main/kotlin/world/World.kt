@@ -1,6 +1,7 @@
 package com.aznos.world
 
 import com.aznos.Bullet
+import com.aznos.ClientSession
 import com.aznos.datatypes.BlockPositionType
 import com.aznos.datatypes.LocationType
 import com.aznos.entity.DroppedItem
@@ -8,6 +9,8 @@ import com.aznos.entity.Entity
 import com.aznos.entity.OrbEntity
 import com.aznos.entity.livingentity.LivingEntity
 import com.aznos.entity.livingentity.NPCEntity
+import com.aznos.entity.player.Player
+import com.aznos.entity.player.data.PlayerProperty
 import com.aznos.packets.play.out.ServerDestroyEntitiesPacket
 import com.aznos.packets.play.out.ServerPlayerInfoPacket
 import com.aznos.packets.play.out.ServerSoundEffectPacket
@@ -25,6 +28,8 @@ import com.github.f4b6a3.uuid.enums.UuidLocalDomain
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import net.kyori.adventure.text.Component
+import java.net.Socket
 import java.util.UUID
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -138,30 +143,16 @@ class World(
         }
     }
 
-    /**
-     * Spawns an NPC at a given location in the world, optionally holding an item
-     * This method creates a new NPCEntity, sets its properties, and sends a spawn packet to all players in the world
-     *
-     * @param location The location where the NPC should spawn
-     * @param heldItem An optional item that the NPC should hold, default is null
-     * @return The spawned NPCEntity
-     */
-    fun spawnNPC(location: LocationType.Location, heldItem: ItemStack? = null): NPCEntity {
-        val npc = NPCEntity()
-
-        npc.uuid = UuidCreator.getDceSecurity(UuidLocalDomain.LOCAL_DOMAIN_PERSON, npc.entityID)
-        npc.world = this
-        npc.location = location
-        npc.heldItem = heldItem
-
-        npcs.add(npc)
-
-        for(player in Bullet.players) {
-            player.sendPacket(ServerSpawnPlayerPacket(
-                npc.entityID, npc.uuid, npc.location,
-            ))
+    fun spawnNPC(name: String, location: LocationType.Location, skinProps: List<PlayerProperty>): NPCEntity {
+        val npc = NPCEntity().apply {
+            this.username = name
+            this.uuid = UuidCreator.getDceSecurity(UuidLocalDomain.LOCAL_DOMAIN_PERSON, entityID)
+            this.location = location
+            this.properties += skinProps
         }
 
+        npcs += npc
+        broadcastSpawn(npc)
         return npc
     }
 
@@ -187,6 +178,18 @@ class World(
 
                 items.removeAll(toRemove)
             }
+        }
+    }
+
+    private fun broadcastSpawn(npc: NPCEntity) {
+        val addEntry = ServerPlayerInfoPacket(
+            0, npc.uuid, npc.username, npc.properties
+        )
+
+        val spawn = ServerSpawnPlayerPacket(npc.entityID, npc.uuid, npc.location)
+        for(player in Bullet.players) {
+            player.sendPacket(addEntry)
+            player.sendPacket(spawn)
         }
     }
 }

@@ -2,6 +2,7 @@ package com.aznos.entity.livingentity
 
 import com.aznos.Bullet
 import com.aznos.entity.Entity
+import com.aznos.entity.player.data.PlayerProperty
 import com.aznos.world.World
 import com.aznos.world.items.ItemStack
 import java.util.UUID
@@ -17,6 +18,8 @@ import java.util.UUID
  */
 class NPCEntity : Entity() {
     override lateinit var uuid: UUID
+    lateinit var username: String
+    val properties = mutableListOf<PlayerProperty>()
     var world: World? = Bullet.storage.getWorlds()[0]
     var heldItem: ItemStack? = null
     var isSneaking: Boolean = false
