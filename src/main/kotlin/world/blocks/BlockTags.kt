@@ -164,6 +164,28 @@ object BlockTags {
         Block.STRIPPED_DARK_OAK_WOOD,
     )
 
+    val WOOD_PRODUCTS = listOf(
+        Block.BAMBOO,
+        Block.BARREL,
+        Block.BEEHIVE,
+        Block.BOOKSHELF,
+        Block.CAMPFIRE,
+        Block.CARTOGRAPHY_TABLE,
+        Block.CHEST,
+        Block.COMPOSTER,
+        Block.CRAFTING_TABLE,
+        Block.DAYLIGHT_DETECTOR,
+        Block.FLETCHING_TABLE,
+        Block.JUKEBOX,
+        Block.LADDER,
+        Block.LECTERN,
+        Block.LOOM,
+        Block.NOTE_BLOCK,
+        Block.SOUL_CAMPFIRE,
+        Block.SMITHING_TABLE,
+        Block.TRAPPED_CHEST
+    )
+
     val BANNERS = listOf(
         Item.BLACK_BANNER,
         Item.BLUE_BANNER,
@@ -209,5 +231,18 @@ object BlockTags {
         Item.RED_BED,
         Item.WHITE_BED,
         Item.YELLOW_BED
+    )
+
+    val PLANTS = listOf(
+        Item.BEE_NEST,
+        Item.CARVED_PUMPKIN,
+        Item.COCOA_BEANS,
+        Item.JACK_O_LANTERN,
+        Item.MELON,
+        Item.BROWN_MUSHROOM_BLOCK,
+        Item.RED_MUSHROOM_BLOCK,
+        Item.PUMPKIN,
+        Item.CARVED_PUMPKIN,
+        Item.VINE,
     )
 }
