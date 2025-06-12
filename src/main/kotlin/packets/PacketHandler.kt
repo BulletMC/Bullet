@@ -439,7 +439,9 @@ class PacketHandler(
         } else if(client.player.gameMode == GameMode.SURVIVAL) {
             when(event.status) {
                 BlockStatus.STARTED_DIGGING.id -> {
-                    val breakTime = getStoneBreakTime()
+                    val breakTime = getBlockBreakTime(
+                        world.modifiedBlocks[event.blockPos]?.stateID ?: Block.GRASS_BLOCK
+                    )
                     startBlockBreak(event.blockPos, breakTime.toInt())
                 }
 
@@ -1060,8 +1062,18 @@ class PacketHandler(
         }
     }
 
-    private fun getStoneBreakTime(): Long {
-        return ((1.5 * 30) * 140).toLong()
+    private fun getBlockBreakTime(block: Any): Long {
+        val toolSpeed = when(client.player.getHeldItem().item) {
+            Item.WOODEN_PICKAXE -> 2.0
+            Item.STONE_PICKAXE -> 4.0
+            Item.IRON_PICKAXE -> 6.0
+            Item.GOLDEN_PICKAXE -> 12.0
+            Item.DIAMOND_PICKAXE -> 8.0
+            Item.NETHERITE_PICKAXE -> 9.0
+            else -> 1.0
+        }
+
+        return 0
     }
 
     private fun updateEntityMetadata(player: Player, index: Int, value: Int) {
