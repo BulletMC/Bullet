@@ -320,8 +320,9 @@ class PacketHandler(
 
     @PacketReceiver
     fun onCreativeInventoryAction(packet: ClientCreativeInventoryActionPacket) {
+        Bullet.logger.info("Creative inventory action received")
         val slotIdx = packet.slotIndex.toInt()
-        val stack = if (packet.slot.present) packet.slot.toItemStack() else null
+        val stack = if(packet.slot.present) packet.slot.toItemStack() else null
         client.player.inventory.set(slotIdx, stack)
 
         if (slotIdx == client.player.selectedSlot + 36) sendHeldItemUpdate()

@@ -29,6 +29,8 @@ data class ItemStack(
     val id: Int
         get() = item.id
 
+    var rawID: Int? = null
+
     /**
      * Checks if the item stack is empty or air
      *
@@ -47,7 +49,7 @@ data class ItemStack(
         displayName,
         lore.toMutableList(),
         nbt?.clone() as? net.querz.nbt.tag.CompoundTag ?: net.querz.nbt.tag.CompoundTag()
-    )
+    ).apply { rawID = this@ItemStack.rawID }
 
     /**
      * Remove [amount] items and returns them in a new stack
@@ -93,16 +95,18 @@ data class ItemStack(
     fun withDamage(value: Int) = apply { damage = value }
 
     fun toNBT(): net.querz.nbt.tag.CompoundTag = ItemStackNBTCodec.toNbt(this)
-    fun toSlotData(): Slot.SlotData = Slot.SlotData(
-        present = item != Item.AIR,
-        itemID = item.id,
-        itemCount = count.toByte(),
-        nbt = when {
-            nbt != null -> nbt
-            displayName != null || lore.isNotEmpty() || damage != 0 -> toNBT()
-            else -> null
-        }
-    )
+    fun toSlotData(): Slot.SlotData {
+        val valid = (rawID != null) || (item != Item.AIR)
+        val id = rawID ?: item.id
+
+        return Slot.SlotData(
+            present = valid,
+            itemID = if(valid) id else 0,
+            itemCount = if(valid) count.toByte() else 0,
+            nbt = if(valid && (displayName != null || lore.isNotEmpty() || damage != 0))
+                toNBT() else null
+        )
+    }
 
     val isStackable: Boolean
         get() = Item.isStackable(item)
@@ -114,5 +118,6 @@ data class ItemStack(
         @JvmStatic fun of(item: Item, count: Int = 1) = ItemStack(item, count)
         @JvmStatic fun empty() = ItemStack(Item.AIR, 0)
         @JvmStatic fun fromNBT(tag: net.querz.nbt.tag.CompoundTag?) = ItemStackNBTCodec.fromNbt(tag)
+        @JvmStatic fun opaque(rawID: Int, count: Int) = ItemStack(Item.AIR, count).apply { this.rawID = rawID }
     }
 }

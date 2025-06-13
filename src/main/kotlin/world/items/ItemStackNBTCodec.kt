@@ -1,5 +1,6 @@
 package com.aznos.world.items
 
+import com.aznos.Bullet
 import net.querz.nbt.tag.*
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
@@ -8,7 +9,11 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 
 object ItemStackNBTCodec {
     fun fromNbt(root: CompoundTag?): ItemStack {
-        if(root == null) return ItemStack(Item.AIR)
+        if(root == null || root.size() == 0) return ItemStack.empty()
+        if(!(root.containsKey("id") && root.containsKey("Count"))) {
+            Bullet.logger.warn("ItemStack NBT is missing required fields: id or Count")
+            return ItemStack.empty()
+        }
 
         val item = Item.getItemFromID(root.getInt("id")) ?: Item.AIR
         val count = root.getByte("Count").toInt()
