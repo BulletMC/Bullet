@@ -320,7 +320,6 @@ class PacketHandler(
 
     @PacketReceiver
     fun onCreativeInventoryAction(packet: ClientCreativeInventoryActionPacket) {
-        Bullet.logger.info("Creative inventory action received")
         val slotIdx = packet.slotIndex.toInt()
         val stack = if(packet.slot.present) packet.slot.toItemStack() else null
         client.player.inventory.set(slotIdx, stack)
@@ -459,8 +458,8 @@ class PacketHandler(
             }
 
             removeBlock(event.blockPos)
-        } else if (client.player.gameMode == GameMode.SURVIVAL) {
-            when (event.status) {
+        } else if(client.player.gameMode == GameMode.SURVIVAL) {
+            when(event.status) {
                 BlockStatus.STARTED_DIGGING.id -> {
                     val breakTime = getBlockBreakTime(
                         world.modifiedBlocks[event.blockPos]?.stateID ?: Block.GRASS_BLOCK
@@ -478,9 +477,14 @@ class PacketHandler(
                     val vy = (0.1 * 8000).toInt().toShort()
                     val vz = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
 
-                    val itemID = world.modifiedBlocks[event.blockPos]?.blockID ?: Block.AIR.id
+                    val blockId = world.modifiedBlocks[event.blockPos]?.blockID ?: Block.AIR.id
                     val stateID = world.modifiedBlocks[event.blockPos]?.stateID ?: Block.AIR.id
-                    dropItem(event.blockPos, itemID, vx, vy, vz)
+                    val blockObj = Block.getBlockFromID(blockId) ?: Block.AIR
+                    val heldItem = client.player.getHeldItem().item
+
+                    if(canHarvestBlock(blockObj, heldItem)) {
+                        dropItem(event.blockPos, blockId, vx, vy, vz)
+                    }
 
                     stopBlockBreak(event.blockPos)
                     sendBlockBreakParticles(client.player, stateID, event.blockPos)
@@ -2150,7 +2154,7 @@ class PacketHandler(
         }
 
     private fun canHarvestBlock(blockObj: Block, heldItem: Item): Boolean =
-        canHarvestRock(blockObj, heldItem) && canHarvestMetal(blockObj, heldItem)
+        canHarvestRock(blockObj, heldItem) || canHarvestMetal(blockObj, heldItem)
 
     @Suppress("ComplexCondition")
     private fun canHarvestRock(blockObj: Block, heldItem: Item): Boolean =
