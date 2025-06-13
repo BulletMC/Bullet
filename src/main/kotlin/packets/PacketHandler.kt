@@ -473,17 +473,16 @@ class PacketHandler(
 
                 BlockStatus.FINISHED_DIGGING.id -> {
                     client.player.status.exhaustion += 0.005f
-                    val block = world.modifiedBlocks[event.blockPos]?.blockID ?: Block.GRASS_BLOCK.id
-
                     val vx = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
                     val vy = (0.1 * 8000).toInt().toShort()
                     val vz = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
 
-                    val itemID = world.modifiedBlocks[event.blockPos]?.blockID
-                    dropItem(event.blockPos, itemID ?: 0, vx, vy, vz)
+                    val itemID = world.modifiedBlocks[event.blockPos]?.blockID ?: Block.AIR.id
+                    val stateID = world.modifiedBlocks[event.blockPos]?.stateID ?: Block.AIR.id
+                    dropItem(event.blockPos, itemID, vx, vy, vz)
 
                     stopBlockBreak(event.blockPos)
-                    sendBlockBreakParticles(client.player, block, event.blockPos)
+                    sendBlockBreakParticles(client.player, stateID, event.blockPos)
                     removeBlock(event.blockPos)
                 }
             }
