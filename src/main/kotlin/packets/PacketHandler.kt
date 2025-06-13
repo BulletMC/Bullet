@@ -472,23 +472,7 @@ class PacketHandler(
                 }
 
                 BlockStatus.FINISHED_DIGGING.id -> {
-                    client.player.status.exhaustion += 0.005f
-                    val vx = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
-                    val vy = (0.1 * 8000).toInt().toShort()
-                    val vz = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
-
-                    val blockId = world.modifiedBlocks[event.blockPos]?.blockID ?: Block.AIR.id
-                    val stateID = world.modifiedBlocks[event.blockPos]?.stateID ?: Block.AIR.id
-                    val blockObj = Block.getBlockFromID(blockId) ?: Block.AIR
-                    val heldItem = client.player.getHeldItem().item
-
-                    if(canHarvestBlock(blockObj, heldItem)) {
-                        dropItem(event.blockPos, blockId, vx, vy, vz)
-                    }
-
-                    stopBlockBreak(event.blockPos)
-                    sendBlockBreakParticles(client.player, stateID, event.blockPos)
-                    removeBlock(event.blockPos)
+                    handleFinishDigging(event)
                 }
             }
         }
@@ -1428,41 +1412,12 @@ class PacketHandler(
             }
 
             players.forEach {
-                it.sendPacket(ServerBlockChangePacket(event.blockPos, stateID))
-
-                val entry = when {
-                    block is Item && block in BlockTags.SIGNS -> {
-                        client.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
-                        BlockWithMetadata(block.id, stateID, listOf("", "", "", ""))
-                    }
-
-                    block is Item && block in BlockTags.SPAWN_EGGS -> {
-                        handleSpawnEgg(block, event)
-                        BlockWithMetadata(block.id, stateID)
-                    }
-
-                    block is Block -> {
-                        BlockWithMetadata(block.id, stateID)
-                    }
-
-                    else -> BlockWithMetadata(0, stateID)
-                }
-
+                val entry = handlePlayerSpecificBlockPlacement(event, stateID, it, block)
                 world.modifiedBlocks[event.blockPos] = entry
             }
 
-            if (client.player.gameMode == GameMode.SURVIVAL) {
-                val slot = client.player.selectedSlot
-                val inv = client.player.inventory
-                val held = inv.heldStack(slot)
-
-                if(held.count > 1) {
-                    held.count--
-                    client.sendPacket(ServerSetSlotPacket(0, slot + 36, held.toSlotData()))
-                } else {
-                    inv.setHeldSlot(slot, null)
-                    client.sendPacket(ServerSetSlotPacket(0, slot + 36, Slot.SlotData(false)))
-                }
+            if(client.player.gameMode == GameMode.SURVIVAL) {
+                handleItemDecrease()
             }
         } catch (e: IllegalArgumentException) {
             //do nothing
@@ -2196,4 +2151,62 @@ class PacketHandler(
             BlockTags.SWORD.contains(blockObj) && BlockTags.SWORDS.contains(heldItem) -> true
             else -> false
         }
+
+    private fun handleFinishDigging(event: BlockBreakEvent) {
+        client.player.status.exhaustion += 0.005f
+        val vx = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
+        val vy = (0.1 * 8000).toInt().toShort()
+        val vz = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
+
+        val blockId = world.modifiedBlocks[event.blockPos]?.blockID ?: Block.AIR.id
+        val stateID = world.modifiedBlocks[event.blockPos]?.stateID ?: Block.AIR.id
+        val blockObj = Block.getBlockFromID(blockId) ?: Block.AIR
+        val heldItem = client.player.getHeldItem().item
+
+        if(canHarvestBlock(blockObj, heldItem)) {
+            dropItem(event.blockPos, blockId, vx, vy, vz)
+        }
+
+        stopBlockBreak(event.blockPos)
+        sendBlockBreakParticles(client.player, stateID, event.blockPos)
+        removeBlock(event.blockPos)
+    }
+
+    private fun handlePlayerSpecificBlockPlacement(
+        event: BlockPlaceEvent, stateID: Int, player: Player, block: Any
+    ): BlockWithMetadata {
+        player.sendPacket(ServerBlockChangePacket(event.blockPos, stateID))
+
+        return when {
+            block is Item && block in BlockTags.SIGNS -> {
+                client.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
+                BlockWithMetadata(block.id, stateID, listOf("", "", "", ""))
+            }
+
+            block is Item && block in BlockTags.SPAWN_EGGS -> {
+                handleSpawnEgg(block, event)
+                BlockWithMetadata(block.id, stateID)
+            }
+
+            block is Block -> {
+                BlockWithMetadata(block.id, stateID)
+            }
+
+            else -> BlockWithMetadata(0, stateID)
+        }
+    }
+
+    private fun handleItemDecrease() {
+        val slot = client.player.selectedSlot
+        val inv = client.player.inventory
+        val held = inv.heldStack(slot)
+
+        if(held.count > 1) {
+            held.count--
+            client.sendPacket(ServerSetSlotPacket(0, slot + 36, held.toSlotData()))
+        } else {
+            inv.setHeldSlot(slot, null)
+            client.sendPacket(ServerSetSlotPacket(0, slot + 36, Slot.SlotData(false)))
+        }
+    }
 }

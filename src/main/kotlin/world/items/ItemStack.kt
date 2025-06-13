@@ -98,13 +98,13 @@ data class ItemStack(
     fun toSlotData(): Slot.SlotData {
         val valid = (rawID != null) || (item != Item.AIR)
         val id = rawID ?: item.id
+        val hasCustomData = displayName != null || lore.isNotEmpty() || damage != 0
 
         return Slot.SlotData(
             present = valid,
             itemID = if(valid) id else 0,
             itemCount = if(valid) count.toByte() else 0,
-            nbt = if(valid && (displayName != null || lore.isNotEmpty() || damage != 0))
-                toNBT() else null
+            nbt = if(valid && hasCustomData) toNBT() else null
         )
     }
 
