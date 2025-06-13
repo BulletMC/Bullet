@@ -81,8 +81,10 @@ import java.util.*
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
+import kotlin.compareTo
 import kotlin.experimental.and
 import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.sin
@@ -103,30 +105,34 @@ class PacketHandler(
 
     @PacketReceiver
     fun onWindowClick(packet: ClientClickWindowPacket) {
-        if(packet.windowID.toInt() == 0 && packet.mode == 4) {
+        if (packet.windowID.toInt() == 0 && packet.mode == 4) {
             val player = client.player
             val held = player.inventory.heldStack(player.selectedSlot)
-            if(held.isAir) return
+            if (held.isAir) return
 
             val dropAll = (packet.button.toInt() == 1)
-            val toDrop = if(dropAll) held else held.copy(count = 1)
+            val toDrop = if (dropAll) held else held.copy(count = 1)
 
-            if(dropAll) {
+            if (dropAll) {
                 player.inventory.setHeldSlot(player.selectedSlot, null)
             } else {
                 val newCount = held.count - 1
-                if(newCount <= 0) player.inventory.setHeldSlot(player.selectedSlot, null)
+                if (newCount <= 0) player.inventory.setHeldSlot(player.selectedSlot, null)
                 else player.inventory.setHeldSlot(player.selectedSlot, held.copy(count = newCount))
             }
 
-            client.sendPacket(ServerSetSlotPacket(
-                0, player.selectedSlot + 36,
-                player.inventory.heldStack(player.selectedSlot).toSlotData())
+            client.sendPacket(
+                ServerSetSlotPacket(
+                    0, player.selectedSlot + 36,
+                    player.inventory.heldStack(player.selectedSlot).toSlotData()
+                )
             )
 
-            client.sendPacket(ServerWindowConfirmationPacket(
-                0, packet.actionNumber, true
-            ))
+            client.sendPacket(
+                ServerWindowConfirmationPacket(
+                    0, packet.actionNumber, true
+                )
+            )
 
             dropItem(player.location.toBlockPosition(), toDrop.id)
         }
@@ -145,19 +151,21 @@ class PacketHandler(
         data.putString("Text3", "{\"text\":\"${packet.line3}\"}")
         data.putString("Text4", "{\"text\":\"${packet.line4}\"}")
 
-        for(otherPlayer in Bullet.players) {
-            if(otherPlayer != client.player) {
-                otherPlayer.sendPacket(ServerBlockEntityDataPacket(
-                    packet.blockPos,
-                    9,
-                    data
-                ))
+        for (otherPlayer in Bullet.players) {
+            if (otherPlayer != client.player) {
+                otherPlayer.sendPacket(
+                    ServerBlockEntityDataPacket(
+                        packet.blockPos,
+                        9,
+                        data
+                    )
+                )
             }
         }
 
         val world = world
         val prev = world.modifiedBlocks[packet.blockPos]
-        if(prev != null) {
+        if (prev != null) {
             val lines = listOf(packet.line1, packet.line2, packet.line3, packet.line4)
             world.modifiedBlocks[packet.blockPos] = prev.copy(textLines = lines)
         }
@@ -165,15 +173,17 @@ class PacketHandler(
 
     @PacketReceiver
     fun onPlayerAbilities(packet: ClientPlayerAbilitiesPacket) {
-        if(client.player.canFly) {
+        if (client.player.canFly) {
             val flying = (packet.flags and 0x02).toInt() == 0x02
             client.player.isFlying = flying
         } else {
             client.player.isFlying = false
-            client.player.sendPacket(ServerPlayerAbilitiesPacket(
-                0,
-                0f,
-            ))
+            client.player.sendPacket(
+                ServerPlayerAbilitiesPacket(
+                    0,
+                    0f,
+                )
+            )
         }
     }
 
@@ -199,27 +209,31 @@ class PacketHandler(
                 if (lastSpace == -1) "/$match" else match
             }
 
-            client.player.sendPacket(ServerTabCompletePacket(
-                packet.transactionID,
-                start = start + 1,
-                length = length,
-                matches = formattedMatches
-            ))
+            client.player.sendPacket(
+                ServerTabCompletePacket(
+                    packet.transactionID,
+                    start = start + 1,
+                    length = length,
+                    matches = formattedMatches
+                )
+            )
         }
     }
 
     @PacketReceiver
     fun onClientStatus(packet: ClientStatusPacket) {
-        when(packet.actionID) {
+        when (packet.actionID) {
             0 -> { // Perform respawn
-                client.player.sendPacket(ServerRespawnPacket(
-                    Bullet.dimensionCodec!!,
-                    "minecraft:overworld",
-                    GameMode.SURVIVAL,
-                    false,
-                    false,
-                    true
-                ))
+                client.player.sendPacket(
+                    ServerRespawnPacket(
+                        Bullet.dimensionCodec!!,
+                        "minecraft:overworld",
+                        GameMode.SURVIVAL,
+                        false,
+                        false,
+                        true
+                    )
+                )
 
                 client.player.status.health = 20
                 client.player.status.foodLevel = 20
@@ -245,23 +259,27 @@ class PacketHandler(
 
         val event = PlayerInteractEntityEvent(attacker, packet.entityID, packet.type)
         EventManager.fire(event)
-        if(event.isCancelled) return
+        if (event.isCancelled) return
 
-        if(packet.type == 1) {
-            for(player in Bullet.players) {
-                if(player.entityID == packet.entityID && player.gameMode == GameMode.SURVIVAL) {
+        if (packet.type == 1) {
+            for (player in Bullet.players) {
+                if (player.entityID == packet.entityID && player.gameMode == GameMode.SURVIVAL) {
                     player.status.health -= 1
 
-                    player.sendPacket(ServerUpdateHealthPacket(
-                        player.status.health.toFloat(),
-                        player.status.foodLevel,
-                        player.status.saturation
-                    ))
+                    player.sendPacket(
+                        ServerUpdateHealthPacket(
+                            player.status.health.toFloat(),
+                            player.status.foodLevel,
+                            player.status.saturation
+                        )
+                    )
 
-                    player.sendPacket(ServerAnimationPacket(
-                        player.entityID,
-                        1
-                    ))
+                    player.sendPacket(
+                        ServerAnimationPacket(
+                            player.entityID,
+                            1
+                        )
+                    )
 
                     player.status.exhaustion += 0.1f
 
@@ -269,19 +287,21 @@ class PacketHandler(
                     val dy = player.location.y - attacker.location.y
                     val dz = player.location.z - attacker.location.z
                     val distance = sqrt(dx * dx + dy * dy + dz * dz)
-                    if(distance != 0.0) {
+                    if (distance != 0.0) {
                         val kbStrength = 0.5
 
                         val kbX = (dx / distance) * kbStrength
-                        val kbY = if(player.onGround) 0.3 else 0.125
+                        val kbY = if (player.onGround) 0.3 else 0.125
                         val kbZ = (dz / distance) * kbStrength
 
-                        player.sendPacket(ServerEntityVelocityPacket(
-                            player.entityID,
-                            (kbX * 8000).toInt().toShort(),
-                            (kbY * 8000).toInt().toShort(),
-                            (kbZ * 8000).toInt().toShort()
-                        ))
+                        player.sendPacket(
+                            ServerEntityVelocityPacket(
+                                player.entityID,
+                                (kbX * 8000).toInt().toShort(),
+                                (kbY * 8000).toInt().toShort(),
+                                (kbZ * 8000).toInt().toShort()
+                            )
+                        )
                     }
                 }
             }
@@ -292,7 +312,7 @@ class PacketHandler(
     fun onHeldItemChange(packet: ClientHeldItemChangePacket) {
         val event = PlayerHeldItemChangeEvent(client.player, packet.slot.toInt())
         EventManager.fire(event)
-        if(event.isCancelled) return
+        if (event.isCancelled) return
 
         client.player.selectedSlot = packet.slot.toInt()
         sendHeldItemUpdate()
@@ -304,8 +324,8 @@ class PacketHandler(
         val stack = if(packet.slot.present) packet.slot.toItemStack() else null
         client.player.inventory.set(slotIdx, stack)
 
-        if(slotIdx == client.player.selectedSlot + 36) sendHeldItemUpdate()
-        if(slotIdx == -1) { //drop item
+        if (slotIdx == client.player.selectedSlot + 36) sendHeldItemUpdate()
+        if (slotIdx == -1) { //drop item
             if (stack != null && !stack.isAir) {
                 val vx = ((Math.random() - 0.5) * 0.2 * 8000).toInt().toShort()
                 val vy = (0.1 * 8000).toInt().toShort()
@@ -318,7 +338,7 @@ class PacketHandler(
 
     @PacketReceiver
     fun onPluginMessage(packet: ClientPluginMessagePacket) {
-        when(packet.channel) {
+        when (packet.channel) {
             "minecraft:brand" -> {
                 val input = DataInputStream(ByteArrayInputStream(packet.pluginData))
                 val length = input.readVarInt()
@@ -331,7 +351,7 @@ class PacketHandler(
 
                 val event = PlayerBrandEvent(client.player, brand)
                 EventManager.fire(event)
-                if(event.isCancelled) {
+                if (event.isCancelled) {
                     client.player.disconnect(Component.text("Your client brand is not supported"))
                     return
                 }
@@ -351,7 +371,7 @@ class PacketHandler(
             packet.mainHand
         )
         EventManager.fire(event)
-        if(event.isCancelled) return
+        if (event.isCancelled) return
 
         client.player.viewDistance = packet.viewDistance.toInt()
         client.player.locale = packet.locale
@@ -365,11 +385,11 @@ class PacketHandler(
      */
     @PacketReceiver
     fun onPlayerAction(packet: ClientEntityActionPacket) {
-        when(packet.actionID) {
+        when (packet.actionID) {
             0 -> { //Start sneaking
                 val event = PlayerSneakEvent(client.player, true)
                 EventManager.fire(event)
-                if(event.isCancelled) return
+                if (event.isCancelled) return
 
                 client.player.isSneaking = true
                 updateEntityMetadata(client.player, 6, 5)
@@ -378,7 +398,7 @@ class PacketHandler(
             1 -> { //Stop sneaking
                 val event = PlayerSneakEvent(client.player, false)
                 EventManager.fire(event)
-                if(event.isCancelled) return
+                if (event.isCancelled) return
 
                 client.player.isSneaking = false
                 updateEntityMetadata(client.player, 6, 0)
@@ -391,7 +411,7 @@ class PacketHandler(
             3 -> { //Start sprinting
                 val event = PlayerSprintEvent(client.player, true)
                 EventManager.fire(event)
-                if(event.isCancelled) return
+                if (event.isCancelled) return
 
                 sprinting.add(client.player.entityID)
                 client.player.lastSprintLocation = client.player.location
@@ -400,7 +420,7 @@ class PacketHandler(
             4 -> { //Stop sprinting
                 val event = PlayerSprintEvent(client.player, false)
                 EventManager.fire(event)
-                if(event.isCancelled) return
+                if (event.isCancelled) return
 
                 sprinting.remove(client.player.entityID)
                 client.player.lastSprintLocation = null
@@ -420,15 +440,17 @@ class PacketHandler(
             packet.face
         )
         EventManager.fire(event)
-        if(event.isCancelled) return
+        if (event.isCancelled) return
 
-        if(client.player.gameMode == GameMode.CREATIVE && event.status == BlockStatus.STARTED_DIGGING.id) {
-            for(otherPlayer in Bullet.players) {
-                if(otherPlayer != client.player) {
-                    otherPlayer.sendPacket(ServerBlockChangePacket(
-                        event.blockPos,
-                        0
-                    ))
+        if (client.player.gameMode == GameMode.CREATIVE && event.status == BlockStatus.STARTED_DIGGING.id) {
+            for (otherPlayer in Bullet.players) {
+                if (otherPlayer != client.player) {
+                    otherPlayer.sendPacket(
+                        ServerBlockChangePacket(
+                            event.blockPos,
+                            0
+                        )
+                    )
 
                     val block = world.modifiedBlocks[event.blockPos]?.stateID ?: Block.GRASS_BLOCK.id
                     sendBlockBreakParticles(otherPlayer, block, event.blockPos)
@@ -439,7 +461,9 @@ class PacketHandler(
         } else if(client.player.gameMode == GameMode.SURVIVAL) {
             when(event.status) {
                 BlockStatus.STARTED_DIGGING.id -> {
-                    val breakTime = getStoneBreakTime()
+                    val breakTime = getBlockBreakTime(
+                        world.modifiedBlocks[event.blockPos]?.stateID ?: Block.GRASS_BLOCK
+                    )
                     startBlockBreak(event.blockPos, breakTime.toInt())
                 }
 
@@ -448,22 +472,12 @@ class PacketHandler(
                 }
 
                 BlockStatus.FINISHED_DIGGING.id -> {
-                    client.player.status.exhaustion += 0.005f
-                    val block = world.modifiedBlocks[event.blockPos]?.stateID ?: Block.GRASS_BLOCK.id
-
-                    val vx = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
-                    val vy = (0.1 * 8000).toInt().toShort()
-                    val vz = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
-
-                    stopBlockBreak(event.blockPos)
-                    sendBlockBreakParticles(client.player, block, event.blockPos)
-                    removeBlock(event.blockPos)
-                    dropItem(event.blockPos, block, vx, vy, vz)
+                    handleFinishDigging(event)
                 }
             }
         }
 
-        when(event.status) {
+        when (event.status) {
             BlockStatus.DROP_ITEM.id, BlockStatus.DROP_ITEM_STACK.id -> {
                 handleBlockDrop(event.blockPos, event.status)
             }
@@ -474,33 +488,37 @@ class PacketHandler(
     fun onArmSwing(packet: ClientAnimationPacket) {
         val event = PlayerArmSwingEvent(client.player)
         EventManager.fire(event)
-        if(event.isCancelled) return
+        if (event.isCancelled) return
 
-        if(client.player.getHeldItemID() == Item.EXPERIENCE_BOTTLE.id) {
+        if (client.player.getHeldItemID() == Item.EXPERIENCE_BOTTLE.id) {
             world.orbs.add(OrbEntity())
             val orb = world.orbs.last()
             orb.location = client.player.location.copy().add(0.0, 1.0, 0.0)
             orb.xp = (3..11).random()
 
-            for(player in Bullet.players) {
-                player.sendPacket(ServerSpawnExperienceOrb(
-                    orb.entityID,
-                    client.player.location.toBlockPosition().add(0.0, 1.0, 0.0),
-                    orb.xp
-                ))
+            for (player in Bullet.players) {
+                player.sendPacket(
+                    ServerSpawnExperienceOrb(
+                        orb.entityID,
+                        client.player.location.toBlockPosition().add(0.0, 1.0, 0.0),
+                        orb.xp
+                    )
+                )
 
-                player.sendPacket(ServerSoundEffectPacket(
-                    Sounds.ENTITY_EXPERIENCE_BOTTLE_THROW,
-                    SoundCategories.PLAYER,
-                    client.player.location.x.toInt(),
-                    client.player.location.y.toInt(),
-                    client.player.location.z.toInt()
-                ))
+                player.sendPacket(
+                    ServerSoundEffectPacket(
+                        Sounds.ENTITY_EXPERIENCE_BOTTLE_THROW,
+                        SoundCategories.PLAYER,
+                        client.player.location.x.toInt(),
+                        client.player.location.y.toInt(),
+                        client.player.location.z.toInt()
+                    )
+                )
             }
         }
 
-        for(otherPlayer in Bullet.players) {
-            if(otherPlayer != client.player) {
+        for (otherPlayer in Bullet.players) {
+            if (otherPlayer != client.player) {
                 otherPlayer.sendPacket(ServerAnimationPacket(client.player.entityID, 0))
             }
         }
@@ -511,6 +529,11 @@ class PacketHandler(
      */
     @PacketReceiver
     fun onBlockPlacement(packet: ClientBlockPlacementPacket) {
+        val heldStack = client.player.getHeldItem()
+        if(heldStack.isAir || heldStack.count <= 0) return
+
+        val heldItem = client.player.getHeldItemID()
+
         val event = BlockPlaceEvent(
             client.player,
             packet.hand,
@@ -522,9 +545,9 @@ class PacketHandler(
             packet.insideBlock
         )
         EventManager.fire(event)
-        if(event.isCancelled) return
+        if (event.isCancelled) return
 
-        when(event.face) {
+        when (event.face) {
             0 -> event.blockPos.y -= 1
             1 -> event.blockPos.y += 1
             2 -> event.blockPos.z -= 1
@@ -532,8 +555,6 @@ class PacketHandler(
             4 -> event.blockPos.x -= 1
             5 -> event.blockPos.x += 1
         }
-
-        val heldItem = client.player.getHeldItemID()
 
         val block = Block.getBlockFromID(heldItem) ?: Item.getItemFromID(heldItem) ?: Block.AIR
         handlePlacement(block, event, packet.blockPos)
@@ -548,8 +569,8 @@ class PacketHandler(
         val player = client.player
         player.onGround = packet.onGround
 
-        for(otherPlayer in Bullet.players) {
-            if(otherPlayer != player) continue
+        for (otherPlayer in Bullet.players) {
+            if (otherPlayer != player) continue
             otherPlayer.clientSession.sendPacket(ServerEntityMovementPacket(player.entityID))
         }
     }
@@ -567,7 +588,7 @@ class PacketHandler(
             client.player.location.copy()
         )
         EventManager.fire(event)
-        if(event.isCancelled) return
+        if (event.isCancelled) return
 
         val player = client.player
         player.location = newLocation
@@ -585,8 +606,8 @@ class PacketHandler(
             player.location.yaw
         )
 
-        for(otherPlayer in Bullet.players) {
-            if(otherPlayer == player) continue
+        for (otherPlayer in Bullet.players) {
+            if (otherPlayer == player) continue
 
             otherPlayer.clientSession.sendPacket(rotPacket)
             otherPlayer.clientSession.sendPacket(headLookPacket)
@@ -607,14 +628,14 @@ class PacketHandler(
             player.location.copy()
         )
         EventManager.fire(event)
-        if(event.isCancelled) return false
+        if (event.isCancelled) return false
 
         val wasOnGround = player.onGround
 
         val newChunkX = (newLocation.x / 16).toInt()
         val newChunkZ = (newLocation.z / 16).toInt()
 
-        if(newChunkX != player.chunkX || newChunkZ != player.chunkZ) {
+        if (newChunkX != player.chunkX || newChunkZ != player.chunkZ) {
             player.chunkX = newChunkX
             player.chunkZ = newChunkZ
 
@@ -647,7 +668,7 @@ class PacketHandler(
         val player = client.player
         val lastLocation = player.location
 
-        if(!handleMove(player, newLocation, packet.onGround)) return
+        if (!handleMove(player, newLocation, packet.onGround)) return
 
         val (deltaX, deltaY, deltaZ) = calculateDeltas(
             packet.x, packet.feetY, packet.z,
@@ -669,8 +690,8 @@ class PacketHandler(
             player.location.yaw
         )
 
-        for(otherPlayer in Bullet.players) {
-            if(otherPlayer == player) continue
+        for (otherPlayer in Bullet.players) {
+            if (otherPlayer == player) continue
 
             otherPlayer.clientSession.sendPacket(posAndRotPacket)
             otherPlayer.clientSession.sendPacket(headLookPacket)
@@ -689,7 +710,7 @@ class PacketHandler(
         val player = client.player
         val lastLocation = player.location
 
-        if(!handleMove(player, newLocation, packet.onGround)) return
+        if (!handleMove(player, newLocation, packet.onGround)) return
 
         val (deltaX, deltaY, deltaZ) = calculateDeltas(
             packet.x, packet.feetY, packet.z,
@@ -704,8 +725,8 @@ class PacketHandler(
             player.onGround
         )
 
-        for(otherPlayer in Bullet.players) {
-            if(otherPlayer == player) continue
+        for (otherPlayer in Bullet.players) {
+            if (otherPlayer == player) continue
 
             otherPlayer.clientSession.sendPacket(posPacket)
         }
@@ -718,44 +739,50 @@ class PacketHandler(
     fun onChatMessage(packet: ClientChatMessagePacket) {
         val message = packet.message
 
-        if(message.length > 255) {
+        if (message.length > 255) {
             client.player.sendMessage(
                 Component.text("Message is too long")
-                .color(NamedTextColor.RED)
+                    .color(NamedTextColor.RED)
             )
 
             return
         }
 
-        if(message.startsWith('/') && message.length > 1) {
+        if (message.startsWith('/') && message.length > 1) {
             val command = message.substring(1)
             val commandSource = client.player
 
             @Suppress("TooGenericExceptionCaught")
             val result: Int = try {
                 CommandManager.dispatcher.execute(command, commandSource)
-            } catch (e: CommandSyntaxException){
+            } catch (e: CommandSyntaxException) {
                 CommandCodes.ILLEGAL_SYNTAX.id
             } catch (e: Exception) {
                 Bullet.logger.warn("Error running command `$message`:", e)
                 return
             }
 
-            if(result == CommandCodes.SUCCESS.id) return
+            if (result == CommandCodes.SUCCESS.id) return
 
-            when(result) {
+            when (result) {
                 CommandCodes.UNKNOWN.id ->
-                    commandSource.sendMessage(Component.text("Unknown command")
-                        .color(NamedTextColor.RED))
+                    commandSource.sendMessage(
+                        Component.text("Unknown command")
+                            .color(NamedTextColor.RED)
+                    )
 
                 CommandCodes.ILLEGAL_ARGUMENT.id,
                 CommandCodes.ILLEGAL_SYNTAX.id ->
-                    commandSource.sendMessage(Component.text("Invalid command syntax, try typing /help")
-                        .color(NamedTextColor.RED))
+                    commandSource.sendMessage(
+                        Component.text("Invalid command syntax, try typing /help")
+                            .color(NamedTextColor.RED)
+                    )
 
                 CommandCodes.INVALID_PERMISSIONS.id ->
-                    commandSource.sendMessage(Component.text("You don't have permission to use this command")
-                        .color(NamedTextColor.RED))
+                    commandSource.sendMessage(
+                        Component.text("You don't have permission to use this command")
+                            .color(NamedTextColor.RED)
+                    )
             }
             return
         }
@@ -764,7 +791,7 @@ class PacketHandler(
 
         val event = PlayerChatEvent(client.player, formattedMessage)
         EventManager.fire(event)
-        if(event.isCancelled) return
+        if (event.isCancelled) return
 
         val textComponent = Component.text()
             .append(Component.text().content("<").color(NamedTextColor.GRAY))
@@ -784,7 +811,7 @@ class PacketHandler(
     fun onKeepAlive(packet: ClientKeepAlivePacket) {
         val event = PlayerHeartbeatEvent(client.player)
         EventManager.fire(event)
-        if(event.isCancelled) return
+        if (event.isCancelled) return
 
         client.respondedToKeepAlive = true
 
@@ -794,12 +821,14 @@ class PacketHandler(
 
         client.player.ping = rtt / 2
 
-        for(player in Bullet.players) {
-            player.sendPacket(ServerPlayerInfoPacket(
-                2,
-                client.player.uuid,
-                ping = client.player.ping
-            ))
+        for (player in Bullet.players) {
+            player.sendPacket(
+                ServerPlayerInfoPacket(
+                    2,
+                    client.player.uuid,
+                    ping = client.player.ping
+                )
+            )
         }
     }
 
@@ -830,10 +859,14 @@ class PacketHandler(
         val hash = Hashes.makeServerIDHash(sharedSecret, Bullet.publicKey)
         val prof = runBlocking { MojangNetworking.querySessionServer(player, hash) }
 
-        if(prof == null) {
-            client.sendPacket(ServerLoginDisconnectPacket(Component.text(
-                "Failed to verify username with Mojang servers, please try again later",
-                NamedTextColor.RED))
+        if (prof == null) {
+            client.sendPacket(
+                ServerLoginDisconnectPacket(
+                    Component.text(
+                        "Failed to verify username with Mojang servers, please try again later",
+                        NamedTextColor.RED
+                    )
+                )
             )
 
             client.close()
@@ -851,13 +884,18 @@ class PacketHandler(
         val dupes = players.filter { it.uuid == client.player.uuid || it.username == client.player.username }
         players.removeAll(dupes)
 
-        for(old in dupes) {
-            old.disconnect(Component.text()
-                .append(Component.text("You logged in from another location", NamedTextColor.RED))
-                .append(Component.text(
-                    "\n\nIf this wasn’t you, your account may have been compromised.",
-                    NamedTextColor.GRAY))
-                .build())
+        for (old in dupes) {
+            old.disconnect(
+                Component.text()
+                    .append(Component.text("You logged in from another location", NamedTextColor.RED))
+                    .append(
+                        Component.text(
+                            "\n\nIf this wasn’t you, your account may have been compromised.",
+                            NamedTextColor.GRAY
+                        )
+                    )
+                    .build()
+            )
 
             old.clientSession.close()
         }
@@ -876,7 +914,7 @@ class PacketHandler(
     fun onLoginStart(packet: ClientLoginStartPacket) {
         val preJoinEvent = PlayerPreJoinEvent()
         EventManager.fire(preJoinEvent)
-        if(preJoinEvent.isCancelled) return
+        if (preJoinEvent.isCancelled) return
 
         val username = packet.username
         val uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:$username").toByteArray())
@@ -884,16 +922,18 @@ class PacketHandler(
         checkLoginValidity(username)
 
         val player = initializePlayer(username, uuid)
-        if(!Bullet.onlineMode) {
+        if (!Bullet.onlineMode) {
             val dupes = players.filter {
                 it.username == username || it.uuid == uuid
             }
 
             players.removeAll(dupes)
             dupes.forEach { old ->
-                old.sendPacket(ServerLoginDisconnectPacket(
-                    Component.text("You are already logged in from another location", NamedTextColor.RED)
-                ))
+                old.sendPacket(
+                    ServerLoginDisconnectPacket(
+                        Component.text("You are already logged in from another location", NamedTextColor.RED)
+                    )
+                )
 
                 old.clientSession.close()
             }
@@ -921,7 +961,7 @@ class PacketHandler(
     fun onStatusRequest(packet: ClientStatusRequestPacket) {
         val event = StatusRequestEvent(Bullet.max_players, 0, Bullet.motd)
         EventManager.fire(event)
-        if(event.isCancelled) return
+        if (event.isCancelled) return
 
         val response = ServerStatusResponse(
             ServerStatusResponse.Version(Bullet.VERSION, Bullet.PROTOCOL),
@@ -939,12 +979,12 @@ class PacketHandler(
      */
     @PacketReceiver
     fun onHandshake(packet: HandshakePacket) {
-        client.state = if(packet.state == 2) GameState.LOGIN else GameState.STATUS
+        client.state = if (packet.state == 2) GameState.LOGIN else GameState.STATUS
         client.protocol = packet.protocol ?: -1
 
         val event = HandshakeEvent(client.state, client.protocol)
         EventManager.fire(event)
-        if(event.isCancelled) return
+        if (event.isCancelled) return
     }
 
     /**
@@ -955,15 +995,15 @@ class PacketHandler(
     fun handle(packet: Packet) {
         @Suppress("TooGenericExceptionCaught")
         try {
-            for(method in javaClass.methods) {
-                if(method.isAnnotationPresent(PacketReceiver::class.java)) {
+            for (method in javaClass.methods) {
+                if (method.isAnnotationPresent(PacketReceiver::class.java)) {
                     val params: Array<Class<*>> = method.parameterTypes
-                    if(params.size == 1 && params[0] == packet.javaClass) {
+                    if (params.size == 1 && params[0] == packet.javaClass) {
                         method.invoke(this, packet)
                     }
                 }
             }
-        } catch (e: Exception){
+        } catch (e: Exception) {
             Bullet.logger.error("Could not handle packet ${packet.javaClass.name}", e)
         }
     }
@@ -986,7 +1026,7 @@ class PacketHandler(
         player.location = LocationType.Location(8.5, 2.0, 8.5)
         player.onGround = false
 
-        if(player.gameMode != GameMode.SURVIVAL || player.gameMode != GameMode.ADVENTURE) {
+        if (player.gameMode != GameMode.SURVIVAL || player.gameMode != GameMode.ADVENTURE) {
             player.canFly = true
         }
 
@@ -995,8 +1035,8 @@ class PacketHandler(
     }
 
     private fun sendSpawnPlayerPackets(player: Player) {
-        for(otherPlayer in Bullet.players) {
-            if(otherPlayer != player) {
+        for (otherPlayer in Bullet.players) {
+            if (otherPlayer != player) {
                 otherPlayer.clientSession.sendPacket(
                     ServerSpawnPlayerPacket(
                         player.entityID,
@@ -1007,8 +1047,8 @@ class PacketHandler(
             }
         }
 
-        for(existingPlayer in Bullet.players) {
-            if(existingPlayer != player) {
+        for (existingPlayer in Bullet.players) {
+            if (existingPlayer != player) {
                 client.sendPacket(
                     ServerSpawnPlayerPacket(
                         existingPlayer.entityID,
@@ -1022,14 +1062,14 @@ class PacketHandler(
 
     @OptIn(DelicateCoroutinesApi::class)
     private fun startBlockBreak(blockPos: BlockPositionType.BlockPosition, breakTime: Int) {
-        if(breakingBlocks.containsKey(blockPos)) return
+        if (breakingBlocks.containsKey(blockPos)) return
 
         val job = GlobalScope.launch {
             val stepTime = breakTime.toLong() / 9
 
-            for(stage in 0..9) {
-                for(otherPlayer in Bullet.players) {
-                    if(otherPlayer != client.player) {
+            for (stage in 0..9) {
+                for (otherPlayer in Bullet.players) {
+                    if (otherPlayer != client.player) {
                         otherPlayer.sendPacket(ServerBlockBreakAnimationPacket(client.player.entityID, blockPos, stage))
                     }
                 }
@@ -1037,8 +1077,8 @@ class PacketHandler(
                 delay(stepTime)
             }
 
-            for(otherPlayer in Bullet.players) {
-                if(otherPlayer != client.player) {
+            for (otherPlayer in Bullet.players) {
+                if (otherPlayer != client.player) {
                     otherPlayer.sendPacket(ServerBlockChangePacket(blockPos, 0))
                 }
             }
@@ -1053,15 +1093,46 @@ class PacketHandler(
         breakingBlocks[blockPos]?.cancel()
         breakingBlocks.remove(blockPos)
 
-        for(otherPlayer in Bullet.players) {
-            if(otherPlayer != client.player) {
+        for (otherPlayer in Bullet.players) {
+            if (otherPlayer != client.player) {
                 otherPlayer.sendPacket(ServerBlockBreakAnimationPacket(otherPlayer.entityID, blockPos, -1))
             }
         }
     }
 
-    private fun getStoneBreakTime(): Long {
-        return ((1.5 * 30) * 140).toLong()
+    private fun getBlockBreakTime(block: Any): Long {
+        val player = client.player
+        val heldItem = player.getHeldItem().item
+        val blockObj = when (block) {
+            is Block -> block
+            is Item -> Block.getBlockFromID(block.id) ?: return 1
+            else -> return 0
+        }
+
+        val hardness = blockObj.hardness
+        if (hardness <= 0) return 0
+
+        val isBestTool = getBestTool(blockObj, heldItem)
+        val canHarvest = canHarvestBlock(blockObj, heldItem)
+        val toolMultiplier = getToolMultiplier(heldItem)
+
+        var speedMultiplier = if (isBestTool) toolMultiplier else 1.0
+        if (!player.onGround) {
+            speedMultiplier /= 5.0
+        }
+
+        var damage = speedMultiplier / hardness
+        damage /= if (canHarvest) {
+            30.0
+        } else {
+            100.0
+        }
+
+        if (damage > 1.0) return 0
+        val ticks = ceil(1.0 / damage)
+        val seconds = ticks / 20.0
+
+        return seconds.toLong()
     }
 
     private fun updateEntityMetadata(player: Player, index: Int, value: Int) {
@@ -1070,8 +1141,8 @@ class PacketHandler(
             listOf(MetadataType.MetadataEntry(index.toByte(), 18, value))
         )
 
-        for(otherPlayer in Bullet.players) {
-            if(otherPlayer != player) {
+        for (otherPlayer in Bullet.players) {
+            if (otherPlayer != player) {
                 otherPlayer.sendPacket(packet)
             }
         }
@@ -1081,12 +1152,14 @@ class PacketHandler(
         val stack = client.player.getHeldItem()
         val slotData = stack.toSlotData()
 
-        for(otherPlayer in Bullet.players) {
-            if(otherPlayer != client.player) {
-                otherPlayer.sendPacket(ServerEntityEquipmentPacket(
-                    client.player.entityID,
-                    listOf(0 to slotData)
-                ))
+        for (otherPlayer in Bullet.players) {
+            if (otherPlayer != client.player) {
+                otherPlayer.sendPacket(
+                    ServerEntityEquipmentPacket(
+                        client.player.entityID,
+                        listOf(0 to slotData)
+                    )
+                )
             }
         }
     }
@@ -1101,21 +1174,21 @@ class PacketHandler(
      * @param wasOnGround If the player was on the ground before the movement packet was called
      */
     private fun handleFoodLevel(player: Player, x: Double, z: Double, onGround: Boolean, wasOnGround: Boolean) {
-        if(!onGround && wasOnGround) {
-            if(sprinting.contains(player.entityID)) {
+        if (!onGround && wasOnGround) {
+            if (sprinting.contains(player.entityID)) {
                 player.status.exhaustion += 0.2f
             } else {
                 player.status.exhaustion += 0.05f
             }
         }
 
-        if(sprinting.contains(player.entityID)) {
+        if (sprinting.contains(player.entityID)) {
             val distance = sqrt(
                 (x - player.lastSprintLocation!!.x).pow(2) +
-                    (z - player.lastSprintLocation!!.z).pow(2)
+                        (z - player.lastSprintLocation!!.z).pow(2)
             )
 
-            if(distance >= 1) {
+            if (distance >= 1) {
                 player.status.exhaustion += 0.1f
                 player.lastSprintLocation = player.location
             }
@@ -1124,23 +1197,25 @@ class PacketHandler(
 
     private fun checkFallDamage() {
         val player = client.player
-        if(player.gameMode == GameMode.SURVIVAL) {
-            if(player.onGround) {
-                if(player.fallDistance > 3) {
+        if (player.gameMode == GameMode.SURVIVAL) {
+            if (player.onGround) {
+                if (player.fallDistance > 3) {
                     val damage = ((player.fallDistance - 3).coerceAtLeast(0.0)).toInt()
                     player.status.health -= damage
 
-                    player.sendPacket(ServerUpdateHealthPacket(
-                        player.status.health.toFloat(),
-                        player.status.foodLevel,
-                        player.status.saturation
-                    ))
+                    player.sendPacket(
+                        ServerUpdateHealthPacket(
+                            player.status.health.toFloat(),
+                            player.status.foodLevel,
+                            player.status.saturation
+                        )
+                    )
                 }
 
                 player.fallDistance = 0.0
                 player.lastOnGroundY = player.location.y
             } else {
-                if(player.location.y < player.lastOnGroundY) {
+                if (player.location.y < player.lastOnGroundY) {
                     player.fallDistance += player.lastOnGroundY - player.location.y
                     player.lastOnGroundY = player.location.y
                 } else {
@@ -1152,37 +1227,43 @@ class PacketHandler(
 
     private fun removeBlock(blockPos: BlockPositionType.BlockPosition) {
         val world = world
-        if(world.modifiedBlocks.keys.find {
+        if (world.modifiedBlocks.keys.find {
                 it.x == blockPos.x && it.y == blockPos.y && it.z == blockPos.z
             } != null) {
             world.modifiedBlocks.remove(blockPos)
         } else {
-            world.modifiedBlocks[blockPos] = BlockWithMetadata(0)
+            world.modifiedBlocks[blockPos] = BlockWithMetadata(0, 0)
         }
 
     }
 
     private fun checkLoginValidity(username: String): Boolean {
-        if(client.protocol > Bullet.PROTOCOL) {
-            client.sendPacket(ServerLoginDisconnectPacket(Component.text()
-                .append(Component.text("Your client is outdated, please downgrade to minecraft version"))
-                .append(Component.text(" " + Bullet.VERSION).color(NamedTextColor.GOLD))
-                .build()
-            ))
+        if (client.protocol > Bullet.PROTOCOL) {
+            client.sendPacket(
+                ServerLoginDisconnectPacket(
+                    Component.text()
+                        .append(Component.text("Your client is outdated, please downgrade to minecraft version"))
+                        .append(Component.text(" " + Bullet.VERSION).color(NamedTextColor.GOLD))
+                        .build()
+                )
+            )
 
             client.close()
             return false
-        } else if(client.protocol < Bullet.PROTOCOL) {
-            client.sendPacket(ServerLoginDisconnectPacket(Component.text()
-                .append(Component.text("Your client is outdated, please upgrade to minecraft version"))
-                .append(Component.text(" " + Bullet.VERSION).color(NamedTextColor.GOLD))
-                .build()
-            ))
+        } else if (client.protocol < Bullet.PROTOCOL) {
+            client.sendPacket(
+                ServerLoginDisconnectPacket(
+                    Component.text()
+                        .append(Component.text("Your client is outdated, please upgrade to minecraft version"))
+                        .append(Component.text(" " + Bullet.VERSION).color(NamedTextColor.GOLD))
+                        .build()
+                )
+            )
 
             return false
         }
 
-        if(!username.matches(Regex("^[a-zA-Z0-9]{3,16}$"))) {
+        if (!username.matches(Regex("^[a-zA-Z0-9]{3,16}$"))) {
             client.sendPacket(ServerLoginDisconnectPacket(Component.text("Invalid username")))
             return false
         }
@@ -1195,7 +1276,7 @@ class PacketHandler(
         client.scheduleKeepAlive()
         client.scheduleHalfSecondUpdate()
 
-        if(Bullet.shouldPersist) client.scheduleSaving()
+        if (Bullet.shouldPersist) client.scheduleSaving()
     }
 
     private fun readPlayerPersistentData() {
@@ -1226,24 +1307,28 @@ class PacketHandler(
         sendHeldItemUpdate()
         calculateXPLevels(player.totalXP)
 
-        player.sendPacket(ServerUpdateHealthPacket(
-            player.status.health.toFloat(),
-            player.status.foodLevel,
-            player.status.saturation
-        ))
+        player.sendPacket(
+            ServerUpdateHealthPacket(
+                player.status.health.toFloat(),
+                player.status.foodLevel,
+                player.status.saturation
+            )
+        )
 
         player.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
 
     }
 
     private fun sendBlockChanges() {
-        if(world.modifiedBlocks.isEmpty()) return
-        for((pos, meta) in world.modifiedBlocks) {
-            client.player.sendPacket(ServerBlockChangePacket(
-                pos, meta.stateID
-            ))
+        if (world.modifiedBlocks.isEmpty()) return
+        for ((pos, meta) in world.modifiedBlocks) {
+            client.player.sendPacket(
+                ServerBlockChangePacket(
+                    pos, meta.stateID
+                )
+            )
 
-            if(meta.textLines != null) {
+            if (meta.textLines != null) {
                 val nbt = CompoundTag()
                 nbt.putString("id", "minecraft:sign")
                 nbt.putInt("x", pos.x.toInt())
@@ -1254,9 +1339,11 @@ class PacketHandler(
                     nbt.putString("Text${idx + 1}", "{\"text\":\"$line\"}")
                 }
 
-                client.player.sendPacket(ServerBlockEntityDataPacket(
-                    pos, 9, nbt
-                ))
+                client.player.sendPacket(
+                    ServerBlockEntityDataPacket(
+                        pos, 9, nbt
+                    )
+                )
             }
         }
     }
@@ -1269,12 +1356,12 @@ class PacketHandler(
         val banEnd = ban.currentTime + durationMillis
         val now = System.currentTimeMillis()
 
-        if(durationMillis > 0 && now >= banEnd) {
+        if (durationMillis > 0 && now >= banEnd) {
             Bullet.storage.unbanPlayer(ban.uuid)
             return false
         }
 
-        val expirationText = if(durationMillis <= 0) {
+        val expirationText = if (durationMillis <= 0) {
             "permanently"
         } else {
             val expirationTime = Instant.ofEpochMilli(banEnd)
@@ -1304,49 +1391,41 @@ class PacketHandler(
     }
 
     private fun handlePlacement(block: Any, event: BlockPlaceEvent, blockPos: BlockPositionType.BlockPosition) {
+        if(block is Item && block == Item.AIR) return
+        if(block is Block && block == Block.AIR) return
+
         try {
             val dir = getCardinalDirection(client.player.location.yaw)
             val properties = modifyBlockProperties(block, dir, event)
 
             val stateID = getStateID(block, properties)
-            if(stateID == -1) return
+            if (stateID == -1) return
 
             val clickedStateID = world.modifiedBlocks[blockPos]?.stateID ?: 0
             val clickedItemID = clickedStateID.let { Item.getIDFromState(it) }
 
-            for(bed in BlockTags.BEDS) {
-                if(clickedItemID == bed.id) {
+            for (bed in BlockTags.BEDS) {
+                if (clickedItemID == bed.id) {
                     handleBedClick(blockPos)
                     break
                 }
             }
 
             players.forEach {
-                it.sendPacket(ServerBlockChangePacket(event.blockPos, stateID))
-
-                val entry = when {
-                    block is Item && block in BlockTags.SIGNS -> {
-                        client.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
-                        BlockWithMetadata(stateID, listOf("", "", "", ""))
-                    }
-
-                    block is Item && block in BlockTags.SPAWN_EGGS -> {
-                        handleSpawnEgg(block, event)
-                        BlockWithMetadata(stateID)
-                    }
-
-                    else -> BlockWithMetadata(stateID)
-                }
-
+                val entry = handlePlayerSpecificBlockPlacement(event, stateID, it, block)
                 world.modifiedBlocks[event.blockPos] = entry
             }
-        } catch(e: IllegalArgumentException) {
+
+            if(client.player.gameMode == GameMode.SURVIVAL) {
+                handleItemDecrease()
+            }
+        } catch (e: IllegalArgumentException) {
             //do nothing
         }
     }
 
     private fun getStateID(block: Any, properties: Map<String, String>): Int {
-        return when(block) {
+        return when (block) {
             is Block -> Block.getStateID(block, properties)
             is Item -> Item.getStateID(block, properties)
             else -> -1
@@ -1360,32 +1439,32 @@ class PacketHandler(
     ): MutableMap<String, String> {
         val properties = mutableMapOf<String, String>()
 
-        for(furnace in BlockTags.FURNANCES) {
-            if(block == furnace) {
+        for (furnace in BlockTags.FURNANCES) {
+            if (block == furnace) {
                 properties["facing"] = cardinalDirection
                 properties["lit"] = "false"
 
-                if(block == Block.CAMPFIRE) {
+                if (block == Block.CAMPFIRE) {
                     properties["waterlogged"] = "false"
                     properties["signal_fire"] = "false"
                 }
             }
         }
 
-        if(block == Block.END_ROD) {
+        if (block == Block.END_ROD) {
             properties["facing"] = cardinalDirection
         }
 
-        if(block == Block.GRINDSTONE) {
+        if (block == Block.GRINDSTONE) {
             properties["facing"] = cardinalDirection
             properties["face"] = "floor"
         }
 
-        if(block == BlockTags.BANNERS || block == BlockTags.SKULLS) {
+        if (block == BlockTags.BANNERS || block == BlockTags.SKULLS) {
             properties["rotation"] = getRotationalDirection(client.player.location.yaw).toString()
         }
 
-        if(block == BlockTags.SIGNS) {
+        if (block == BlockTags.SIGNS) {
             properties["rotation"] = getRotationalDirection(client.player.location.yaw).toString()
             properties["waterlogged"] = "false"
         }
@@ -1402,7 +1481,7 @@ class PacketHandler(
             properties[key] = value
         }
 
-        if(block is Item) {
+        if (block is Item) {
             modifyBedBlocks(block, cardinalDirection, event).forEach { (key, value) ->
                 properties[key] = value
             }
@@ -1414,8 +1493,8 @@ class PacketHandler(
     private fun modifyStairProperties(block: Any, cardinalDirection: String): MutableMap<String, String> {
         val properties = mutableMapOf<String, String>()
 
-        for(stair in BlockTags.STAIRS) {
-            if(block == stair) {
+        for (stair in BlockTags.STAIRS) {
+            if (block == stair) {
                 properties["facing"] = cardinalDirection
                 properties["half"] = "bottom"
                 properties["shape"] = "straight"
@@ -1429,40 +1508,40 @@ class PacketHandler(
     private fun modifyRedstoneBlockProperties(block: Any, cardinalDirection: String): MutableMap<String, String> {
         val properties = mutableMapOf<String, String>()
 
-        if(block == Block.DISPENSER || block == Block.DROPPER) {
+        if (block == Block.DISPENSER || block == Block.DROPPER) {
             properties["facing"] = cardinalDirection
             properties["triggered"] = "false"
         }
 
-        if(block == Block.PISTON) {
+        if (block == Block.PISTON) {
             properties["extended"] = "false"
             properties["facing"] = cardinalDirection
         }
 
-        if(block == Block.OBSERVER) {
+        if (block == Block.OBSERVER) {
             properties["facing"] = cardinalDirection
             properties["powered"] = "false"
         }
 
-        if(block == Block.REPEATER) {
+        if (block == Block.REPEATER) {
             properties["facing"] = cardinalDirection
             properties["delay"] = "1"
             properties["locked"] = "false"
             properties["powered"] = "false"
         }
 
-        if(block == Block.COMPARATOR) {
+        if (block == Block.COMPARATOR) {
             properties["facing"] = cardinalDirection
             properties["mode"] = "compare"
             properties["powered"] = "false"
         }
 
-        if(block == Block.BARREL) {
+        if (block == Block.BARREL) {
             properties["facing"] = cardinalDirection
             properties["open"] = "false"
         }
 
-        if(block == Block.LECTERN) {
+        if (block == Block.LECTERN) {
             properties["facing"] = cardinalDirection
             properties["has_book"] = "false"
             properties["powered"] = "false"
@@ -1474,8 +1553,8 @@ class PacketHandler(
     private fun modifyAxisAlignedBlocks(block: Any): MutableMap<String, String> {
         val properties = mutableMapOf<String, String>()
 
-        for(log in BlockTags.LOGS) {
-            if(block == log) {
+        for (log in BlockTags.LOGS) {
+            if (block == log) {
                 properties["axis"] = getAxisDirection(
                     client.player.location.yaw,
                     client.player.location.pitch
@@ -1483,28 +1562,28 @@ class PacketHandler(
             }
         }
 
-        if(block == Item.QUARTZ_PILLAR) {
+        if (block == Item.QUARTZ_PILLAR) {
             properties["axis"] = getAxisDirection(
                 client.player.location.yaw,
                 client.player.location.pitch
             ).name.lowercase()
         }
 
-        if(block == Item.CHAIN) {
+        if (block == Item.CHAIN) {
             properties["axis"] = getAxisDirection(
                 client.player.location.yaw,
                 client.player.location.pitch
             ).name.lowercase()
         }
 
-        if(block == Item.BONE_BLOCK) {
+        if (block == Item.BONE_BLOCK) {
             properties["axis"] = getAxisDirection(
                 client.player.location.yaw,
                 client.player.location.pitch
             ).name.lowercase()
         }
 
-        if(block == Item.BASALT || block == Item.POLISHED_BASALT) {
+        if (block == Item.BASALT || block == Item.POLISHED_BASALT) {
             properties["axis"] = getAxisDirection(
                 client.player.location.yaw,
                 client.player.location.pitch
@@ -1521,18 +1600,18 @@ class PacketHandler(
     ): MutableMap<String, String> {
         val properties = mutableMapOf<String, String>()
 
-        for(bed in BlockTags.BEDS) {
-            if(block == bed) {
+        for (bed in BlockTags.BEDS) {
+            if (block == bed) {
                 properties["facing"] = cardinalDirection
                 properties["part"] = "foot"
                 properties["occupied"] = "false"
 
-                val headPos = when(cardinalDirection) {
+                val headPos = when (cardinalDirection) {
                     "north" -> event.blockPos.copy(z = event.blockPos.z - 1)
                     "south" -> event.blockPos.copy(z = event.blockPos.z + 1)
-                    "west"  -> event.blockPos.copy(x = event.blockPos.x - 1)
-                    "east"  -> event.blockPos.copy(x = event.blockPos.x + 1)
-                    else    -> event.blockPos
+                    "west" -> event.blockPos.copy(x = event.blockPos.x - 1)
+                    "east" -> event.blockPos.copy(x = event.blockPos.x + 1)
+                    else -> event.blockPos
                 }
 
                 val props: MutableMap<String, String> = mutableMapOf()
@@ -1541,9 +1620,9 @@ class PacketHandler(
                 props["occupied"] = "false"
 
                 val stateID = Item.getStateID(block, props)
-                world.modifiedBlocks[headPos] = BlockWithMetadata(stateID)
+                world.modifiedBlocks[headPos] = BlockWithMetadata(block.id, stateID)
 
-                for(player in Bullet.players) {
+                for (player in Bullet.players) {
                     player.sendPacket(ServerBlockChangePacket(headPos, stateID))
                 }
             }
@@ -1553,29 +1632,33 @@ class PacketHandler(
     }
 
     private fun sendEntities() {
-        for(entity in world.entities) {
-            client.sendPacket(ServerSpawnEntityPacket(
-                entity.first.entityID,
-                entity.second.uuid,
-                entity.second.entityType,
-                entity.second.location,
-                entity.second.velocityX,
-                entity.second.velocityY,
-                entity.second.velocityZ,
-            ))
+        for (entity in world.entities) {
+            client.sendPacket(
+                ServerSpawnEntityPacket(
+                    entity.first.entityID,
+                    entity.second.uuid,
+                    entity.second.entityType,
+                    entity.second.location,
+                    entity.second.velocityX,
+                    entity.second.velocityY,
+                    entity.second.velocityZ,
+                )
+            )
         }
 
-        for(livingEntity in world.livingEntities) {
-            client.sendPacket(ServerSpawnLivingEntityPacket(
-                livingEntity.first.entityID,
-                livingEntity.second.uuid,
-                livingEntity.second.entityType,
-                livingEntity.second.location,
-                livingEntity.second.headPitch,
-                livingEntity.second.velocityX,
-                livingEntity.second.velocityY,
-                livingEntity.second.velocityZ,
-            ))
+        for (livingEntity in world.livingEntities) {
+            client.sendPacket(
+                ServerSpawnLivingEntityPacket(
+                    livingEntity.first.entityID,
+                    livingEntity.second.uuid,
+                    livingEntity.second.entityType,
+                    livingEntity.second.location,
+                    livingEntity.second.headPitch,
+                    livingEntity.second.velocityX,
+                    livingEntity.second.velocityY,
+                    livingEntity.second.velocityZ,
+                )
+            )
         }
     }
 
@@ -1583,7 +1666,7 @@ class PacketHandler(
         val itemName = block.name.removeSuffix("_SPAWN_EGG")
         val entity = LivingEntities.entries.find { it.name.equals(itemName, true) }
 
-        if(entity != null) {
+        if (entity != null) {
             val location = LocationType.Location(
                 event.blockPos.x + 0.5,
                 event.blockPos.y,
@@ -1624,16 +1707,18 @@ class PacketHandler(
     }
 
     private fun sendBlockBreakParticles(player: Player, block: Int, blockPos: BlockPositionType.BlockPosition) {
-        player.sendPacket(ServerParticlePacket(
-            Particles.Block(block),
-            false,
-            blockPos.add(0.5, 0.5, 0.5),
-            0.2f,
-            0.22f,
-            0.2f,
-            0f,
-            25
-        ))
+        player.sendPacket(
+            ServerParticlePacket(
+                Particles.Block(block),
+                false,
+                blockPos.add(0.5, 0.5, 0.5),
+                0.2f,
+                0.22f,
+                0.2f,
+                0f,
+                25
+            )
+        )
     }
 
     private fun getCardinalDirection(yaw: Float): String {
@@ -1662,8 +1747,8 @@ class PacketHandler(
 
     private fun handleBedClick(blockPos: BlockPositionType.BlockPosition) {
         val time = client.player.world!!.timeOfDay
-        if(world.weather == 0) {
-            if(time !in 12542..23459) {
+        if (world.weather == 0) {
+            if (time !in 12542..23459) {
                 client.player.sendMessage(
                     Component.text("You can only sleep at night")
                         .color(NamedTextColor.RED)
@@ -1671,7 +1756,7 @@ class PacketHandler(
                 return
             }
         } else {
-            if(time !in 12010..23991) {
+            if (time !in 12010..23991) {
                 client.player.sendMessage(
                     Component.text("You can only sleep at night")
                         .color(NamedTextColor.RED)
@@ -1685,23 +1770,23 @@ class PacketHandler(
             MetadataType.MetadataEntry(13.toByte(), 10, true to blockPos),
         )
 
-        for(player in players) {
+        for (player in players) {
             player.sendPacket(ServerEntityMetadataPacket(client.player.entityID, metadata))
         }
 
         client.player.world!!.sleepingPlayers += 1
-        if(canSleepNow()) handleSleeping()
+        if (canSleepNow()) handleSleeping()
     }
 
     private fun handleWakeUp(player: Player) {
-        if(!canSleepNow()) return
+        if (!canSleepNow()) return
 
         val metadata = listOf(
             MetadataType.MetadataEntry(13.toByte(), 10, false to null),
             MetadataType.MetadataEntry(6.toByte(), 18, 0)
         )
 
-        for(plr in players) {
+        for (plr in players) {
             plr.sendPacket(ServerEntityMetadataPacket(player.entityID, metadata))
         }
 
@@ -1712,9 +1797,9 @@ class PacketHandler(
         Bullet.scope.launch {
             delay(5.seconds)
             val world = client.player.world!!
-            if(!canSleepNow()) return@launch
+            if (!canSleepNow()) return@launch
 
-            for(player in players) {
+            for (player in players) {
                 player.sendPacket(ServerChangeGameStatePacket(1, 0f))
                 world.weather = 0
                 player.setTimeOfDay(0)
@@ -1729,8 +1814,8 @@ class PacketHandler(
         val totalPlayers = players.size
         val sleepingPlayers = world.sleepingPlayers
 
-        return if(totalPlayers > 0 && sleepingPlayers >= totalPlayers / 2) {
-            if(world.weather == 0) {
+        return if (totalPlayers > 0 && sleepingPlayers >= totalPlayers / 2) {
+            if (world.weather == 0) {
                 time in 12542..23459
             } else {
                 time in 12010..23991
@@ -1741,31 +1826,35 @@ class PacketHandler(
     }
 
     private fun checkOrbs() {
-        for(player in players) {
+        for (player in players) {
             val toRemove = mutableListOf<Entity>()
-            for(orb in world.orbs) {
+            for (orb in world.orbs) {
                 val distance = sqrt(
                     (player.location.x - orb.location.x).pow(2) +
                             (player.location.y - orb.location.y).pow(2) +
                             (player.location.z - orb.location.z).pow(2)
                 )
 
-                if(distance <= 1.25) {
-                    client.player.sendPacket(ServerCollectItemPacket(
-                        orb.entityID,
-                        client.player.entityID,
-                        1
-                    ))
+                if (distance <= 1.25) {
+                    client.player.sendPacket(
+                        ServerCollectItemPacket(
+                            orb.entityID,
+                            client.player.entityID,
+                            1
+                        )
+                    )
 
                     client.player.sendPacket(ServerDestroyEntitiesPacket(intArrayOf(orb.entityID)))
 
-                    client.player.sendPacket(ServerSoundEffectPacket(
-                        Sounds.ENTITY_EXPERIENCE_ORB_PICKUP,
-                        SoundCategories.PLAYER,
-                        client.player.location.x.toInt(),
-                        client.player.location.y.toInt(),
-                        client.player.location.z.toInt()
-                    ))
+                    client.player.sendPacket(
+                        ServerSoundEffectPacket(
+                            Sounds.ENTITY_EXPERIENCE_ORB_PICKUP,
+                            SoundCategories.PLAYER,
+                            client.player.location.x.toInt(),
+                            client.player.location.y.toInt(),
+                            client.player.location.z.toInt()
+                        )
+                    )
 
                     calculateXPLevels(client.player.totalXP + orb.xp)
                     toRemove.add(orb)
@@ -1779,13 +1868,13 @@ class PacketHandler(
     fun xpToNextLevel(level: Int): Int = when {
         level < 16 -> 2 * level + 7
         level < 31 -> 5 * level - 38
-        else       -> 9 * level - 158
+        else -> 9 * level - 158
     }
 
     fun totalXPTillNextLevel(level: Int): Int = when {
         level <= 16 -> level * level + 6 * level
         level <= 31 -> (2.5 * level * level - 40.5 * level + 360).toInt()
-        else        -> (4.5 * level * level - 162.5 * level + 2220).toInt()
+        else -> (4.5 * level * level - 162.5 * level + 2220).toInt()
     }
 
     fun calculateXPLevels(totalXP: Int) {
@@ -1793,7 +1882,7 @@ class PacketHandler(
         player.totalXP = totalXP
 
         var level = 0
-        while(totalXPTillNextLevel(level + 1) <= player.totalXP) {
+        while (totalXPTillNextLevel(level + 1) <= player.totalXP) {
             level++
         }
 
@@ -1801,23 +1890,25 @@ class PacketHandler(
         val xpNeeded = xpToNextLevel(level).toFloat()
 
         player.level = level
-        player.experienceBar = if(xpNeeded == 0f) 0f else xpIntoLevel / xpNeeded
+        player.experienceBar = if (xpNeeded == 0f) 0f else xpIntoLevel / xpNeeded
 
         player.sendPacket(ServerSetExperiencePacket(player.experienceBar, player.level, player.totalXP))
     }
 
     fun handleOnlineModeJoin(packet: ClientLoginStartPacket) {
-        if(Bullet.onlineMode) {
+        if (Bullet.onlineMode) {
             val verifyToken = ByteArray(4).apply {
                 SecureRandom().nextBytes(this)
             }
 
             client.verifyToken = verifyToken
-            client.player.sendPacket(ServerEncryptionRequestPacket(
-                "",
-                Bullet.publicKey,
-                verifyToken
-            ))
+            client.player.sendPacket(
+                ServerEncryptionRequestPacket(
+                    "",
+                    Bullet.publicKey,
+                    verifyToken
+                )
+            )
         }
     }
 
@@ -1841,9 +1932,12 @@ class PacketHandler(
     }
 
     private fun verifyPlayerToken(verifyToken: ByteArray) {
-        if(!client.verifyToken.contentEquals(verifyToken)) {
-            client.sendPacket(ServerLoginDisconnectPacket(Component
-                .text("Invalid verification token", NamedTextColor.RED))
+        if (!client.verifyToken.contentEquals(verifyToken)) {
+            client.sendPacket(
+                ServerLoginDisconnectPacket(
+                    Component
+                        .text("Invalid verification token", NamedTextColor.RED)
+                )
             )
 
             client.close()
@@ -1864,19 +1958,23 @@ class PacketHandler(
 
         world.items.add(Pair(itemEntity, drop))
 
-        for(player in players) {
-            player.sendPacket(ServerSpawnEntityPacket(
-                itemEntity.entityID, itemEntity.uuid,
-                37,
-                loc,
-                vx, vy, vz,
-                1
-            ))
+        for (player in players) {
+            player.sendPacket(
+                ServerSpawnEntityPacket(
+                    itemEntity.entityID, itemEntity.uuid,
+                    37,
+                    loc,
+                    vx, vy, vz,
+                    1
+                )
+            )
 
-            player.sendPacket(ServerEntityMetadataPacket(
-                itemEntity.entityID,
-                listOf(MetadataType.MetadataEntry(7, 6, drop.toSlotData()))
-            ))
+            player.sendPacket(
+                ServerEntityMetadataPacket(
+                    itemEntity.entityID,
+                    listOf(MetadataType.MetadataEntry(7, 6, drop.toSlotData()))
+                )
+            )
         }
     }
 
@@ -1885,8 +1983,8 @@ class PacketHandler(
         val player = client.player
         val picked = mutableListOf<Pair<Entity, ItemStack>>()
 
-        for(item in world.items) {
-            if(now - item.first.spawnTimeMs < item.first.pickupDelayMs) continue
+        for (item in world.items) {
+            if (now - item.first.spawnTimeMs < item.first.pickupDelayMs) continue
 
             val distance = sqrt(
                 (player.location.x - item.first.location.x).pow(2) +
@@ -1894,22 +1992,26 @@ class PacketHandler(
                         (player.location.z - item.first.location.z).pow(2)
             )
 
-            if(distance <= 1.25) {
-                player.sendPacket(ServerCollectItemPacket(
-                    item.first.entityID,
-                    player.entityID,
-                    1
-                ))
+            if (distance <= 1.25) {
+                player.sendPacket(
+                    ServerCollectItemPacket(
+                        item.first.entityID,
+                        player.entityID,
+                        1
+                    )
+                )
 
                 player.sendPacket(ServerDestroyEntitiesPacket(intArrayOf(item.first.entityID)))
 
-                player.sendPacket(ServerSoundEffectPacket(
-                    Sounds.ENTITY_ITEM_PICKUP,
-                    SoundCategories.PLAYER,
-                    player.location.x.toInt(),
-                    player.location.y.toInt(),
-                    player.location.z.toInt()
-                ))
+                player.sendPacket(
+                    ServerSoundEffectPacket(
+                        Sounds.ENTITY_ITEM_PICKUP,
+                        SoundCategories.PLAYER,
+                        player.location.x.toInt(),
+                        player.location.y.toInt(),
+                        player.location.z.toInt()
+                    )
+                )
 
                 player.addItem(item.second)
                 picked += item
@@ -1921,25 +2023,27 @@ class PacketHandler(
 
     private fun handleBlockDrop(blockPos: BlockPositionType.BlockPosition, status: Int) {
         val held = client.player.inventory.heldStack(client.player.selectedSlot)
-        if(held.isAir) return
+        if (held.isAir) return
 
         val dropAll = status == 5
-        val toDrop = if(dropAll) held else held.copy(count = 1)
+        val toDrop = if (dropAll) held else held.copy(count = 1)
 
-        if(dropAll) {
+        if (dropAll) {
             client.player.inventory.setHeldSlot(client.player.selectedSlot, null)
         } else {
             val newCount = held.count - 1
             client.player.inventory.setHeldSlot(
                 client.player.selectedSlot,
-                if(newCount > 0) held.copy(count = newCount) else null
+                if (newCount > 0) held.copy(count = newCount) else null
             )
         }
 
-        client.sendPacket(ServerSetSlotPacket(
-            0, client.player.selectedSlot + 36,
-            client.player.inventory.heldStack(client.player.selectedSlot).toSlotData()
-        ))
+        client.sendPacket(
+            ServerSetSlotPacket(
+                0, client.player.selectedSlot + 36,
+                client.player.inventory.heldStack(client.player.selectedSlot).toSlotData()
+            )
+        )
 
         val yaw = Math.toRadians(client.player.location.yaw.toDouble())
         val pitch = Math.toRadians(client.player.location.pitch.toDouble())
@@ -1960,7 +2064,7 @@ class PacketHandler(
         client.sendPacket(ServerLoginSuccessPacket(player.uuid, player.username))
         client.state = GameState.PLAY
 
-        if(checkForBan()) return
+        if (checkForBan()) return
 
         sendJoinGamePacket()
         client.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
@@ -1982,14 +2086,127 @@ class PacketHandler(
 
         val joinEvent = PlayerJoinEvent(client.player)
         EventManager.fire(joinEvent)
-        if(joinEvent.isCancelled) return
+        if (joinEvent.isCancelled) return
 
         val world = player.world!!
         player.setTimeOfDay(world.timeOfDay)
-        if(world.weather == 1) player.sendPacket(ServerChangeGameStatePacket(2, 0f))
+        if (world.weather == 1) player.sendPacket(ServerChangeGameStatePacket(2, 0f))
         else player.sendPacket(ServerChangeGameStatePacket(1, 0f))
 
         val (nodes, rootIndex) = buildCommandGraphFromDispatcher(CommandManager.dispatcher)
         client.sendPacket(ServerDeclareCommandsPacket(nodes, rootIndex))
+    }
+
+    private fun getToolMultiplier(heldItem: Item): Double =
+        when(heldItem) {
+            Item.WOODEN_PICKAXE, Item.WOODEN_AXE, Item.WOODEN_SHOVEL, Item.WOODEN_HOE -> 2.0
+            Item.STONE_PICKAXE, Item.STONE_AXE, Item.STONE_SHOVEL, Item.STONE_HOE -> 4.0
+            Item.IRON_PICKAXE, Item.IRON_AXE, Item.IRON_SHOVEL, Item.IRON_HOE -> 6.0
+            Item.GOLDEN_PICKAXE, Item.GOLDEN_AXE, Item.GOLDEN_SHOVEL, Item.GOLDEN_HOE -> 12.0
+            Item.DIAMOND_PICKAXE, Item.DIAMOND_AXE, Item.DIAMOND_SHOVEL, Item.DIAMOND_HOE -> 8.0
+            Item.NETHERITE_PICKAXE, Item.NETHERITE_AXE, Item.NETHERITE_SHOVEL, Item.NETHERITE_HOE -> 9.0
+            else -> 1.0
+        }
+
+    private fun canHarvestBlock(blockObj: Block, heldItem: Item): Boolean =
+        canHarvestRock(blockObj, heldItem) || canHarvestMetal(blockObj, heldItem)
+
+    @Suppress("ComplexCondition")
+    private fun canHarvestRock(blockObj: Block, heldItem: Item): Boolean =
+        BlockTags.ROCK_1.contains(blockObj) &&
+        BlockTags.TOOLS.contains(heldItem) &&
+        BlockTags.ABOVE_HAND.contains(heldItem) ||
+
+        BlockTags.ROCK_2.contains(blockObj) &&
+        BlockTags.TOOLS.contains(heldItem) &&
+        BlockTags.ABOVE_WOODEN.contains(heldItem) ||
+
+        BlockTags.ROCK_3.contains(blockObj) &&
+        BlockTags.TOOLS.contains(heldItem) &&
+        BlockTags.ABOVE_STONE.contains(heldItem) ||
+
+        BlockTags.ROCK_4.contains(blockObj) &&
+        BlockTags.TOOLS.contains(heldItem) &&
+        BlockTags.ABOVE_IRON.contains(heldItem)
+
+    @Suppress("ComplexCondition")
+    private fun canHarvestMetal(blockObj: Block, heldItem: Item): Boolean =
+        BlockTags.METAL_1.contains(blockObj) &&
+        BlockTags.TOOLS.contains(heldItem) &&
+        BlockTags.ABOVE_HAND.contains(heldItem) ||
+
+        BlockTags.METAL_2.contains(blockObj) &&
+        BlockTags.TOOLS.contains(heldItem) &&
+        BlockTags.ABOVE_WOODEN.contains(heldItem) ||
+
+        BlockTags.METAL_3.contains(blockObj) &&
+        BlockTags.TOOLS.contains(heldItem) &&
+        BlockTags.ABOVE_STONE.contains(heldItem)
+
+    private fun getBestTool(blockObj: Block, heldItem: Item): Boolean =
+        when {
+            BlockTags.PICKAXE.contains(blockObj) && BlockTags.PICKAXES.contains(heldItem) -> true
+            BlockTags.AXE.contains(blockObj) && BlockTags.AXES.contains(heldItem) -> true
+            BlockTags.SHOVEL.contains(blockObj) && BlockTags.SHOVELS.contains(heldItem) -> true
+            BlockTags.SWORD.contains(blockObj) && BlockTags.SWORDS.contains(heldItem) -> true
+            else -> false
+        }
+
+    private fun handleFinishDigging(event: BlockBreakEvent) {
+        client.player.status.exhaustion += 0.005f
+        val vx = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
+        val vy = (0.1 * 8000).toInt().toShort()
+        val vz = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
+
+        val blockId = world.modifiedBlocks[event.blockPos]?.blockID ?: Block.AIR.id
+        val stateID = world.modifiedBlocks[event.blockPos]?.stateID ?: Block.AIR.id
+        val blockObj = Block.getBlockFromID(blockId) ?: Block.AIR
+        val heldItem = client.player.getHeldItem().item
+
+        if(canHarvestBlock(blockObj, heldItem)) {
+            dropItem(event.blockPos, blockId, vx, vy, vz)
+        }
+
+        stopBlockBreak(event.blockPos)
+        sendBlockBreakParticles(client.player, stateID, event.blockPos)
+        removeBlock(event.blockPos)
+    }
+
+    private fun handlePlayerSpecificBlockPlacement(
+        event: BlockPlaceEvent, stateID: Int, player: Player, block: Any
+    ): BlockWithMetadata {
+        player.sendPacket(ServerBlockChangePacket(event.blockPos, stateID))
+
+        return when {
+            block is Item && block in BlockTags.SIGNS -> {
+                client.sendPacket(ServerOpenSignEditorPacket(event.blockPos))
+                BlockWithMetadata(block.id, stateID, listOf("", "", "", ""))
+            }
+
+            block is Item && block in BlockTags.SPAWN_EGGS -> {
+                handleSpawnEgg(block, event)
+                BlockWithMetadata(block.id, stateID)
+            }
+
+            block is Block -> {
+                BlockWithMetadata(block.id, stateID)
+            }
+
+            else -> BlockWithMetadata(0, stateID)
+        }
+    }
+
+    private fun handleItemDecrease() {
+        val slot = client.player.selectedSlot
+        val inv = client.player.inventory
+        val held = inv.heldStack(slot)
+
+        if(held.count > 1) {
+            held.count--
+            client.sendPacket(ServerSetSlotPacket(0, slot + 36, held.toSlotData()))
+        } else {
+            inv.setHeldSlot(slot, null)
+            client.sendPacket(ServerSetSlotPacket(0, slot + 36, Slot.SlotData(false)))
+        }
     }
 }

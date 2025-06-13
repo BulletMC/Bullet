@@ -1,5 +1,6 @@
 package com.aznos.datatypes
 
+import com.aznos.Bullet
 import com.aznos.datatypes.VarInt.readVarInt
 import com.aznos.datatypes.VarInt.writeVarInt
 import com.aznos.world.items.Item
@@ -11,6 +12,7 @@ import net.querz.nbt.tag.Tag
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException
+import java.io.PushbackInputStream
 
 /**
  * Represents a slot in the players inventory
@@ -31,13 +33,19 @@ object Slot {
         var nbt: CompoundTag? = null
     )
 
-    fun SlotData.toItemStack(): ItemStack =
-        if(!present) ItemStack.of(Item.AIR)
-        else ItemStack(
-            item = Item.getItemFromID(itemID!!) ?: Item.AIR,
-            count = itemCount?.toInt() ?: 0,
-            nbt = nbt
-        )
+    fun SlotData.toItemStack(): ItemStack {
+        if(!present) return ItemStack.empty()
+
+        val id = itemID ?: return ItemStack.empty()
+        val count = itemCount?.toInt() ?: 1
+
+        val known = Item.getItemFromID(id)
+        return if(known != null) {
+            ItemStack(known, count)
+        } else {
+            ItemStack.opaque(id, count)
+        }
+    }
 
     /**
      * Reads a slot from the [DataInputStream]
@@ -46,28 +54,23 @@ object Slot {
      * @throws IOException If an I/O error occurs
      */
     @Throws(IOException::class)
-    fun DataInputStream.readSlot(): SlotData {
+    fun DataInputStream.readSlot(): Slot.SlotData {
         val present = readBoolean()
-        if(!present) return SlotData(false)
+        if(!present) return Slot.SlotData(false)
 
-        val itemID = readVarInt()
+        val itemID    = readVarInt()
         val itemCount = readByte()
 
-        mark(512)
-        val tagId = readByte()
-        val nbt: CompoundTag? = if(tagId.toInt() == 0) {
-            null
-        } else {
-            reset()
-            //TODO: fix this warning
-            NBTInputStream(this).use { nbtIn ->
-                val tag = nbtIn.readTag(Tag.DEFAULT_MAX_DEPTH)
-                if(tag is CompoundTag) tag
-                else throw IOException(
-                    "Expected CompoundTag in slot but got ${tag::class.simpleName}"
-                )
+        val first = readUnsignedByte()
+        val nbt: CompoundTag? =
+            if(first == 0) null
+            else {
+                val pb = PushbackInputStream(this, 1)
+                pb.unread(first)
+
+                val named = NBTInputStream(pb).use { it.readTag(Tag.DEFAULT_MAX_DEPTH) }
+                (named.tag as? CompoundTag)
             }
-        }
 
         return SlotData(true, itemID, itemCount, nbt)
     }
