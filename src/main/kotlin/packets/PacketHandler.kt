@@ -104,21 +104,6 @@ class PacketHandler(
         get() = client.player.world!!
 
     /**
-     * Every 20 ticks the client will send an empty movement packet telling the server if the
-     * client is on the ground or not
-     */
-    @PacketReceiver
-    fun onPlayerMovement(packet: ClientPlayerMovement) {
-        val player = client.player
-        player.onGround = packet.onGround
-
-        for (otherPlayer in Bullet.players) {
-            if (otherPlayer != player) continue
-            otherPlayer.clientSession.sendPacket(ServerEntityMovementPacket(player.entityID))
-        }
-    }
-
-    /**
      * Handles when a player rotates to a new yaw and pitch
      */
     @PacketReceiver
