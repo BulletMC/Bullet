@@ -100,77 +100,6 @@ import kotlin.time.Duration.Companion.seconds
 class PacketHandler(
     private val client: ClientSession
 ) {
-    @PacketReceiver
-    fun onEncryptionResponse(packet: ClientEncryptionResponsePacket) {
-        val rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding")
-        rsa.init(Cipher.DECRYPT_MODE, Bullet.keyPair.private)
-
-        val sharedSecret = rsa.doFinal(packet.secretKey)
-        val verifyToken = rsa.doFinal(packet.verifyToken)
-
-        verifyPlayerToken(verifyToken)
-
-        val secretKey = SecretKeySpec(sharedSecret, "AES")
-        val iv = IvParameterSpec(sharedSecret)
-
-        val decrypt = Cipher.getInstance("AES/CFB8/NoPadding").apply {
-            init(Cipher.DECRYPT_MODE, secretKey, iv)
-        }
-        val encrypt = Cipher.getInstance("AES/CFB8/NoPadding").apply {
-            init(Cipher.ENCRYPT_MODE, secretKey, iv)
-        }
-
-        client.enableEncryption(decrypt, encrypt)
-
-        val player = client.player
-
-        val hash = Hashes.makeServerIDHash(sharedSecret, Bullet.publicKey)
-        val prof = runBlocking { MojangNetworking.querySessionServer(player, hash) }
-
-        if (prof == null) {
-            client.sendPacket(
-                ServerLoginDisconnectPacket(
-                    Component.text(
-                        "Failed to verify username with Mojang servers, please try again later",
-                        NamedTextColor.RED
-                    )
-                )
-            )
-
-            client.close()
-            return
-        }
-
-        val uuidWithDashes = prof.id.replaceFirst(
-            "(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)".toRegex(),
-            "$1-$2-$3-$4-$5"
-        )
-
-        client.player.uuid = UUID.fromString(uuidWithDashes)
-        client.player.username = prof.name
-
-        val dupes = players.filter { it.uuid == client.player.uuid || it.username == client.player.username }
-        players.removeAll(dupes)
-
-        for (old in dupes) {
-            old.disconnect(
-                Component.text()
-                    .append(Component.text("You logged in from another location", NamedTextColor.RED))
-                    .append(
-                        Component.text(
-                            "\n\nIf this wasn’t you, your account may have been compromised.",
-                            NamedTextColor.GRAY
-                        )
-                    )
-                    .build()
-            )
-
-            old.clientSession.close()
-        }
-
-        loginPlayer()
-    }
-
     /**
      * Handles a ping packet by sending a pong response and closing the connection
      */
@@ -224,20 +153,6 @@ class PacketHandler(
             packet.apply(client)
         } catch(e: Exception) {
             Bullet.logger.error("Could not handle packet ${packet.javaClass.name}", e)
-        }
-    }
-
-    private fun verifyPlayerToken(verifyToken: ByteArray) {
-        if (!client.verifyToken.contentEquals(verifyToken)) {
-            client.sendPacket(
-                ServerLoginDisconnectPacket(
-                    Component
-                        .text("Invalid verification token", NamedTextColor.RED)
-                )
-            )
-
-            client.close()
-            return
         }
     }
 }
