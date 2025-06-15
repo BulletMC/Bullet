@@ -376,62 +376,6 @@ class PacketHandler(
     }
 
     /**
-     * Called when a client starts digging a block
-     */
-    @PacketReceiver
-    fun onPlayerDig(packet: ClientDiggingPacket) {
-        val event = BlockBreakEvent(
-            client.player,
-            packet.status,
-            BlockPositionType.BlockPosition(packet.blockPos.x, packet.blockPos.y, packet.blockPos.z),
-            packet.face
-        )
-        EventManager.fire(event)
-        if (event.isCancelled) return
-
-        if (client.player.gameMode == GameMode.CREATIVE && event.status == BlockStatus.STARTED_DIGGING.id) {
-            for (otherPlayer in Bullet.players) {
-                if (otherPlayer != client.player) {
-                    otherPlayer.sendPacket(
-                        ServerBlockChangePacket(
-                            event.blockPos,
-                            0
-                        )
-                    )
-
-                    val block = world.modifiedBlocks[event.blockPos]?.stateID ?: Block.GRASS_BLOCK.id
-                    sendBlockBreakParticles(otherPlayer, block, event.blockPos)
-                }
-            }
-
-            removeBlock(event.blockPos)
-        } else if(client.player.gameMode == GameMode.SURVIVAL) {
-            when(event.status) {
-                BlockStatus.STARTED_DIGGING.id -> {
-                    val breakTime = getBlockBreakTime(
-                        world.modifiedBlocks[event.blockPos]?.stateID ?: Block.GRASS_BLOCK
-                    )
-                    startBlockBreak(event.blockPos, breakTime.toInt())
-                }
-
-                BlockStatus.CANCELLED_DIGGING.id -> {
-                    stopBlockBreak(event.blockPos)
-                }
-
-                BlockStatus.FINISHED_DIGGING.id -> {
-                    handleFinishDigging(event)
-                }
-            }
-        }
-
-        when (event.status) {
-            BlockStatus.DROP_ITEM.id, BlockStatus.DROP_ITEM_STACK.id -> {
-                handleBlockDrop(event.blockPos, event.status)
-            }
-        }
-    }
-
-    /**
      * Every 20 ticks the client will send an empty movement packet telling the server if the
      * client is on the ground or not
      */
@@ -853,81 +797,6 @@ class PacketHandler(
         }
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
-    private fun startBlockBreak(blockPos: BlockPositionType.BlockPosition, breakTime: Int) {
-        if (breakingBlocks.containsKey(blockPos)) return
-
-        val job = GlobalScope.launch {
-            val stepTime = breakTime.toLong() / 9
-
-            for (stage in 0..9) {
-                for (otherPlayer in Bullet.players) {
-                    if (otherPlayer != client.player) {
-                        otherPlayer.sendPacket(ServerBlockBreakAnimationPacket(client.player.entityID, blockPos, stage))
-                    }
-                }
-
-                delay(stepTime)
-            }
-
-            for (otherPlayer in Bullet.players) {
-                if (otherPlayer != client.player) {
-                    otherPlayer.sendPacket(ServerBlockChangePacket(blockPos, 0))
-                }
-            }
-
-            breakingBlocks.remove(blockPos)
-        }
-
-        breakingBlocks[blockPos] = job
-    }
-
-    private fun stopBlockBreak(blockPos: BlockPositionType.BlockPosition) {
-        breakingBlocks[blockPos]?.cancel()
-        breakingBlocks.remove(blockPos)
-
-        for (otherPlayer in Bullet.players) {
-            if (otherPlayer != client.player) {
-                otherPlayer.sendPacket(ServerBlockBreakAnimationPacket(otherPlayer.entityID, blockPos, -1))
-            }
-        }
-    }
-
-    private fun getBlockBreakTime(block: Any): Long {
-        val player = client.player
-        val heldItem = player.getHeldItem().item
-        val blockObj = when (block) {
-            is Block -> block
-            is Item -> Block.getBlockFromID(block.id) ?: return 1
-            else -> return 0
-        }
-
-        val hardness = blockObj.hardness
-        if (hardness <= 0) return 0
-
-        val isBestTool = getBestTool(blockObj, heldItem)
-        val canHarvest = canHarvestBlock(blockObj, heldItem)
-        val toolMultiplier = getToolMultiplier(heldItem)
-
-        var speedMultiplier = if (isBestTool) toolMultiplier else 1.0
-        if (!player.onGround) {
-            speedMultiplier /= 5.0
-        }
-
-        var damage = speedMultiplier / hardness
-        damage /= if (canHarvest) {
-            30.0
-        } else {
-            100.0
-        }
-
-        if (damage > 1.0) return 0
-        val ticks = ceil(1.0 / damage)
-        val seconds = ticks / 20.0
-
-        return seconds.toLong()
-    }
-
     private fun updateEntityMetadata(player: Player, index: Int, value: Int) {
         val packet = ServerEntityMetadataPacket(
             player.entityID,
@@ -1000,18 +869,6 @@ class PacketHandler(
                 }
             }
         }
-    }
-
-    private fun removeBlock(blockPos: BlockPositionType.BlockPosition) {
-        val world = world
-        if (world.modifiedBlocks.keys.find {
-                it.x == blockPos.x && it.y == blockPos.y && it.z == blockPos.z
-            } != null) {
-            world.modifiedBlocks.remove(blockPos)
-        } else {
-            world.modifiedBlocks[blockPos] = BlockWithMetadata(0, 0)
-        }
-
     }
 
     private fun checkLoginValidity(username: String): Boolean {
@@ -1198,21 +1055,6 @@ class PacketHandler(
         }
     }
 
-    private fun sendBlockBreakParticles(player: Player, block: Int, blockPos: BlockPositionType.BlockPosition) {
-        player.sendPacket(
-            ServerParticlePacket(
-                Particles.Block(block),
-                false,
-                blockPos.add(0.5, 0.5, 0.5),
-                0.2f,
-                0.22f,
-                0.2f,
-                0f,
-                25
-            )
-        )
-    }
-
     private fun checkOrbs() {
         for (player in players) {
             val toRemove = mutableListOf<Entity>()
@@ -1376,44 +1218,6 @@ class PacketHandler(
         world.items.removeAll(picked)
     }
 
-    private fun handleBlockDrop(blockPos: BlockPositionType.BlockPosition, status: Int) {
-        val held = client.player.inventory.heldStack(client.player.selectedSlot)
-        if (held.isAir) return
-
-        val dropAll = status == 5
-        val toDrop = if (dropAll) held else held.copy(count = 1)
-
-        if (dropAll) {
-            client.player.inventory.setHeldSlot(client.player.selectedSlot, null)
-        } else {
-            val newCount = held.count - 1
-            client.player.inventory.setHeldSlot(
-                client.player.selectedSlot,
-                if (newCount > 0) held.copy(count = newCount) else null
-            )
-        }
-
-        client.sendPacket(
-            ServerSetSlotPacket(
-                0, client.player.selectedSlot + 36,
-                client.player.inventory.heldStack(client.player.selectedSlot).toSlotData()
-            )
-        )
-
-        val yaw = Math.toRadians(client.player.location.yaw.toDouble())
-        val pitch = Math.toRadians(client.player.location.pitch.toDouble())
-        val forwardSpeed = 10
-        val dx = -sin(yaw) * cos(pitch) * forwardSpeed
-        val dy = -sin(pitch) * forwardSpeed + 0.2225
-        val dz = cos(yaw) * cos(pitch) * forwardSpeed
-
-        val vx = (dx * 8000).toInt().toShort()
-        val vy = (dy * 8000).toInt().toShort()
-        val vz = (dz * 8000).toInt().toShort()
-
-        dropItem(client.player.location.toBlockPosition(), toDrop.id, vx, vy, vz)
-    }
-
     private fun loginPlayer() {
         val player = client.player
         client.sendPacket(ServerLoginSuccessPacket(player.uuid, player.username))
@@ -1450,80 +1254,5 @@ class PacketHandler(
 
         val (nodes, rootIndex) = buildCommandGraphFromDispatcher(CommandManager.dispatcher)
         client.sendPacket(ServerDeclareCommandsPacket(nodes, rootIndex))
-    }
-
-    private fun getToolMultiplier(heldItem: Item): Double =
-        when(heldItem) {
-            Item.WOODEN_PICKAXE, Item.WOODEN_AXE, Item.WOODEN_SHOVEL, Item.WOODEN_HOE -> 2.0
-            Item.STONE_PICKAXE, Item.STONE_AXE, Item.STONE_SHOVEL, Item.STONE_HOE -> 4.0
-            Item.IRON_PICKAXE, Item.IRON_AXE, Item.IRON_SHOVEL, Item.IRON_HOE -> 6.0
-            Item.GOLDEN_PICKAXE, Item.GOLDEN_AXE, Item.GOLDEN_SHOVEL, Item.GOLDEN_HOE -> 12.0
-            Item.DIAMOND_PICKAXE, Item.DIAMOND_AXE, Item.DIAMOND_SHOVEL, Item.DIAMOND_HOE -> 8.0
-            Item.NETHERITE_PICKAXE, Item.NETHERITE_AXE, Item.NETHERITE_SHOVEL, Item.NETHERITE_HOE -> 9.0
-            else -> 1.0
-        }
-
-    private fun canHarvestBlock(blockObj: Block, heldItem: Item): Boolean =
-        canHarvestRock(blockObj, heldItem) || canHarvestMetal(blockObj, heldItem)
-
-    @Suppress("ComplexCondition")
-    private fun canHarvestRock(blockObj: Block, heldItem: Item): Boolean =
-        BlockTags.ROCK_1.contains(blockObj) &&
-        BlockTags.TOOLS.contains(heldItem) &&
-        BlockTags.ABOVE_HAND.contains(heldItem) ||
-
-        BlockTags.ROCK_2.contains(blockObj) &&
-        BlockTags.TOOLS.contains(heldItem) &&
-        BlockTags.ABOVE_WOODEN.contains(heldItem) ||
-
-        BlockTags.ROCK_3.contains(blockObj) &&
-        BlockTags.TOOLS.contains(heldItem) &&
-        BlockTags.ABOVE_STONE.contains(heldItem) ||
-
-        BlockTags.ROCK_4.contains(blockObj) &&
-        BlockTags.TOOLS.contains(heldItem) &&
-        BlockTags.ABOVE_IRON.contains(heldItem)
-
-    @Suppress("ComplexCondition")
-    private fun canHarvestMetal(blockObj: Block, heldItem: Item): Boolean =
-        BlockTags.METAL_1.contains(blockObj) &&
-        BlockTags.TOOLS.contains(heldItem) &&
-        BlockTags.ABOVE_HAND.contains(heldItem) ||
-
-        BlockTags.METAL_2.contains(blockObj) &&
-        BlockTags.TOOLS.contains(heldItem) &&
-        BlockTags.ABOVE_WOODEN.contains(heldItem) ||
-
-        BlockTags.METAL_3.contains(blockObj) &&
-        BlockTags.TOOLS.contains(heldItem) &&
-        BlockTags.ABOVE_STONE.contains(heldItem)
-
-    private fun getBestTool(blockObj: Block, heldItem: Item): Boolean =
-        when {
-            BlockTags.PICKAXE.contains(blockObj) && BlockTags.PICKAXES.contains(heldItem) -> true
-            BlockTags.AXE.contains(blockObj) && BlockTags.AXES.contains(heldItem) -> true
-            BlockTags.SHOVEL.contains(blockObj) && BlockTags.SHOVELS.contains(heldItem) -> true
-            BlockTags.SWORD.contains(blockObj) && BlockTags.SWORDS.contains(heldItem) -> true
-            else -> false
-        }
-
-    private fun handleFinishDigging(event: BlockBreakEvent) {
-        client.player.status.exhaustion += 0.005f
-        val vx = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
-        val vy = (0.1 * 8000).toInt().toShort()
-        val vz = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
-
-        val blockId = world.modifiedBlocks[event.blockPos]?.blockID ?: Block.AIR.id
-        val stateID = world.modifiedBlocks[event.blockPos]?.stateID ?: Block.AIR.id
-        val blockObj = Block.getBlockFromID(blockId) ?: Block.AIR
-        val heldItem = client.player.getHeldItem().item
-
-        if(canHarvestBlock(blockObj, heldItem)) {
-            dropItem(event.blockPos, blockId, vx, vy, vz)
-        }
-
-        stopBlockBreak(event.blockPos)
-        sendBlockBreakParticles(client.player, stateID, event.blockPos)
-        removeBlock(event.blockPos)
     }
 }
