@@ -87,40 +87,51 @@ object BlockUtils {
             else -> 1.0
         }
 
-    fun canHarvestBlock(blockObj: Block, heldItem: Item): Boolean =
-        canHarvestRock(blockObj, heldItem) || canHarvestMetal(blockObj, heldItem)
+    fun canHarvestBlock(blockObj: Block, heldItem: Item): Boolean {
+        val isRockOrMetal =
+            BlockTags.ROCK_1.contains(blockObj) ||
+            BlockTags.ROCK_2.contains(blockObj) ||
+            BlockTags.ROCK_3.contains(blockObj) ||
+            BlockTags.ROCK_4.contains(blockObj) ||
+            BlockTags.METAL_1.contains(blockObj) ||
+            BlockTags.METAL_2.contains(blockObj) ||
+            BlockTags.METAL_3.contains(blockObj)
+
+        return if(!isRockOrMetal) true
+        else canHarvestRock(blockObj, heldItem) || canHarvestMetal(blockObj, heldItem)
+    }
 
     @Suppress("ComplexCondition")
     private fun canHarvestRock(blockObj: Block, heldItem: Item): Boolean =
         BlockTags.ROCK_1.contains(blockObj) &&
-                BlockTags.TOOLS.contains(heldItem) &&
-                BlockTags.ABOVE_HAND.contains(heldItem) ||
+        BlockTags.TOOLS.contains(heldItem) &&
+        BlockTags.ABOVE_HAND.contains(heldItem) ||
 
-                BlockTags.ROCK_2.contains(blockObj) &&
-                BlockTags.TOOLS.contains(heldItem) &&
-                BlockTags.ABOVE_WOODEN.contains(heldItem) ||
+        BlockTags.ROCK_2.contains(blockObj) &&
+        BlockTags.TOOLS.contains(heldItem) &&
+        BlockTags.ABOVE_WOODEN.contains(heldItem) ||
 
-                BlockTags.ROCK_3.contains(blockObj) &&
-                BlockTags.TOOLS.contains(heldItem) &&
-                BlockTags.ABOVE_STONE.contains(heldItem) ||
+        BlockTags.ROCK_3.contains(blockObj) &&
+        BlockTags.TOOLS.contains(heldItem) &&
+        BlockTags.ABOVE_STONE.contains(heldItem) ||
 
-                BlockTags.ROCK_4.contains(blockObj) &&
-                BlockTags.TOOLS.contains(heldItem) &&
-                BlockTags.ABOVE_IRON.contains(heldItem)
+        BlockTags.ROCK_4.contains(blockObj) &&
+        BlockTags.TOOLS.contains(heldItem) &&
+        BlockTags.ABOVE_IRON.contains(heldItem)
 
     @Suppress("ComplexCondition")
     private fun canHarvestMetal(blockObj: Block, heldItem: Item): Boolean =
         BlockTags.METAL_1.contains(blockObj) &&
-                BlockTags.TOOLS.contains(heldItem) &&
-                BlockTags.ABOVE_HAND.contains(heldItem) ||
+        BlockTags.TOOLS.contains(heldItem) &&
+        BlockTags.ABOVE_HAND.contains(heldItem) ||
 
-                BlockTags.METAL_2.contains(blockObj) &&
-                BlockTags.TOOLS.contains(heldItem) &&
-                BlockTags.ABOVE_WOODEN.contains(heldItem) ||
+        BlockTags.METAL_2.contains(blockObj) &&
+        BlockTags.TOOLS.contains(heldItem) &&
+        BlockTags.ABOVE_WOODEN.contains(heldItem) ||
 
-                BlockTags.METAL_3.contains(blockObj) &&
-                BlockTags.TOOLS.contains(heldItem) &&
-                BlockTags.ABOVE_STONE.contains(heldItem)
+        BlockTags.METAL_3.contains(blockObj) &&
+        BlockTags.TOOLS.contains(heldItem) &&
+        BlockTags.ABOVE_STONE.contains(heldItem)
 
     private fun getBestTool(blockObj: Block, heldItem: Item): Boolean =
         when {
