@@ -101,15 +101,6 @@ class PacketHandler(
     private val client: ClientSession
 ) {
     /**
-     * Handles a ping packet by sending a pong response and closing the connection
-     */
-    @PacketReceiver
-    fun onPing(packet: ClientStatusPingPacket) {
-        client.sendPacket(ServerStatusPongPacket(packet.payload))
-        client.close()
-    }
-
-    /**
      * Dispatches the given packet to the corresponding handler method based on its type
      *
      * @param packet The packet to handle
