@@ -482,35 +482,6 @@ class PacketHandler(
         }
     }
 
-    /**
-     * Handles when the client responds to the server keep alive packet to tell the server the client is still online
-     * It also calculates the round trip time (RTT) and updates the players ping
-     */
-    @PacketReceiver
-    fun onKeepAlive(packet: ClientKeepAlivePacket) {
-        val event = PlayerHeartbeatEvent(client.player)
-        EventManager.fire(event)
-        if (event.isCancelled) return
-
-        client.respondedToKeepAlive = true
-
-        val receivedTimestamp = packet.keepAliveID
-        val currentTime = System.currentTimeMillis()
-        val rtt = (currentTime - receivedTimestamp).toInt()
-
-        client.player.ping = rtt / 2
-
-        for (player in Bullet.players) {
-            player.sendPacket(
-                ServerPlayerInfoPacket(
-                    2,
-                    client.player.uuid,
-                    ping = client.player.ping
-                )
-            )
-        }
-    }
-
     @PacketReceiver
     fun onEncryptionResponse(packet: ClientEncryptionResponsePacket) {
         val rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding")
