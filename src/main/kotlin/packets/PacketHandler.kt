@@ -203,29 +203,6 @@ class PacketHandler(
     }
 
     @PacketReceiver
-    fun onPluginMessage(packet: ClientPluginMessagePacket) {
-        when (packet.channel) {
-            "minecraft:brand" -> {
-                val input = DataInputStream(ByteArrayInputStream(packet.pluginData))
-                val length = input.readVarInt()
-
-                val brandBytes = ByteArray(length)
-                input.readFully(brandBytes)
-
-                val brand = String(brandBytes, Charsets.UTF_8)
-                client.player.brand = brand
-
-                val event = PlayerBrandEvent(client.player, brand)
-                EventManager.fire(event)
-                if (event.isCancelled) {
-                    client.player.disconnect(Component.text("Your client brand is not supported"))
-                    return
-                }
-            }
-        }
-    }
-
-    @PacketReceiver
     fun onPlayerSettingsChange(packet: ClientSettingsPacket) {
         val event = PlayerSettingsChangeEvent(
             client.player,
