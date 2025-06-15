@@ -104,41 +104,6 @@ class PacketHandler(
         get() = client.player.world!!
 
     @PacketReceiver
-    fun onWindowClick(packet: ClientClickWindowPacket) {
-        if (packet.windowID.toInt() == 0 && packet.mode == 4) {
-            val player = client.player
-            val held = player.inventory.heldStack(player.selectedSlot)
-            if (held.isAir) return
-
-            val dropAll = (packet.button.toInt() == 1)
-            val toDrop = if (dropAll) held else held.copy(count = 1)
-
-            if (dropAll) {
-                player.inventory.setHeldSlot(player.selectedSlot, null)
-            } else {
-                val newCount = held.count - 1
-                if (newCount <= 0) player.inventory.setHeldSlot(player.selectedSlot, null)
-                else player.inventory.setHeldSlot(player.selectedSlot, held.copy(count = newCount))
-            }
-
-            client.sendPacket(
-                ServerSetSlotPacket(
-                    0, player.selectedSlot + 36,
-                    player.inventory.heldStack(player.selectedSlot).toSlotData()
-                )
-            )
-
-            client.sendPacket(
-                ServerWindowConfirmationPacket(
-                    0, packet.actionNumber, true
-                )
-            )
-
-            dropItem(player.location.toBlockPosition(), toDrop.id)
-        }
-    }
-
-    @PacketReceiver
     fun onUpdateSign(packet: ClientUpdateSignPacket) {
         val data = CompoundTag()
         data.putString("id", "minecraft:sign")
@@ -1399,39 +1364,6 @@ class PacketHandler(
 
             client.close()
             return
-        }
-    }
-
-    private fun dropItem(
-        blockPos: BlockPositionType.BlockPosition,
-        item: Int,
-        vx: Short = 0, vy: Short = 0, vz: Short = 0
-    ) {
-        val drop = ItemStack.of(Item.getItemFromID(item) ?: Item.AIR)
-        val itemEntity = DroppedItem()
-
-        val loc = LocationType.Location(blockPos.x + 0.5, blockPos.y + 0.5, blockPos.z + 0.5, 0f, 0f)
-        itemEntity.location = loc
-
-        world.items.add(Pair(itemEntity, drop))
-
-        for (player in players) {
-            player.sendPacket(
-                ServerSpawnEntityPacket(
-                    itemEntity.entityID, itemEntity.uuid,
-                    37,
-                    loc,
-                    vx, vy, vz,
-                    1
-                )
-            )
-
-            player.sendPacket(
-                ServerEntityMetadataPacket(
-                    itemEntity.entityID,
-                    listOf(MetadataType.MetadataEntry(7, 6, drop.toSlotData()))
-                )
-            )
         }
     }
 

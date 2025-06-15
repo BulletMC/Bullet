@@ -1,9 +1,13 @@
 package com.aznos.packets.play.`in`
 
+import com.aznos.ClientSession
 import com.aznos.datatypes.Slot
 import com.aznos.datatypes.Slot.readSlot
 import com.aznos.datatypes.VarInt.readVarInt
 import com.aznos.packets.Packet
+import com.aznos.packets.play.out.ServerSetSlotPacket
+import com.aznos.packets.play.out.ServerWindowConfirmationPacket
+import com.aznos.util.ItemUtils
 
 /**
  * This packet is sent by the player when they click a slot in a window
@@ -68,5 +72,39 @@ class ClientClickWindowPacket(data: ByteArray) : Packet(data) {
         actionNumber = input.readShort()
         mode = input.readVarInt()
         clickedItem = input.readSlot()
+    }
+
+    override fun apply(client: ClientSession) {
+        if(windowID.toInt() == 0 && mode == 4) {
+            val player = client.player
+            val held = player.inventory.heldStack(player.selectedSlot)
+            if(held.isAir) return
+
+            val dropAll = (button.toInt() == 1)
+            val toDrop = if (dropAll) held else held.copy(count = 1)
+
+            if(dropAll) {
+                player.inventory.setHeldSlot(player.selectedSlot, null)
+            } else {
+                val newCount = held.count - 1
+                if (newCount <= 0) player.inventory.setHeldSlot(player.selectedSlot, null)
+                else player.inventory.setHeldSlot(player.selectedSlot, held.copy(count = newCount))
+            }
+
+            client.sendPacket(
+                ServerSetSlotPacket(
+                    0, player.selectedSlot + 36,
+                    player.inventory.heldStack(player.selectedSlot).toSlotData()
+                )
+            )
+
+            client.sendPacket(
+                ServerWindowConfirmationPacket(
+                    0, actionNumber, true
+                )
+            )
+
+            ItemUtils.dropItem(player.world!!, player.location.toBlockPosition(), toDrop.id)
+        }
     }
 }
