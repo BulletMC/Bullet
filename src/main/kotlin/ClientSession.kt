@@ -34,7 +34,6 @@ import kotlin.time.Duration.Companion.seconds
  *
  * @property out The output stream to send packets to the client
  * @property input The input stream to read packets from the client
- * @property handler The packet handler to handle incoming packets
  * @property state The current state of the game connection
  * @property protocol The protocol version of the player
  * @property player The player class associated with this session

@@ -101,7 +101,7 @@ class ClientLoginStartPacket(data: ByteArray) : Packet(data) {
         player.location = LocationType.Location(8.5, 2.0, 8.5)
         player.onGround = false
 
-        if (player.gameMode != GameMode.SURVIVAL || player.gameMode != GameMode.ADVENTURE) {
+        if (player.gameMode != GameMode.SURVIVAL && player.gameMode != GameMode.ADVENTURE) {
             player.canFly = true
         }
 
