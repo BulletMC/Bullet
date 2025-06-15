@@ -202,27 +202,6 @@ class PacketHandler(
         }
     }
 
-    @PacketReceiver
-    fun onPlayerSettingsChange(packet: ClientSettingsPacket) {
-        val event = PlayerSettingsChangeEvent(
-            client.player,
-            packet.locale,
-            packet.viewDistance.toInt(),
-            packet.chatMode,
-            packet.chatColors,
-            packet.displayedSkinParts.toInt(),
-            packet.mainHand
-        )
-        EventManager.fire(event)
-        if (event.isCancelled) return
-
-        client.player.viewDistance = packet.viewDistance.toInt()
-        client.player.locale = packet.locale
-
-        client.sendPacket(ServerUpdateViewPositionPacket(client.player.chunkX, client.player.chunkZ))
-        client.updatePlayerChunks(client.player.chunkX, client.player.chunkZ)
-    }
-
     /**
      * Called when a client performs an action, such as jumping, sneaking, or sprinting
      */

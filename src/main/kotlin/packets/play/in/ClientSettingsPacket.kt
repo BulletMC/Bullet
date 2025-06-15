@@ -1,8 +1,12 @@
 package com.aznos.packets.play.`in`
 
+import com.aznos.ClientSession
 import com.aznos.datatypes.StringType.readString
 import com.aznos.datatypes.VarInt.readVarInt
+import com.aznos.events.EventManager
+import com.aznos.events.PlayerSettingsChangeEvent
 import com.aznos.packets.Packet
+import com.aznos.packets.play.out.ServerUpdateViewPositionPacket
 
 /**
  * Packet sent by the client to inform the server about the client settings
@@ -40,4 +44,24 @@ class ClientSettingsPacket(data: ByteArray) : Packet(data) {
     fun isLeftPantsLegEnabled(): Boolean = (displayedSkinParts.toInt() and 0x10) != 0
     fun isRightPantsLegEnabled(): Boolean = (displayedSkinParts.toInt() and 0x20) != 0
     fun isHatEnabled(): Boolean = (displayedSkinParts.toInt() and 0x40) != 0
+
+    override fun apply(client: ClientSession) {
+        val event = PlayerSettingsChangeEvent(
+            client.player,
+            locale,
+            viewDistance.toInt(),
+            chatMode,
+            chatColors,
+            displayedSkinParts.toInt(),
+            mainHand
+        )
+        EventManager.fire(event)
+        if(event.isCancelled) return
+
+        client.player.viewDistance = viewDistance.toInt()
+        client.player.locale = locale
+
+        client.sendPacket(ServerUpdateViewPositionPacket(client.player.chunkX, client.player.chunkZ))
+        client.updatePlayerChunks(client.player.chunkX, client.player.chunkZ)
+    }
 }
