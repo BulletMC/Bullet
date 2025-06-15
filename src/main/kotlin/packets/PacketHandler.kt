@@ -94,7 +94,7 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * Handles all incoming packets by dispatching them to the appropriate handler methods
  *
- * @property client The clients session
+ * @property client The client's session
  */
 @Suppress("UnusedParameter", "TooManyFunctions", "LargeClass")
 class PacketHandler(

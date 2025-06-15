@@ -9,8 +9,4 @@ import com.aznos.packets.Packet
  */
 class ClientUseItemPacket(data: ByteArray) : Packet(data) {
     val hand: Int = getIStream().readVarInt()
-
-    override fun apply(client: ClientSession) {
-
-    }
 }

@@ -25,14 +25,19 @@ class ClientCreativeInventoryActionPacket(data: ByteArray) : Packet(data) {
         val stack = if(slot.present) slot.toItemStack() else null
         client.player.inventory.set(slotIdx, stack)
 
-        if(slotIdx == client.player.selectedSlot + 36) sendHeldItemUpdate(client)
+        if(slotIdx == client.player.selectedSlot + 36) client.player.sendHeldItemUpdate(client)
         if(slotIdx == -1) { //drop item
             if(stack != null && !stack.isAir) {
                 val vx = ((Math.random() - 0.5) * 0.2 * 8000).toInt().toShort()
                 val vy = (0.1 * 8000).toInt().toShort()
                 val vz = ((Math.random() - 0.5) * 0.2 * 8000).toInt().toShort()
 
-                ItemUtils.dropItem(client.player.world!!, client.player.location.toBlockPosition(), stack.id, vx, vy, vz)
+                ItemUtils.dropItem(
+                    client.player.world!!,
+                    client.player.location.toBlockPosition(),
+                    stack.id,
+                    vx, vy, vz
+                )
             }
         }
     }

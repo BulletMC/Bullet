@@ -75,7 +75,7 @@ object LoginUtils {
         client.sendPacket(ServerDeclareCommandsPacket(nodes, rootIndex))
     }
 
-    fun handleOnlineModeJoin(client: ClientSession, packet: ClientLoginStartPacket) {
+    fun handleOnlineModeJoin(client: ClientSession) {
         if(Bullet.onlineMode) {
             val verifyToken = ByteArray(4).apply {
                 SecureRandom().nextBytes(this)

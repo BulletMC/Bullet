@@ -59,7 +59,7 @@ object BlockPlacementUtils {
             properties[key] = value
         }
 
-        modifyRedstoneBlockProperties(client, block, cardinalDirection).forEach { (key, value) ->
+        modifyRedstoneBlockProperties(block, cardinalDirection).forEach { (key, value) ->
             properties[key] = value
         }
 
@@ -91,7 +91,7 @@ object BlockPlacementUtils {
         return properties
     }
 
-    fun modifyRedstoneBlockProperties(client: ClientSession, block: Any, cardinalDirection: String): MutableMap<String, String> {
+    fun modifyRedstoneBlockProperties(block: Any, cardinalDirection: String): MutableMap<String, String> {
         val properties = mutableMapOf<String, String>()
 
         if(block == Block.DISPENSER || block == Block.DROPPER) {

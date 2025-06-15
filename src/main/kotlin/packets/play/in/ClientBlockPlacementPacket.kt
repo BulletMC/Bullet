@@ -82,7 +82,9 @@ class ClientBlockPlacementPacket(data: ByteArray) : Packet(data) {
         handlePlacement(client, block, event, blockPos)
     }
 
-    private fun handlePlacement(client: ClientSession, block: Any, event: BlockPlaceEvent, blockPos: BlockPositionType.BlockPosition) {
+    private fun handlePlacement(
+        client: ClientSession, block: Any, event: BlockPlaceEvent, blockPos: BlockPositionType.BlockPosition
+    ) {
         if(block is Item && block == Item.AIR) return
         if(block is Block && block == Block.AIR) return
 

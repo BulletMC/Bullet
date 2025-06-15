@@ -10,8 +10,4 @@ import com.aznos.packets.Packet
 @Suppress("unused")
 class ClientTeleportConfirmPacket(data: ByteArray) : Packet(data) {
     val teleportID: Int = getIStream().readVarInt()
-
-    override fun apply(client: ClientSession) {
-
-    }
 }
