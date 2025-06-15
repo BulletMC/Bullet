@@ -275,12 +275,7 @@ class PacketHandler(
 
     @PacketReceiver
     fun onHeldItemChange(packet: ClientHeldItemChangePacket) {
-        val event = PlayerHeldItemChangeEvent(client.player, packet.slot.toInt())
-        EventManager.fire(event)
-        if (event.isCancelled) return
 
-        client.player.selectedSlot = packet.slot.toInt()
-        sendHeldItemUpdate()
     }
 
     @PacketReceiver
