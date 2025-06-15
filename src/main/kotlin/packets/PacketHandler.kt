@@ -137,22 +137,6 @@ class PacketHandler(
     }
 
     @PacketReceiver
-    fun onPlayerAbilities(packet: ClientPlayerAbilitiesPacket) {
-        if (client.player.canFly) {
-            val flying = (packet.flags and 0x02).toInt() == 0x02
-            client.player.isFlying = flying
-        } else {
-            client.player.isFlying = false
-            client.player.sendPacket(
-                ServerPlayerAbilitiesPacket(
-                    0,
-                    0f,
-                )
-            )
-        }
-    }
-
-    @PacketReceiver
     fun onTabComplete(packet: ClientTabCompletePacket) {
         val dispatcher = CommandManager.dispatcher
         val rawInput = packet.text
