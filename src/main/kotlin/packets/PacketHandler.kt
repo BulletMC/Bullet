@@ -103,45 +103,6 @@ class PacketHandler(
     val world: World
         get() = client.player.world!!
 
-    /**
-     * Handles when a player rotates to a new yaw and pitch
-     */
-    @PacketReceiver
-    fun onPlayerRotation(packet: ClientPlayerRotation) {
-        val newLocation = client.player.location.set(packet.yaw, packet.pitch)
-
-        val event = PlayerMoveEvent(
-            client.player,
-            newLocation,
-            client.player.location.copy()
-        )
-        EventManager.fire(event)
-        if (event.isCancelled) return
-
-        val player = client.player
-        player.location = newLocation
-        player.onGround = packet.onGround
-
-        val rotPacket = ServerEntityRotationPacket(
-            player.entityID,
-            player.location.yaw,
-            player.location.pitch,
-            player.onGround
-        )
-
-        val headLookPacket = ServerEntityHeadLook(
-            player.entityID,
-            player.location.yaw
-        )
-
-        for (otherPlayer in Bullet.players) {
-            if (otherPlayer == player) continue
-
-            otherPlayer.clientSession.sendPacket(rotPacket)
-            otherPlayer.clientSession.sendPacket(headLookPacket)
-        }
-    }
-
     @PacketReceiver
     fun onEncryptionResponse(packet: ClientEncryptionResponsePacket) {
         val rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding")
