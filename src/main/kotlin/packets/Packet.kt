@@ -1,6 +1,8 @@
 package com.aznos.packets
 
+import com.aznos.ClientSession
 import com.aznos.datatypes.VarInt.writeVarInt
+import com.aznos.entity.player.Player
 import java.io.*
 
 
@@ -34,6 +36,8 @@ open class Packet(
     fun getIStream(): DataInputStream {
         return DataInputStream(ByteArrayInputStream(buffer.toByteArray()))
     }
+
+    open fun apply(client: ClientSession) {}
 
     /**
      * Retrieves the complete packet data with its length prefixed

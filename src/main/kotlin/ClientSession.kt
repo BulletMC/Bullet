@@ -7,7 +7,6 @@ import com.aznos.entity.player.data.GameMode
 import com.aznos.events.EventManager
 import com.aznos.events.PlayerQuitEvent
 import com.aznos.packets.Packet
-import com.aznos.packets.PacketHandler
 import com.aznos.packets.PacketRegistry
 import com.aznos.packets.login.out.ServerLoginDisconnectPacket
 import com.aznos.packets.play.out.*
@@ -35,7 +34,6 @@ import kotlin.time.Duration.Companion.seconds
  *
  * @property out The output stream to send packets to the client
  * @property input The input stream to read packets from the client
- * @property handler The packet handler to handle incoming packets
  * @property state The current state of the game connection
  * @property protocol The protocol version of the player
  * @property player The player class associated with this session
@@ -50,7 +48,6 @@ class ClientSession(
 ) : AutoCloseable {
     private var out = socket.getOutputStream()
     var input = DataInputStream(BufferedInputStream(socket.getInputStream()))
-    private val handler = PacketHandler(this)
 
     var state = GameState.HANDSHAKE
     var protocol = -1
@@ -113,7 +110,7 @@ class ClientSession(
                     val packet: Packet = packetClass
                         .getConstructor(ByteArray::class.java)
                         .newInstance(data)
-                    handler.handle(packet)
+                    packet.apply(this)
                 } else {
                     Bullet.logger.warn("Unhandled packet with raw packet ID: 0x$id (Hex: 0x${id.toString(16)})")
                 }

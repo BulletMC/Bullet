@@ -680,6 +680,8 @@ object BlockTags {
         Item.PURPUR_STAIRS,
         Block.PURPUR_SLAB,
         Item.PURPUR_SLAB,
+        Block.STONE,
+        Item.STONE,
     )
 
     val ROCK_2 = listOf( //Stone+ pickaxe required to collect block

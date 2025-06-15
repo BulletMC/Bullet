@@ -329,4 +329,20 @@ class Player(
 
         return toAdd
     }
+
+    fun sendHeldItemUpdate(client: ClientSession) {
+        val stack = client.player.getHeldItem()
+        val slotData = stack.toSlotData()
+
+        for(otherPlayer in Bullet.players) {
+            if(otherPlayer != client.player) {
+                otherPlayer.sendPacket(
+                    ServerEntityEquipmentPacket(
+                        client.player.entityID,
+                        listOf(0 to slotData)
+                    )
+                )
+            }
+        }
+    }
 }
