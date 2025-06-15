@@ -219,66 +219,6 @@ class PacketHandler(
     }
 
     @PacketReceiver
-    fun onEntityInteract(packet: ClientInteractEntityPacket) {
-        val attacker = client.player
-
-        val event = PlayerInteractEntityEvent(attacker, packet.entityID, packet.type)
-        EventManager.fire(event)
-        if (event.isCancelled) return
-
-        if (packet.type == 1) {
-            for (player in Bullet.players) {
-                if (player.entityID == packet.entityID && player.gameMode == GameMode.SURVIVAL) {
-                    player.status.health -= 1
-
-                    player.sendPacket(
-                        ServerUpdateHealthPacket(
-                            player.status.health.toFloat(),
-                            player.status.foodLevel,
-                            player.status.saturation
-                        )
-                    )
-
-                    player.sendPacket(
-                        ServerAnimationPacket(
-                            player.entityID,
-                            1
-                        )
-                    )
-
-                    player.status.exhaustion += 0.1f
-
-                    val dx = player.location.x - attacker.location.x
-                    val dy = player.location.y - attacker.location.y
-                    val dz = player.location.z - attacker.location.z
-                    val distance = sqrt(dx * dx + dy * dy + dz * dz)
-                    if (distance != 0.0) {
-                        val kbStrength = 0.5
-
-                        val kbX = (dx / distance) * kbStrength
-                        val kbY = if (player.onGround) 0.3 else 0.125
-                        val kbZ = (dz / distance) * kbStrength
-
-                        player.sendPacket(
-                            ServerEntityVelocityPacket(
-                                player.entityID,
-                                (kbX * 8000).toInt().toShort(),
-                                (kbY * 8000).toInt().toShort(),
-                                (kbZ * 8000).toInt().toShort()
-                            )
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    @PacketReceiver
-    fun onHeldItemChange(packet: ClientHeldItemChangePacket) {
-
-    }
-
-    @PacketReceiver
     fun onPluginMessage(packet: ClientPluginMessagePacket) {
         when (packet.channel) {
             "minecraft:brand" -> {
