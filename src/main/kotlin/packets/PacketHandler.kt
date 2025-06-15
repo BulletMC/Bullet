@@ -110,39 +110,6 @@ class PacketHandler(
     }
 
     /**
-     * Handles a status request packet by sending a server status response
-     */
-    @PacketReceiver
-    fun onStatusRequest(packet: ClientStatusRequestPacket) {
-        val event = StatusRequestEvent(Bullet.max_players, 0, Bullet.motd)
-        EventManager.fire(event)
-        if (event.isCancelled) return
-
-        val response = ServerStatusResponse(
-            ServerStatusResponse.Version(Bullet.VERSION, Bullet.PROTOCOL),
-            ServerStatusResponse.Players(event.maxPlayers, event.onlinePlayers),
-            event.motd,
-            Bullet.favicon,
-            false
-        )
-
-        client.sendPacket(ServerStatusResponsePacket(Json.encodeToString(response)))
-    }
-
-    /**
-     * Handles a handshake packet by updating the client state and protocol
-     */
-    @PacketReceiver
-    fun onHandshake(packet: HandshakePacket) {
-        client.state = if (packet.state == 2) GameState.LOGIN else GameState.STATUS
-        client.protocol = packet.protocol ?: -1
-
-        val event = HandshakeEvent(client.state, client.protocol)
-        EventManager.fire(event)
-        if (event.isCancelled) return
-    }
-
-    /**
      * Dispatches the given packet to the corresponding handler method based on its type
      *
      * @param packet The packet to handle

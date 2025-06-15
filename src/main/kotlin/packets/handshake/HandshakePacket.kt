@@ -1,7 +1,11 @@
 package packets.handshake
 
+import com.aznos.ClientSession
+import com.aznos.GameState
 import com.aznos.datatypes.StringType.readString
 import com.aznos.datatypes.VarInt.readVarInt
+import com.aznos.events.EventManager
+import com.aznos.events.HandshakeEvent
 import com.aznos.packets.Packet
 import java.io.DataInputStream
 
@@ -26,5 +30,14 @@ class HandshakePacket(data: ByteArray) : Packet(data) {
         host = input.readString()
         port = input.readShort()
         state = input.readVarInt()
+    }
+
+    override fun apply(client: ClientSession) {
+        client.state = if(state == 2) GameState.LOGIN else GameState.STATUS
+        client.protocol = protocol ?: -1
+
+        val event = HandshakeEvent(client.state, client.protocol)
+        EventManager.fire(event)
+        if(event.isCancelled) return
     }
 }
