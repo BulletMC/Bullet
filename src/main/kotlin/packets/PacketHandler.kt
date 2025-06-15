@@ -136,39 +136,6 @@ class PacketHandler(
         }
     }
 
-    @PacketReceiver
-    fun onTabComplete(packet: ClientTabCompletePacket) {
-        val dispatcher = CommandManager.dispatcher
-        val rawInput = packet.text
-        val input = if (rawInput.startsWith("/")) rawInput.substring(1) else rawInput
-
-        val parseResults = dispatcher.parse(input, client.player)
-        dispatcher.getCompletionSuggestions(parseResults, input.length).thenAccept { suggestions ->
-            val lastSpace = input.lastIndexOf(' ')
-            val start = lastSpace + 1
-            val length = input.length - start
-
-            val startStr = input.substring(start)
-
-            val matches = suggestions.list
-                .filter { it.text.startsWith(startStr, ignoreCase = true) }
-                .map { it.text }
-
-            val formattedMatches = matches.map { match ->
-                if (lastSpace == -1) "/$match" else match
-            }
-
-            client.player.sendPacket(
-                ServerTabCompletePacket(
-                    packet.transactionID,
-                    start = start + 1,
-                    length = length,
-                    matches = formattedMatches
-                )
-            )
-        }
-    }
-
     /**
      * Called when a client performs an action, such as jumping, sneaking, or sprinting
      */
