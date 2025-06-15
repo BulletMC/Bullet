@@ -103,39 +103,6 @@ class PacketHandler(
     val world: World
         get() = client.player.world!!
 
-    @PacketReceiver
-    fun onUpdateSign(packet: ClientUpdateSignPacket) {
-        val data = CompoundTag()
-        data.putString("id", "minecraft:sign")
-        data.putInt("x", packet.blockPos.x.toInt())
-        data.putInt("y", packet.blockPos.y.toInt())
-        data.putInt("z", packet.blockPos.z.toInt())
-
-        data.putString("Text1", "{\"text\":\"${packet.line1}\"}")
-        data.putString("Text2", "{\"text\":\"${packet.line2}\"}")
-        data.putString("Text3", "{\"text\":\"${packet.line3}\"}")
-        data.putString("Text4", "{\"text\":\"${packet.line4}\"}")
-
-        for (otherPlayer in Bullet.players) {
-            if (otherPlayer != client.player) {
-                otherPlayer.sendPacket(
-                    ServerBlockEntityDataPacket(
-                        packet.blockPos,
-                        9,
-                        data
-                    )
-                )
-            }
-        }
-
-        val world = world
-        val prev = world.modifiedBlocks[packet.blockPos]
-        if (prev != null) {
-            val lines = listOf(packet.line1, packet.line2, packet.line3, packet.line4)
-            world.modifiedBlocks[packet.blockPos] = prev.copy(textLines = lines)
-        }
-    }
-
     /**
      * Called when a client performs an action, such as jumping, sneaking, or sprinting
      */
