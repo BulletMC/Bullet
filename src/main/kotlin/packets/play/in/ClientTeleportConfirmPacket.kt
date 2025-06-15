@@ -1,6 +1,6 @@
 package com.aznos.packets.play.`in`
 
-import com.aznos.datatypes.StringType.readString
+import com.aznos.ClientSession
 import com.aznos.datatypes.VarInt.readVarInt
 import com.aznos.packets.Packet
 
@@ -10,4 +10,8 @@ import com.aznos.packets.Packet
 @Suppress("unused")
 class ClientTeleportConfirmPacket(data: ByteArray) : Packet(data) {
     val teleportID: Int = getIStream().readVarInt()
+
+    override fun apply(client: ClientSession) {
+
+    }
 }
