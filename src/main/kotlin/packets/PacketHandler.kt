@@ -169,39 +169,6 @@ class PacketHandler(
         }
     }
 
-    @PacketReceiver
-    fun onClientStatus(packet: ClientStatusPacket) {
-        when (packet.actionID) {
-            0 -> { // Perform respawn
-                client.player.sendPacket(
-                    ServerRespawnPacket(
-                        Bullet.dimensionCodec!!,
-                        "minecraft:overworld",
-                        GameMode.SURVIVAL,
-                        false,
-                        false,
-                        true
-                    )
-                )
-
-                client.player.status.health = 20
-                client.player.status.foodLevel = 20
-                client.player.status.saturation = 5.0f
-                client.player.status.exhaustion = 0f
-
-                client.player.sendPacket(
-                    ServerPlayerPositionAndLookPacket(
-                        LocationType.Location(8.5, 2.0, 8.5)
-                    )
-                )
-            }
-
-            1 -> { // Request statistics
-
-            }
-        }
-    }
-
     /**
      * Called when a client performs an action, such as jumping, sneaking, or sprinting
      */
