@@ -118,7 +118,7 @@ class ClientDiggingPacket(data: ByteArray) : Packet(data) {
     }
 
     private fun removeBlock(world: World, blockPos: BlockPositionType.BlockPosition) {
-        if(world.modifiedBlocks.keys.find { it.x == blockPos.x && it.y == blockPos.y && it.z == blockPos.z } != null) {
+        if(world.modifiedBlocks.containsKey(blockPos)) {
             world.modifiedBlocks.remove(blockPos)
         } else {
             world.modifiedBlocks[blockPos] = BlockWithMetadata(0, 0)
