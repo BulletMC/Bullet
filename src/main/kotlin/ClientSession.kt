@@ -7,7 +7,6 @@ import com.aznos.entity.player.data.GameMode
 import com.aznos.events.EventManager
 import com.aznos.events.PlayerQuitEvent
 import com.aznos.packets.Packet
-import com.aznos.packets.PacketHandler
 import com.aznos.packets.PacketRegistry
 import com.aznos.packets.login.out.ServerLoginDisconnectPacket
 import com.aznos.packets.play.out.*
@@ -50,7 +49,6 @@ class ClientSession(
 ) : AutoCloseable {
     private var out = socket.getOutputStream()
     var input = DataInputStream(BufferedInputStream(socket.getInputStream()))
-    private val handler = PacketHandler(this)
 
     var state = GameState.HANDSHAKE
     var protocol = -1
@@ -113,7 +111,7 @@ class ClientSession(
                     val packet: Packet = packetClass
                         .getConstructor(ByteArray::class.java)
                         .newInstance(data)
-                    handler.handle(packet)
+                    packet.apply(this)
                 } else {
                     Bullet.logger.warn("Unhandled packet with raw packet ID: 0x$id (Hex: 0x${id.toString(16)})")
                 }
