@@ -486,42 +486,7 @@ class PacketHandler(
 
     @PacketReceiver
     fun onArmSwing(packet: ClientAnimationPacket) {
-        val event = PlayerArmSwingEvent(client.player)
-        EventManager.fire(event)
-        if (event.isCancelled) return
 
-        if (client.player.getHeldItemID() == Item.EXPERIENCE_BOTTLE.id) {
-            world.orbs.add(OrbEntity())
-            val orb = world.orbs.last()
-            orb.location = client.player.location.copy().add(0.0, 1.0, 0.0)
-            orb.xp = (3..11).random()
-
-            for (player in Bullet.players) {
-                player.sendPacket(
-                    ServerSpawnExperienceOrb(
-                        orb.entityID,
-                        client.player.location.toBlockPosition().add(0.0, 1.0, 0.0),
-                        orb.xp
-                    )
-                )
-
-                player.sendPacket(
-                    ServerSoundEffectPacket(
-                        Sounds.ENTITY_EXPERIENCE_BOTTLE_THROW,
-                        SoundCategories.PLAYER,
-                        client.player.location.x.toInt(),
-                        client.player.location.y.toInt(),
-                        client.player.location.z.toInt()
-                    )
-                )
-            }
-        }
-
-        for (otherPlayer in Bullet.players) {
-            if (otherPlayer != client.player) {
-                otherPlayer.sendPacket(ServerAnimationPacket(client.player.entityID, 0))
-            }
-        }
     }
 
     /**
@@ -995,15 +960,8 @@ class PacketHandler(
     fun handle(packet: Packet) {
         @Suppress("TooGenericExceptionCaught")
         try {
-            for (method in javaClass.methods) {
-                if (method.isAnnotationPresent(PacketReceiver::class.java)) {
-                    val params: Array<Class<*>> = method.parameterTypes
-                    if (params.size == 1 && params[0] == packet.javaClass) {
-                        method.invoke(this, packet)
-                    }
-                }
-            }
-        } catch (e: Exception) {
+            packet.apply(client)
+        } catch(e: Exception) {
             Bullet.logger.error("Could not handle packet ${packet.javaClass.name}", e)
         }
     }
