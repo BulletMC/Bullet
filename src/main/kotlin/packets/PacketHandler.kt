@@ -143,90 +143,6 @@ class PacketHandler(
     }
 
     /**
-     * Handle of a new position
-     */
-    private fun handleMove(
-        player: Player,
-        newLocation: LocationType.Location,
-        onGround: Boolean,
-    ): Boolean {
-        val event = PlayerMoveEvent(
-            player,
-            newLocation,
-            player.location.copy()
-        )
-        EventManager.fire(event)
-        if (event.isCancelled) return false
-
-        val wasOnGround = player.onGround
-
-        val newChunkX = (newLocation.x / 16).toInt()
-        val newChunkZ = (newLocation.z / 16).toInt()
-
-        if (newChunkX != player.chunkX || newChunkZ != player.chunkZ) {
-            player.chunkX = newChunkX
-            player.chunkZ = newChunkZ
-
-            client.sendPacket(
-                ServerUpdateViewPositionPacket(
-                    newChunkX,
-                    newChunkZ
-                )
-            )
-            client.updatePlayerChunks(newChunkX, newChunkZ)
-        }
-        handleFoodLevel(player, newLocation.x, newLocation.z, onGround, wasOnGround)
-
-        player.location = newLocation
-        player.onGround = onGround
-        checkFallDamage()
-        checkOrbs()
-        checkItems()
-
-        return true
-    }
-
-    /**
-     * Handles when a player moves to a new position and rotation axis at the same time
-     */
-    @PacketReceiver
-    fun onPlayerPositionAndRotation(packet: ClientPlayerPositionAndRotation) {
-        val newLocation = LocationType.Location(packet.x, packet.feetY, packet.z, packet.yaw, packet.pitch)
-
-        val player = client.player
-        val lastLocation = player.location
-
-        if (!handleMove(player, newLocation, packet.onGround)) return
-
-        val (deltaX, deltaY, deltaZ) = calculateDeltas(
-            packet.x, packet.feetY, packet.z,
-            lastLocation.x, lastLocation.y, lastLocation.z
-        )
-
-        val posAndRotPacket = ServerEntityPositionAndRotationPacket(
-            player.entityID,
-            deltaX,
-            deltaY,
-            deltaZ,
-            player.location.yaw,
-            player.location.pitch,
-            player.onGround
-        )
-
-        val headLookPacket = ServerEntityHeadLook(
-            player.entityID,
-            player.location.yaw
-        )
-
-        for (otherPlayer in Bullet.players) {
-            if (otherPlayer == player) continue
-
-            otherPlayer.clientSession.sendPacket(posAndRotPacket)
-            otherPlayer.clientSession.sendPacket(headLookPacket)
-        }
-    }
-
-    /**
      * Handles when a player moves to a new position
      */
     @PacketReceiver
@@ -429,16 +345,6 @@ class PacketHandler(
         }
     }
 
-    private fun calculateDeltas(
-        currentX: Double, currentY: Double, currentZ: Double,
-        lastX: Double, lastY: Double, lastZ: Double
-    ): Triple<Short, Short, Short> {
-        val deltaX = ((currentX - lastX) * 4096).toInt().coerceIn(-32768, 32767).toShort()
-        val deltaY = ((currentY - lastY) * 4096).toInt().coerceIn(-32768, 32767).toShort()
-        val deltaZ = ((currentZ - lastZ) * 4096).toInt().coerceIn(-32768, 32767).toShort()
-        return Triple(deltaX, deltaY, deltaZ)
-    }
-
     private fun initializePlayer(username: String, uuid: UUID): Player {
         val player = Player(client)
         player.username = username
@@ -477,67 +383,6 @@ class PacketHandler(
                         existingPlayer.location
                     )
                 )
-            }
-        }
-    }
-
-    /**
-     * Handles updating the food level when the player moves
-     *
-     * @param player The player to update
-     * @param x The current X position of the player
-     * @param z The current Z position of the player
-     * @param onGround Whether the player is on the ground
-     * @param wasOnGround If the player was on the ground before the movement packet was called
-     */
-    private fun handleFoodLevel(player: Player, x: Double, z: Double, onGround: Boolean, wasOnGround: Boolean) {
-        if (!onGround && wasOnGround) {
-            if (sprinting.contains(player.entityID)) {
-                player.status.exhaustion += 0.2f
-            } else {
-                player.status.exhaustion += 0.05f
-            }
-        }
-
-        if (sprinting.contains(player.entityID)) {
-            val distance = sqrt(
-                (x - player.lastSprintLocation!!.x).pow(2) +
-                        (z - player.lastSprintLocation!!.z).pow(2)
-            )
-
-            if (distance >= 1) {
-                player.status.exhaustion += 0.1f
-                player.lastSprintLocation = player.location
-            }
-        }
-    }
-
-    private fun checkFallDamage() {
-        val player = client.player
-        if (player.gameMode == GameMode.SURVIVAL) {
-            if (player.onGround) {
-                if (player.fallDistance > 3) {
-                    val damage = ((player.fallDistance - 3).coerceAtLeast(0.0)).toInt()
-                    player.status.health -= damage
-
-                    player.sendPacket(
-                        ServerUpdateHealthPacket(
-                            player.status.health.toFloat(),
-                            player.status.foodLevel,
-                            player.status.saturation
-                        )
-                    )
-                }
-
-                player.fallDistance = 0.0
-                player.lastOnGroundY = player.location.y
-            } else {
-                if (player.location.y < player.lastOnGroundY) {
-                    player.fallDistance += player.lastOnGroundY - player.location.y
-                    player.lastOnGroundY = player.location.y
-                } else {
-                    player.lastOnGroundY = player.location.y
-                }
             }
         }
     }
@@ -726,76 +571,6 @@ class PacketHandler(
         }
     }
 
-    private fun checkOrbs() {
-        for (player in players) {
-            val toRemove = mutableListOf<Entity>()
-            for (orb in world.orbs) {
-                val distance = sqrt(
-                    (player.location.x - orb.location.x).pow(2) +
-                            (player.location.y - orb.location.y).pow(2) +
-                            (player.location.z - orb.location.z).pow(2)
-                )
-
-                if (distance <= 1.25) {
-                    client.player.sendPacket(
-                        ServerCollectItemPacket(
-                            orb.entityID,
-                            client.player.entityID,
-                            1
-                        )
-                    )
-
-                    client.player.sendPacket(ServerDestroyEntitiesPacket(intArrayOf(orb.entityID)))
-
-                    client.player.sendPacket(
-                        ServerSoundEffectPacket(
-                            Sounds.ENTITY_EXPERIENCE_ORB_PICKUP,
-                            SoundCategories.PLAYER,
-                            client.player.location.x.toInt(),
-                            client.player.location.y.toInt(),
-                            client.player.location.z.toInt()
-                        )
-                    )
-
-                    calculateXPLevels(client.player.totalXP + orb.xp)
-                    toRemove.add(orb)
-                }
-            }
-
-            world.orbs.removeAll(toRemove)
-        }
-    }
-
-    fun xpToNextLevel(level: Int): Int = when {
-        level < 16 -> 2 * level + 7
-        level < 31 -> 5 * level - 38
-        else -> 9 * level - 158
-    }
-
-    fun totalXPTillNextLevel(level: Int): Int = when {
-        level <= 16 -> level * level + 6 * level
-        level <= 31 -> (2.5 * level * level - 40.5 * level + 360).toInt()
-        else -> (4.5 * level * level - 162.5 * level + 2220).toInt()
-    }
-
-    fun calculateXPLevels(totalXP: Int) {
-        val player = client.player
-        player.totalXP = totalXP
-
-        var level = 0
-        while (totalXPTillNextLevel(level + 1) <= player.totalXP) {
-            level++
-        }
-
-        val xpIntoLevel = player.totalXP - totalXPTillNextLevel(level)
-        val xpNeeded = xpToNextLevel(level).toFloat()
-
-        player.level = level
-        player.experienceBar = if (xpNeeded == 0f) 0f else xpIntoLevel / xpNeeded
-
-        player.sendPacket(ServerSetExperiencePacket(player.experienceBar, player.level, player.totalXP))
-    }
-
     fun handleOnlineModeJoin(packet: ClientLoginStartPacket) {
         if (Bullet.onlineMode) {
             val verifyToken = ByteArray(4).apply {
@@ -846,55 +621,12 @@ class PacketHandler(
         }
     }
 
-    private fun checkItems() {
-        val now = System.currentTimeMillis()
-        val player = client.player
-        val picked = mutableListOf<Pair<Entity, ItemStack>>()
-
-        for (item in world.items) {
-            if (now - item.first.spawnTimeMs < item.first.pickupDelayMs) continue
-
-            val distance = sqrt(
-                (player.location.x - item.first.location.x).pow(2) +
-                        (player.location.y - item.first.location.y).pow(2) +
-                        (player.location.z - item.first.location.z).pow(2)
-            )
-
-            if (distance <= 1.25) {
-                player.sendPacket(
-                    ServerCollectItemPacket(
-                        item.first.entityID,
-                        player.entityID,
-                        1
-                    )
-                )
-
-                player.sendPacket(ServerDestroyEntitiesPacket(intArrayOf(item.first.entityID)))
-
-                player.sendPacket(
-                    ServerSoundEffectPacket(
-                        Sounds.ENTITY_ITEM_PICKUP,
-                        SoundCategories.PLAYER,
-                        player.location.x.toInt(),
-                        player.location.y.toInt(),
-                        player.location.z.toInt()
-                    )
-                )
-
-                player.addItem(item.second)
-                picked += item
-            }
-        }
-
-        world.items.removeAll(picked)
-    }
-
     private fun loginPlayer() {
         val player = client.player
         client.sendPacket(ServerLoginSuccessPacket(player.uuid, player.username))
         client.state = GameState.PLAY
 
-        if (checkForBan()) return
+        if(checkForBan()) return
 
         sendJoinGamePacket()
         client.sendPacket(ServerPlayerPositionAndLookPacket(player.location))
