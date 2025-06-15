@@ -56,7 +56,7 @@ class ClientLoginStartPacket(data: ByteArray) : Packet(data) {
             LoginUtils.loginPlayer(client)
         }
 
-        LoginUtils.handleOnlineModeJoin(client, this)
+        LoginUtils.handleOnlineModeJoin(client)
     }
 
     private fun checkLoginValidity(client: ClientSession, username: String): Boolean {
