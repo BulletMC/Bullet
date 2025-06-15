@@ -142,40 +142,6 @@ class PacketHandler(
         }
     }
 
-    /**
-     * Handles when a player moves to a new position
-     */
-    @PacketReceiver
-    fun onPlayerPosition(packet: ClientPlayerPositionPacket) {
-        val newLocation = client.player.location.set(
-            packet.x, packet.feetY, packet.z
-        )
-
-        val player = client.player
-        val lastLocation = player.location
-
-        if (!handleMove(player, newLocation, packet.onGround)) return
-
-        val (deltaX, deltaY, deltaZ) = calculateDeltas(
-            packet.x, packet.feetY, packet.z,
-            lastLocation.x, lastLocation.y, lastLocation.z
-        )
-
-        val posPacket = ServerEntityPositionPacket(
-            player.entityID,
-            deltaX,
-            deltaY,
-            deltaZ,
-            player.onGround
-        )
-
-        for (otherPlayer in Bullet.players) {
-            if (otherPlayer == player) continue
-
-            otherPlayer.clientSession.sendPacket(posPacket)
-        }
-    }
-
     @PacketReceiver
     fun onEncryptionResponse(packet: ClientEncryptionResponsePacket) {
         val rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding")
