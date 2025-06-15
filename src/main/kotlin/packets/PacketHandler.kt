@@ -104,54 +104,6 @@ class PacketHandler(
         get() = client.player.world!!
 
     /**
-     * Called when a client performs an action, such as jumping, sneaking, or sprinting
-     */
-    @PacketReceiver
-    fun onPlayerAction(packet: ClientEntityActionPacket) {
-        when (packet.actionID) {
-            0 -> { //Start sneaking
-                val event = PlayerSneakEvent(client.player, true)
-                EventManager.fire(event)
-                if (event.isCancelled) return
-
-                client.player.isSneaking = true
-                updateEntityMetadata(client.player, 6, 5)
-            }
-
-            1 -> { //Stop sneaking
-                val event = PlayerSneakEvent(client.player, false)
-                EventManager.fire(event)
-                if (event.isCancelled) return
-
-                client.player.isSneaking = false
-                updateEntityMetadata(client.player, 6, 0)
-            }
-
-            2 -> { //Leave bed
-                handleWakeUp(client.player)
-            }
-
-            3 -> { //Start sprinting
-                val event = PlayerSprintEvent(client.player, true)
-                EventManager.fire(event)
-                if (event.isCancelled) return
-
-                sprinting.add(client.player.entityID)
-                client.player.lastSprintLocation = client.player.location
-            }
-
-            4 -> { //Stop sprinting
-                val event = PlayerSprintEvent(client.player, false)
-                EventManager.fire(event)
-                if (event.isCancelled) return
-
-                sprinting.remove(client.player.entityID)
-                client.player.lastSprintLocation = null
-            }
-        }
-    }
-
-    /**
      * Every 20 ticks the client will send an empty movement packet telling the server if the
      * client is on the ground or not
      */
@@ -540,19 +492,6 @@ class PacketHandler(
                         existingPlayer.location
                     )
                 )
-            }
-        }
-    }
-
-    private fun updateEntityMetadata(player: Player, index: Int, value: Int) {
-        val packet = ServerEntityMetadataPacket(
-            player.entityID,
-            listOf(MetadataType.MetadataEntry(index.toByte(), 18, value))
-        )
-
-        for (otherPlayer in Bullet.players) {
-            if (otherPlayer != player) {
-                otherPlayer.sendPacket(packet)
             }
         }
     }

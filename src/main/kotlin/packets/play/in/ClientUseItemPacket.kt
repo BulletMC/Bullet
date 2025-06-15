@@ -1,5 +1,6 @@
 package com.aznos.packets.play.`in`
 
+import com.aznos.ClientSession
 import com.aznos.datatypes.VarInt.readVarInt
 import com.aznos.packets.Packet
 
@@ -8,4 +9,8 @@ import com.aznos.packets.Packet
  */
 class ClientUseItemPacket(data: ByteArray) : Packet(data) {
     val hand: Int = getIStream().readVarInt()
+
+    override fun apply(client: ClientSession) {
+
+    }
 }
