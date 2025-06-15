@@ -171,13 +171,13 @@ class ClientDiggingPacket(data: ByteArray) : Packet(data) {
         val vz = ((Math.random() - 0.5) * 0.1 * 8000).toInt().toShort()
         val world = client.player.world ?: return
 
-        val blockId = world.modifiedBlocks[event.blockPos]?.blockID ?: Block.AIR.id
-        val stateID = world.modifiedBlocks[event.blockPos]?.stateID ?: Block.AIR.id
-        val blockObj = Block.getBlockFromID(blockId) ?: Block.AIR
+        val blockId = world.modifiedBlocks[event.blockPos]?.blockID ?: Block.GRASS_BLOCK.id
+        val stateID = world.modifiedBlocks[event.blockPos]?.stateID ?: Block.GRASS_BLOCK.id
+        val blockObj = Block.getBlockFromID(blockId) ?: Block.GRASS_BLOCK
         val heldItem = client.player.getHeldItem().item
 
         if(BlockUtils.canHarvestBlock(blockObj, heldItem)) {
-            ItemUtils.dropItem(world, event.blockPos, blockId, vx, vy, vz)
+            ItemUtils.dropItem(world, event.blockPos, blockObj.id, vx, vy, vz)
         }
 
         stopBlockBreak(client, event.blockPos)

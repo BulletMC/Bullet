@@ -1,5 +1,6 @@
 package com.aznos.util
 
+import com.aznos.Bullet
 import com.aznos.Bullet.players
 import com.aznos.ClientSession
 import com.aznos.datatypes.BlockPositionType
@@ -36,7 +37,7 @@ object ItemUtils {
 
         world.items.add(Pair(itemEntity, drop))
 
-        for (player in players) {
+        for(player in players) {
             player.sendPacket(
                 ServerSpawnEntityPacket(
                     itemEntity.entityID, itemEntity.uuid,

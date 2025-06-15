@@ -1,5 +1,6 @@
 package com.aznos.util
 
+import com.aznos.Bullet
 import com.aznos.ClientSession
 import com.aznos.world.blocks.Block
 import com.aznos.world.blocks.BlockTags
