@@ -11,6 +11,7 @@ import com.aznos.packets.play.out.ServerAnimationPacket
 import com.aznos.packets.play.out.ServerUpdateHealthPacket
 import com.aznos.packets.play.out.movement.ServerEntityVelocityPacket
 import com.aznos.util.ItemUtils
+import com.aznos.world.blocks.BlockTags
 import kotlin.math.sqrt
 
 /**
@@ -112,7 +113,11 @@ class ClientInteractEntityPacket(data: ByteArray) : Packet(data) {
                         )
                     }
 
-                    ItemUtils.decreaseItemDurability(attacker.clientSession, attacker.getHeldItem(), 2)
+                    if(attacker.getHeldItem().item in BlockTags.SWORDS) {
+                        ItemUtils.decreaseItemDurability(attacker.clientSession, attacker.getHeldItem(), 1)
+                    } else {
+                        ItemUtils.decreaseItemDurability(attacker.clientSession, attacker.getHeldItem(), 2)
+                    }
                 }
             }
         }
