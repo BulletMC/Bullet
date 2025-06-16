@@ -13,6 +13,17 @@ import kotlin.math.pow
 import kotlin.math.sqrt
 
 object MovementUtils {
+    /**
+     * Calculates the deltas for movement based on the current and last positions
+     *
+     * @param currentX The current X coordinate
+     * @param currentY The current Y coordinate
+     * @param currentZ The current Z coordinate
+     * @param lastX The last X coordinate
+     * @param lastY The last Y coordinate
+     * @param lastZ The last Z coordinate
+     * @return A Triple containing the deltas for X, Y, and Z coordinates as Shorts
+     */
     fun calculateDeltas(
         currentX: Double, currentY: Double, currentZ: Double,
         lastX: Double, lastY: Double, lastZ: Double
@@ -23,6 +34,14 @@ object MovementUtils {
         return Triple(deltaX, deltaY, deltaZ)
     }
 
+    /**
+     * Handles the player's movement, including chunk updates, fall damage, and food level adjustments.
+     *
+     * @param client The client session of the player
+     * @param newLocation The new location to move the player to
+     * @param onGround Whether the player is on the ground
+     * @return True if the movement was successful, false if it was cancelled by an event
+     */
     fun handleMove(
         client: ClientSession,
         newLocation: LocationType.Location,

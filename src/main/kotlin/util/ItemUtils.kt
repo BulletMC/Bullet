@@ -1,6 +1,5 @@
 package com.aznos.util
 
-import com.aznos.Bullet
 import com.aznos.Bullet.players
 import com.aznos.ClientSession
 import com.aznos.datatypes.BlockPositionType
@@ -11,9 +10,11 @@ import com.aznos.entity.Entity
 import com.aznos.packets.play.out.ServerCollectItemPacket
 import com.aznos.packets.play.out.ServerDestroyEntitiesPacket
 import com.aznos.packets.play.out.ServerEntityMetadataPacket
+import com.aznos.packets.play.out.ServerSetSlotPacket
 import com.aznos.packets.play.out.ServerSoundEffectPacket
 import com.aznos.packets.play.out.ServerSpawnEntityPacket
 import com.aznos.world.World
+import com.aznos.world.blocks.BlockTags
 import com.aznos.world.items.Item
 import com.aznos.world.items.ItemStack
 import com.aznos.world.sounds.SoundCategories
@@ -23,6 +24,16 @@ import kotlin.math.pow
 import kotlin.math.sqrt
 
 object ItemUtils {
+    /**
+     * Drops an item in the world at the specified position with the given velocity
+     *
+     * @param world The world to drop the item in
+     * @param blockPos The position to drop the item at
+     * @param item The item ID to drop
+     * @param vx The velocity in the x direction (default is 0)
+     * @param vy The velocity in the y direction (default is 0)
+     * @param vz The velocity in the z direction (default is 0)
+     */
     fun dropItem(
         world: World,
         blockPos: BlockPositionType.BlockPosition,
@@ -57,6 +68,12 @@ object ItemUtils {
         }
     }
 
+    /**
+     * Checks if the player is close enough to pick up items in the world
+     *
+     * @param client The client session of the player
+     * @param world The world to check for items
+     */
     fun checkItems(client: ClientSession, world: World) {
         val now = System.currentTimeMillis()
         val player = client.player
@@ -97,5 +114,68 @@ object ItemUtils {
         }
 
         world.items.removeAll(picked)
+    }
+
+    /**
+     * Returns the maximum durability of an item based on its type
+     *
+     * @param itemStack The item stack to check
+     * @return The maximum durability of the item, or 0 if it is not a tool
+     */
+    fun getMaxItemDurability(itemStack: ItemStack): Int {
+        for(woodTool in BlockTags.WOODEN_TOOLS) {
+            if(itemStack.item.id == woodTool.id) return 59
+        }
+
+        for(stoneTool in BlockTags.STONE_TOOLS) {
+            if(itemStack.item.id == stoneTool.id) return 131
+        }
+
+        for(ironTool in BlockTags.IRON_TOOLS) {
+            if(itemStack.item.id == ironTool.id) return 250
+        }
+
+        for(goldTool in BlockTags.GOLDEN_TOOLS) {
+            if(itemStack.item.id == goldTool.id) return 32
+        }
+
+        for(diamondTool in BlockTags.DIAMOND_TOOLS) {
+            if(itemStack.item.id == diamondTool.id) return 1561
+        }
+
+        for(netheriteTool in BlockTags.NETHERITE_TOOLS) {
+            if(itemStack.item.id == netheriteTool.id) return 2031
+        }
+
+        return 0
+    }
+
+    /**
+     * Decreases the durability of an item stack by a specified amount
+     *
+     * @param client The client session of the player
+     * @param itemStack The item stack to decrease durability for
+     * @param amount The amount to decrease durability by (default is 1)
+     */
+    fun decreaseItemDurability(client: ClientSession, itemStack: ItemStack, amount: Int = 1) {
+        if(itemStack.isAir) return
+        if(itemStack.isUnbreakable()) return
+
+        val isTool = BlockTags.TOOLS.find { it.id == itemStack.item.id } != null
+        val maxDurability = getMaxItemDurability(itemStack)
+
+        if(isTool && maxDurability > 0) {
+            val newDurability = itemStack.damage + amount
+            if(newDurability >= maxDurability) {
+                client.player.inventory.setHeldSlot(client.player.selectedSlot, null)
+            } else {
+                itemStack.damage = newDurability
+            }
+
+            client.sendPacket(ServerSetSlotPacket(
+                0, client.player.selectedSlot + 36,
+                client.player.inventory.heldStack(client.player.selectedSlot).toSlotData()
+            ))
+        }
     }
 }

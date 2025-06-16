@@ -37,6 +37,11 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 object LoginUtils {
+    /**
+     * Handles the login process for a player.
+     *
+     * @param client The client session of the player logging in.
+     */
     fun loginPlayer(client: ClientSession) {
         val player = client.player
         client.sendPacket(ServerLoginSuccessPacket(player.uuid, player.username))
@@ -75,6 +80,11 @@ object LoginUtils {
         client.sendPacket(ServerDeclareCommandsPacket(nodes, rootIndex))
     }
 
+    /**
+     * Handles when the server is in online mode and a player attempts to join.
+     *
+     * @param client The client session of the player connecting.
+     */
     fun handleOnlineModeJoin(client: ClientSession) {
         if(Bullet.onlineMode) {
             val verifyToken = ByteArray(4).apply {
@@ -92,6 +102,12 @@ object LoginUtils {
         }
     }
 
+    /**
+     * Checks if the player is banned and handles the ban logic
+     *
+     * @param client The client session of the player.
+     * @return True if the player is banned, false otherwise.
+     */
     private fun checkForBan(client: ClientSession): Boolean {
         val ban = Bullet.storage.getPlayerBan(client.player.uuid) ?: return false
 

@@ -3,6 +3,15 @@ package com.aznos.util
 import kotlin.time.Duration
 
 object DurationFormat {
+    /**
+     * Converts a Duration object into a human-readable string.
+     * If the duration is null, it returns "permanently".
+     * The format is "for X days Y hours Z minutes W seconds".
+     * If the duration is less than a second, it returns "0 seconds".
+     *
+     * @param duration The Duration object to format.
+     * @return A human-readable string representing the duration.
+     */
     fun getReadableDuration(duration: Duration?): String {
         if(duration == null) return "permanently"
 
@@ -50,6 +59,12 @@ object DurationFormat {
         return if(length == 3) "0 seconds" else ""
     }
 
+    /**
+     * Returns the appropriate suffix for a given day of the month.
+     *
+     * @param day The day of the month (1-31).
+     * @return A string representing the suffix ("st", "nd", "rd", or "th").
+     */
     fun getDaySuffix(day: Int): String {
         return if (day in 11..13) {
             "th"

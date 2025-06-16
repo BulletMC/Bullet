@@ -18,9 +18,12 @@ import com.aznos.util.BlockUtils
 import com.aznos.util.ItemUtils
 import com.aznos.world.World
 import com.aznos.world.blocks.Block
+import com.aznos.world.blocks.BlockTags
 import com.aznos.world.data.BlockStatus
 import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.Particles
+import com.aznos.world.items.Item
+import com.aznos.world.items.ItemStack
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -183,6 +186,10 @@ class ClientDiggingPacket(data: ByteArray) : Packet(data) {
         stopBlockBreak(client, event.blockPos)
         sendBlockBreakParticles(client.player, stateID, event.blockPos)
         removeBlock(world, event.blockPos)
+
+        if(client.player.gameMode == GameMode.SURVIVAL) {
+            ItemUtils.decreaseItemDurability(client, client.player.inventory.heldStack(client.player.selectedSlot))
+        }
     }
 
     private fun handleBlockDrop(client: ClientSession, status: Int) {

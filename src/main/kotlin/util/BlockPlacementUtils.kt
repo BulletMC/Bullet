@@ -17,6 +17,16 @@ import com.aznos.world.items.Item
 import kotlin.collections.set
 
 object BlockPlacementUtils {
+    /**
+     * Modifies block properties based on the block type and cardinal direction.
+     * This function is used to set the correct properties for blocks when they are placed.
+     *
+     * @param client The client session of the player placing the block.
+     * @param block The block being placed.
+     * @param cardinalDirection The cardinal direction in which the block is being placed.
+     * @param event The BlockPlaceEvent containing information about the placement.
+     * @return A map of properties to be applied to the block.
+     */
     fun modifyBlockProperties(
         client: ClientSession,
         block: Any,
@@ -24,7 +34,6 @@ object BlockPlacementUtils {
         event: BlockPlaceEvent
     ): MutableMap<String, String> {
         val properties = mutableMapOf<String, String>()
-
         for(furnace in BlockTags.FURNANCES) {
             if(block == furnace) {
                 properties["facing"] = cardinalDirection
