@@ -14,6 +14,7 @@ import com.aznos.packets.play.out.ServerEntityMetadataPacket
 import com.aznos.packets.play.out.ServerSoundEffectPacket
 import com.aznos.packets.play.out.ServerSpawnEntityPacket
 import com.aznos.world.World
+import com.aznos.world.blocks.BlockTags
 import com.aznos.world.items.Item
 import com.aznos.world.items.ItemStack
 import com.aznos.world.sounds.SoundCategories
@@ -97,5 +98,33 @@ object ItemUtils {
         }
 
         world.items.removeAll(picked)
+    }
+
+    fun getMaxItemDurability(itemStack: ItemStack): Int {
+        for(woodTool in BlockTags.WOODEN_TOOLS) {
+            if(itemStack.item.id == woodTool.id) return 59
+        }
+
+        for(stoneTool in BlockTags.STONE_TOOLS) {
+            if(itemStack.item.id == stoneTool.id) return 131
+        }
+
+        for(ironTool in BlockTags.IRON_TOOLS) {
+            if(itemStack.item.id == ironTool.id) return 250
+        }
+
+        for(goldTool in BlockTags.GOLDEN_TOOLS) {
+            if(itemStack.item.id == goldTool.id) return 32
+        }
+
+        for(diamondTool in BlockTags.DIAMOND_TOOLS) {
+            if(itemStack.item.id == diamondTool.id) return 1561
+        }
+
+        for(netheriteTool in BlockTags.NETHERITE_TOOLS) {
+            if(itemStack.item.id == netheriteTool.id) return 2031
+        }
+
+        return 0
     }
 }
