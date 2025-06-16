@@ -1,7 +1,11 @@
 package com.aznos.world.items
 
+import com.aznos.ClientSession
 import com.aznos.datatypes.Slot
+import com.aznos.packets.play.out.ServerSetSlotPacket
 import com.aznos.serialization.CompoundTagSerializer
+import com.aznos.util.ItemUtils
+import com.aznos.world.blocks.BlockTags
 import kotlinx.serialization.Serializable
 import net.kyori.adventure.text.Component
 import net.querz.nbt.tag.ByteTag

@@ -186,7 +186,7 @@ class ClientDiggingPacket(data: ByteArray) : Packet(data) {
         stopBlockBreak(client, event.blockPos)
         sendBlockBreakParticles(client.player, stateID, event.blockPos)
         removeBlock(world, event.blockPos)
-        decreaseItemDurability(client, client.player.inventory.heldStack(client.player.selectedSlot))
+        ItemUtils.decreaseItemDurability(client, client.player.inventory.heldStack(client.player.selectedSlot))
     }
 
     private fun handleBlockDrop(client: ClientSession, status: Int) {
@@ -225,27 +225,5 @@ class ClientDiggingPacket(data: ByteArray) : Packet(data) {
         val vz = (dz * 8000).toInt().toShort()
 
         ItemUtils.dropItem(client.player.world!!, client.player.location.toBlockPosition(), toDrop.id, vx, vy, vz)
-    }
-
-    fun decreaseItemDurability(client: ClientSession, itemStack: ItemStack) {
-        if(itemStack.isAir) return
-        if(itemStack.isUnbreakable()) return
-
-        val isTool = BlockTags.TOOLS.find { it.id == itemStack.item.id } != null
-        val maxDurability = ItemUtils.getMaxItemDurability(itemStack)
-
-        if(isTool && maxDurability > 0) {
-            val newDurability = itemStack.damage + 1
-            if(newDurability >= maxDurability) {
-                client.player.inventory.setHeldSlot(client.player.selectedSlot, null)
-            } else {
-                itemStack.damage = newDurability
-            }
-
-            client.sendPacket(ServerSetSlotPacket(
-                0, client.player.selectedSlot + 36,
-                client.player.inventory.heldStack(client.player.selectedSlot).toSlotData()
-            ))
-        }
     }
 }

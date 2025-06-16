@@ -10,6 +10,7 @@ import com.aznos.entity.Entity
 import com.aznos.packets.play.out.ServerCollectItemPacket
 import com.aznos.packets.play.out.ServerDestroyEntitiesPacket
 import com.aznos.packets.play.out.ServerEntityMetadataPacket
+import com.aznos.packets.play.out.ServerSetSlotPacket
 import com.aznos.packets.play.out.ServerSoundEffectPacket
 import com.aznos.packets.play.out.ServerSpawnEntityPacket
 import com.aznos.world.World
@@ -117,7 +118,7 @@ object ItemUtils {
 
     /**
      * Returns the maximum durability of an item based on its type
-     * 
+     *
      * @param itemStack The item stack to check
      * @return The maximum durability of the item, or 0 if it is not a tool
      */
@@ -147,5 +148,34 @@ object ItemUtils {
         }
 
         return 0
+    }
+
+    /**
+     * Decreases the durability of an item stack by a specified amount
+     *
+     * @param client The client session of the player
+     * @param itemStack The item stack to decrease durability for
+     * @param amount The amount to decrease durability by (default is 1)
+     */
+    fun decreaseItemDurability(client: ClientSession, itemStack: ItemStack, amount: Int = 1) {
+        if(itemStack.isAir) return
+        if(itemStack.isUnbreakable()) return
+
+        val isTool = BlockTags.TOOLS.find { it.id == itemStack.item.id } != null
+        val maxDurability = ItemUtils.getMaxItemDurability(itemStack)
+
+        if(isTool && maxDurability > 0) {
+            val newDurability = itemStack.damage + amount
+            if(newDurability >= maxDurability) {
+                client.player.inventory.setHeldSlot(client.player.selectedSlot, null)
+            } else {
+                itemStack.damage = newDurability
+            }
+
+            client.sendPacket(ServerSetSlotPacket(
+                0, client.player.selectedSlot + 36,
+                client.player.inventory.heldStack(client.player.selectedSlot).toSlotData()
+            ))
+        }
     }
 }
