@@ -18,9 +18,12 @@ import com.aznos.util.BlockUtils
 import com.aznos.util.ItemUtils
 import com.aznos.world.World
 import com.aznos.world.blocks.Block
+import com.aznos.world.blocks.BlockTags
 import com.aznos.world.data.BlockStatus
 import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.Particles
+import com.aznos.world.items.Item
+import com.aznos.world.items.ItemStack
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -183,6 +186,7 @@ class ClientDiggingPacket(data: ByteArray) : Packet(data) {
         stopBlockBreak(client, event.blockPos)
         sendBlockBreakParticles(client.player, stateID, event.blockPos)
         removeBlock(world, event.blockPos)
+        decreaseItemDurability(client, client.player.inventory.heldStack(client.player.selectedSlot))
     }
 
     private fun handleBlockDrop(client: ClientSession, status: Int) {
@@ -221,5 +225,60 @@ class ClientDiggingPacket(data: ByteArray) : Packet(data) {
         val vz = (dz * 8000).toInt().toShort()
 
         ItemUtils.dropItem(client.player.world!!, client.player.location.toBlockPosition(), toDrop.id, vx, vy, vz)
+    }
+
+    fun decreaseItemDurability(client: ClientSession, itemStack: ItemStack) {
+        if(itemStack.isAir) return
+        val isTool = BlockTags.TOOLS.find { it.id == itemStack.item.id } != null
+        val maxDurability = getMaxItemDurability(itemStack)
+
+        if(isTool && maxDurability > 0) {
+            val newDurability = itemStack.damage + 1
+            if(newDurability >= maxDurability) {
+                client.player.inventory.setHeldSlot(client.player.selectedSlot, null)
+                client.sendPacket(
+                    ServerSetSlotPacket(
+                        0, client.player.selectedSlot + 36,
+                        client.player.inventory.heldStack(client.player.selectedSlot).toSlotData()
+                    )
+                )
+            } else {
+                itemStack.damage = newDurability
+                client.sendPacket(
+                    ServerSetSlotPacket(
+                        0, client.player.selectedSlot + 36,
+                        itemStack.toSlotData()
+                    )
+                )
+            }
+        }
+    }
+
+    private fun getMaxItemDurability(itemStack: ItemStack): Int {
+        for(woodTool in BlockTags.WOODEN_TOOLS) {
+            if(itemStack.item.id == woodTool.id) return 59
+        }
+
+        for(stoneTool in BlockTags.STONE_TOOLS) {
+            if(itemStack.item.id == stoneTool.id) return 131
+        }
+
+        for(ironTool in BlockTags.IRON_TOOLS) {
+            if(itemStack.item.id == ironTool.id) return 250
+        }
+
+        for(goldTool in BlockTags.GOLDEN_TOOLS) {
+            if(itemStack.item.id == goldTool.id) return 32
+        }
+
+        for(diamondTool in BlockTags.DIAMOND_TOOLS) {
+            if(itemStack.item.id == diamondTool.id) return 1561
+        }
+
+        for(netheriteTool in BlockTags.NETHERITE_TOOLS) {
+            if(itemStack.item.id == netheriteTool.id) return 2031
+        }
+
+        return 0
     }
 }
