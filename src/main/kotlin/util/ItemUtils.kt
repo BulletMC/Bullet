@@ -162,7 +162,7 @@ object ItemUtils {
         if(itemStack.isUnbreakable()) return
 
         val isTool = BlockTags.TOOLS.find { it.id == itemStack.item.id } != null
-        val maxDurability = ItemUtils.getMaxItemDurability(itemStack)
+        val maxDurability = getMaxItemDurability(itemStack)
 
         if(isTool && maxDurability > 0) {
             val newDurability = itemStack.damage + amount
