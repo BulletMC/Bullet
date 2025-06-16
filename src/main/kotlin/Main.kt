@@ -49,5 +49,9 @@ fun main(args: Array<String>) {
 
     parser.parse(args)
 
+    EventManager.register(PlayerArmSwingEvent::class.java) { e ->
+        e.player.setSlot(40, ItemStack(Item.IRON_PICKAXE).setUnbreakable())
+    }
+
     Bullet.createServer(address, port, onlineMode, shouldPersist)
 }

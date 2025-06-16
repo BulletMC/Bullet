@@ -1,9 +1,12 @@
 package com.aznos.world.items
 
 import com.aznos.datatypes.Slot
+import com.aznos.serialization.CompoundTagSerializer
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import net.kyori.adventure.text.Component
+import net.querz.nbt.tag.ByteTag
+import net.querz.nbt.tag.CompoundTag
 import kotlin.math.min
 
 /**
@@ -23,13 +26,18 @@ data class ItemStack(
     var damage: Int = 0,
     var displayName: Component? = null,
     var lore: List<Component> = emptyList(),
-    @Contextual
-    var nbt: net.querz.nbt.tag.CompoundTag? = null
+    @Serializable(with = CompoundTagSerializer::class)
+    var nbt: CompoundTag? = null
 ) {
     val id: Int
         get() = item.id
 
     var rawID: Int? = null
+
+    fun setUnbreakable(value: Boolean = true): ItemStack {
+        ensureNBT().put("Unbreakable", ByteTag(if(value) 1 else 0))
+        return this
+    }
 
     /**
      * Checks if the item stack is empty or air
@@ -94,11 +102,20 @@ data class ItemStack(
     fun withLore(vararg lines: Component) = apply { lore = lines.toMutableList() }
     fun withDamage(value: Int) = apply { damage = value }
 
-    fun toNBT(): net.querz.nbt.tag.CompoundTag = ItemStackNBTCodec.toNbt(this)
+    fun toNBT(): CompoundTag {
+        val base = ItemStackNBTCodec.toNbt(this)
+
+        nbt?.let { custom ->
+            for((key, tag) in custom) base.put(key, tag.clone())
+        }
+
+        return base
+    }
+
     fun toSlotData(): Slot.SlotData {
         val valid = (rawID != null) || (item != Item.AIR)
         val id = rawID ?: item.id
-        val hasCustomData = displayName != null || lore.isNotEmpty() || damage != 0
+        val hasCustomData = displayName != null || lore.isNotEmpty() || damage != 0 || nbt != null
 
         return Slot.SlotData(
             present = valid,
@@ -113,6 +130,11 @@ data class ItemStack(
 
     val maxStackSize: Int
         get() = Item.getMaxStackSize(item)
+
+    private fun ensureNBT(): CompoundTag {
+        if(nbt == null) nbt = CompoundTag()
+        return nbt!!
+    }
 
     companion object {
         @JvmStatic fun of(item: Item, count: Int = 1) = ItemStack(item, count)
