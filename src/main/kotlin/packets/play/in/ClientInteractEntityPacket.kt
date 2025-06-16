@@ -113,10 +113,12 @@ class ClientInteractEntityPacket(data: ByteArray) : Packet(data) {
                         )
                     }
 
-                    if(attacker.getHeldItem().item in BlockTags.SWORDS) {
-                        ItemUtils.decreaseItemDurability(attacker.clientSession, attacker.getHeldItem(), 1)
-                    } else {
-                        ItemUtils.decreaseItemDurability(attacker.clientSession, attacker.getHeldItem(), 2)
+                    if(attacker.gameMode == GameMode.SURVIVAL) {
+                        if(attacker.getHeldItem().item in BlockTags.SWORDS) {
+                            ItemUtils.decreaseItemDurability(attacker.clientSession, attacker.getHeldItem(), 1)
+                        } else {
+                            ItemUtils.decreaseItemDurability(attacker.clientSession, attacker.getHeldItem(), 2)
+                        }
                     }
                 }
             }

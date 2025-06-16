@@ -186,7 +186,10 @@ class ClientDiggingPacket(data: ByteArray) : Packet(data) {
         stopBlockBreak(client, event.blockPos)
         sendBlockBreakParticles(client.player, stateID, event.blockPos)
         removeBlock(world, event.blockPos)
-        ItemUtils.decreaseItemDurability(client, client.player.inventory.heldStack(client.player.selectedSlot))
+
+        if(client.player.gameMode == GameMode.SURVIVAL) {
+            ItemUtils.decreaseItemDurability(client, client.player.inventory.heldStack(client.player.selectedSlot))
+        }
     }
 
     private fun handleBlockDrop(client: ClientSession, status: Int) {
