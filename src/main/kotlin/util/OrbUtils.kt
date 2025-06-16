@@ -14,6 +14,13 @@ import kotlin.math.pow
 import kotlin.math.sqrt
 
 object OrbUtils {
+    /**
+     * Checks if any player is close enough to an orb to collect it.
+     * If so, it removes the orb from the world and updates the player's experience.
+     *
+     * @param world The world containing the orbs.
+     * @param client The client session of the player.
+     */
     fun checkOrbs(world: World, client: ClientSession) {
         for(player in players) {
             val toRemove = mutableListOf<Entity>()
@@ -53,18 +60,36 @@ object OrbUtils {
         }
     }
 
+    /**
+     * Calculates the experience points needed to reach the next level based on the current level.
+     *
+     * @param level The current level of the player.
+     * @return The experience points needed to reach the next level.
+     */
     fun xpToNextLevel(level: Int): Int = when {
         level < 16 -> 2 * level + 7
         level < 31 -> 5 * level - 38
         else -> 9 * level - 158
     }
 
+    /**
+     * Calculates the total experience points required to reach a specific level.
+     *
+     * @param level The level for which to calculate the total experience points.
+     * @return The total experience points required to reach the specified level.
+     */
     fun totalXPTillNextLevel(level: Int): Int = when {
         level <= 16 -> level * level + 6 * level
         level <= 31 -> (2.5 * level * level - 40.5 * level + 360).toInt()
         else -> (4.5 * level * level - 162.5 * level + 2220).toInt()
     }
 
+    /**
+     * Calculates the player's level and experience bar based on the total experience points.
+     *
+     * @param totalXP The total experience points of the player.
+     * @param client The client session of the player.
+     */
     fun calculateXPLevels(totalXP: Int, client: ClientSession) {
         val player = client.player
         player.totalXP = totalXP

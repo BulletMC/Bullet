@@ -16,6 +16,12 @@ import kotlin.ranges.contains
 import kotlin.time.Duration.Companion.seconds
 
 object BedUtils {
+    /**
+     * Handles the click on a bed block
+     *
+     * @param client The client session of the player clicking the bed.
+     * @param blockPos The position of the bed block being clicked.
+     */
     fun handleBedClick(client: ClientSession, blockPos: BlockPositionType.BlockPosition) {
         val world = client.player.world!!
         val time = world.timeOfDay
@@ -52,6 +58,12 @@ object BedUtils {
         if(canSleepNow(world)) handleSleeping(client)
     }
 
+    /**
+     * Handles the sleeping action for a player.
+     * This method is called when a player is ready to sleep in a bed.
+     *
+     * @param client The client session of the player who is sleeping.
+     */
     fun handleSleeping(client: ClientSession) {
         Bullet.scope.launch {
             delay(5.seconds)
@@ -67,6 +79,12 @@ object BedUtils {
         }
     }
 
+    /**
+     * Checks if the conditions are met for players to sleep in the world.
+     *
+     * @param world The world in which the players are trying to sleep.
+     * @return True if the conditions for sleeping are met, false otherwise.
+     */
     fun canSleepNow(world: World): Boolean {
         val time = world.timeOfDay
         val totalPlayers = players.size
@@ -83,6 +101,12 @@ object BedUtils {
         }
     }
 
+    /**
+     * Handles the wake-up process for players after sleeping.
+     *
+     * @param world The world in which the players are waking up.
+     * @param client The client session of the player waking up.
+     */
     fun handleWakeUp(world: World, client: ClientSession) {
         if(!canSleepNow(world)) return
 

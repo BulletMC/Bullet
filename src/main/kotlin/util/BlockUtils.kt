@@ -10,6 +10,12 @@ import kotlin.math.abs
 import kotlin.math.ceil
 
 object BlockUtils {
+    /**
+     * Returns the cardinal direction based on the yaw angle.
+     *
+     * @param yaw The yaw angle in degrees.
+     * @return The cardinal direction as a string ("north", "south", "east", "west").
+     */
     fun getCardinalDirection(yaw: Float): String {
         val rot = (yaw % 360 + 360) % 360
         return when {
@@ -20,11 +26,24 @@ object BlockUtils {
         }
     }
 
+    /**
+     * Returns the rotational direction based on the yaw angle.
+     *
+     * @param yaw The yaw angle in degrees.
+     * @return An integer representing the rotational direction (0-15).
+     */
     fun getRotationalDirection(yaw: Float): Int {
         val normalizedYaw = (yaw % 360 + 360) % 360
         return ((normalizedYaw / 22.5).toInt() % 16)
     }
 
+    /**
+     * Returns the axis direction based on the yaw and pitch angles.
+     *
+     * @param yaw The yaw angle in degrees.
+     * @param pitch The pitch angle in degrees.
+     * @return The axis direction as an Axis enum value (X, Y, or Z).
+     */
     fun getAxisDirection(yaw: Float, pitch: Float): Axis {
         return when {
             pitch > 60f -> Axis.Y
@@ -34,6 +53,13 @@ object BlockUtils {
         }
     }
 
+    /**
+     * Returns the state ID for a block or item based on its properties.
+     *
+     * @param block The block or item object.
+     * @param properties A map of properties to determine the state ID.
+     * @return The state ID as an integer, or -1 if not applicable.
+     */
     fun getStateID(block: Any, properties: Map<String, String>): Int {
         return when (block) {
             is Block -> Block.getStateID(block, properties)
@@ -42,6 +68,13 @@ object BlockUtils {
         }
     }
 
+    /**
+     * Calculates the time required to break a block based on the player's held item and block properties.
+     *
+     * @param client The client session containing the player information.
+     * @param block The block or item to be broken.
+     * @return The time in seconds required to break the block, or 0 if it cannot be broken.
+     */
     fun getBlockBreakTime(client: ClientSession, block: Any): Long {
         val player = client.player
         val heldItem = player.getHeldItem().item
@@ -77,6 +110,12 @@ object BlockUtils {
         return seconds.toLong()
     }
 
+    /**
+     * Returns the multiplier for the tool based on its type.
+     *
+     * @param heldItem The item being held by the player.
+     * @return The multiplier as a Double.
+     */
     fun getToolMultiplier(heldItem: Item): Double =
         when(heldItem) {
             Item.WOODEN_PICKAXE, Item.WOODEN_AXE, Item.WOODEN_SHOVEL, Item.WOODEN_HOE -> 2.0
@@ -88,6 +127,13 @@ object BlockUtils {
             else -> 1.0
         }
 
+    /**
+     * Checks if the player can harvest a block based on the held item and block properties.
+     *
+     * @param blockObj The block object to be harvested.
+     * @param heldItem The item being held by the player.
+     * @return True if the block can be harvested, false otherwise.
+     */
     fun canHarvestBlock(blockObj: Block, heldItem: Item): Boolean {
         val isRockOrMetal =
             BlockTags.ROCK_1.contains(blockObj) ||
