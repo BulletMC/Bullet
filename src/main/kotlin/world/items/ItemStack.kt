@@ -2,7 +2,6 @@ package com.aznos.world.items
 
 import com.aznos.datatypes.Slot
 import com.aznos.serialization.CompoundTagSerializer
-import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import net.kyori.adventure.text.Component
 import net.querz.nbt.tag.ByteTag
@@ -19,6 +18,7 @@ import kotlin.math.min
  * @param lore Optional list of components to display as lore
  * @param nbt Any optional NBT data associated with the item stack
  */
+@Suppress("TooManyFunctions")
 @Serializable
 data class ItemStack(
     val item: Item,
@@ -47,6 +47,10 @@ data class ItemStack(
     val isAir: Boolean
         get() = item == Item.AIR || count <= 0
 
+    fun isUnbreakable(): Boolean {
+        return nbt?.getByte("Unbreakable")?.toInt() == 1
+    }
+
     /**
      * Creates a copy of an ItemStack
      *
@@ -56,7 +60,7 @@ data class ItemStack(
         item, count, damage,
         displayName,
         lore.toMutableList(),
-        nbt?.clone() as? net.querz.nbt.tag.CompoundTag ?: net.querz.nbt.tag.CompoundTag()
+        nbt?.clone() as? CompoundTag ?: CompoundTag()
     ).apply { rawID = this@ItemStack.rawID }
 
     /**

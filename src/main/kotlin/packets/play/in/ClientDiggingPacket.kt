@@ -229,6 +229,8 @@ class ClientDiggingPacket(data: ByteArray) : Packet(data) {
 
     fun decreaseItemDurability(client: ClientSession, itemStack: ItemStack) {
         if(itemStack.isAir) return
+        if(itemStack.isUnbreakable()) return
+
         val isTool = BlockTags.TOOLS.find { it.id == itemStack.item.id } != null
         val maxDurability = ItemUtils.getMaxItemDurability(itemStack)
 
@@ -236,21 +238,14 @@ class ClientDiggingPacket(data: ByteArray) : Packet(data) {
             val newDurability = itemStack.damage + 1
             if(newDurability >= maxDurability) {
                 client.player.inventory.setHeldSlot(client.player.selectedSlot, null)
-                client.sendPacket(
-                    ServerSetSlotPacket(
-                        0, client.player.selectedSlot + 36,
-                        client.player.inventory.heldStack(client.player.selectedSlot).toSlotData()
-                    )
-                )
             } else {
                 itemStack.damage = newDurability
-                client.sendPacket(
-                    ServerSetSlotPacket(
-                        0, client.player.selectedSlot + 36,
-                        itemStack.toSlotData()
-                    )
-                )
             }
+
+            client.sendPacket(ServerSetSlotPacket(
+                0, client.player.selectedSlot + 36,
+                client.player.inventory.heldStack(client.player.selectedSlot).toSlotData()
+            ))
         }
     }
 }
