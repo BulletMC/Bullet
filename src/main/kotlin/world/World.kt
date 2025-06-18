@@ -15,6 +15,8 @@ import com.aznos.packets.play.out.ServerDestroyEntitiesPacket
 import com.aznos.packets.play.out.ServerPlayerInfoPacket
 import com.aznos.packets.play.out.ServerSoundEffectPacket
 import com.aznos.packets.play.out.ServerSpawnPlayerPacket
+import com.aznos.packets.play.out.movement.ServerEntityHeadLook
+import com.aznos.packets.play.out.movement.ServerEntityPositionAndRotationPacket
 import com.aznos.storage.world.AbstractWorldStorage
 import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.Difficulty
@@ -65,6 +67,7 @@ class World(
     val items = mutableListOf<Pair<DroppedItem, ItemStack>>()
 
     lateinit var modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>
+    private val lastLocations = mutableMapOf<Int, LocationType.Location>()
 
     init {
         loadWorldsData()
@@ -206,6 +209,35 @@ class World(
                     player.sendPacket(removeEntry)
                 }
             }
+        }
+    }
+
+    fun broadcastEntityUpdate(entity: Entity) {
+        val newLoc = entity.location
+        val prevLoc = lastLocations[entity.entityID] ?: newLoc
+
+        fun d(a: Double, b: Double) =
+            ((a - b) * 4096).toInt().coerceIn(-32768, 32767).toShort()
+
+        val dx = d(newLoc.x, prevLoc.x)
+        val dy = d(newLoc.y, prevLoc.y)
+        val dz = d(newLoc.z, prevLoc.z)
+
+        if(
+            dx == (0).toShort() && dy == (0).toShort() && dz == (0).toShort() &&
+            newLoc.yaw == prevLoc.yaw && newLoc.pitch == prevLoc.pitch
+        ) return
+
+        for(player in Bullet.players) {
+            if(player.entityID == entity.entityID) continue
+            player.sendPacket(ServerEntityPositionAndRotationPacket(
+                entity.entityID,
+                dx, dy, dz,
+                newLoc.yaw, newLoc.pitch,
+                true
+            ))
+
+            player.sendPacket(ServerEntityHeadLook(entity.entityID, newLoc.yaw))
         }
     }
 }
