@@ -18,6 +18,8 @@ import com.aznos.packets.play.out.ServerSpawnPlayerPacket
 import com.aznos.packets.play.out.movement.ServerEntityHeadLook
 import com.aznos.packets.play.out.movement.ServerEntityPositionAndRotationPacket
 import com.aznos.storage.world.AbstractWorldStorage
+import com.aznos.util.schedule
+import com.aznos.world.blocks.Block
 import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.Difficulty
 import com.aznos.world.data.EntityData
@@ -72,6 +74,10 @@ class World(
     init {
         loadWorldsData()
         cleanItems()
+
+        Bullet.scope.schedule(50.milliseconds) {
+            livingEntities.forEach { it.first.tickAI(this@World) }
+        }
     }
 
     private fun loadWorldsData() {
@@ -212,6 +218,11 @@ class World(
         }
     }
 
+    /**
+     * Broadcasts an entity update to all players in the world
+     *
+     * @param entity The entity to broadcast
+     */
     fun broadcastEntityUpdate(entity: Entity) {
         val newLoc = entity.location
         val prevLoc = lastLocations[entity.entityID] ?: newLoc
@@ -223,10 +234,9 @@ class World(
         val dy = d(newLoc.y, prevLoc.y)
         val dz = d(newLoc.z, prevLoc.z)
 
-        if(
-            dx == (0).toShort() && dy == (0).toShort() && dz == (0).toShort() &&
-            newLoc.yaw == prevLoc.yaw && newLoc.pitch == prevLoc.pitch
-        ) return
+        val noPositionChange = dx == (0).toShort() && dy == (0).toShort() && dz == (0).toShort()
+        val noRotationChange = newLoc.yaw == prevLoc.yaw && newLoc.pitch == prevLoc.pitch
+        if(noPositionChange && noRotationChange) return
 
         for(player in Bullet.players) {
             if(player.entityID == entity.entityID) continue
@@ -239,5 +249,18 @@ class World(
 
             player.sendPacket(ServerEntityHeadLook(entity.entityID, newLoc.yaw))
         }
+    }
+
+    fun getHighestSolidBlockY(x: Double, z: Double, maxY: Int = 255): Int {
+        for(y in maxY downTo 0) {
+            val pos = BlockPositionType.BlockPosition(x, y.toDouble(), z)
+            val id = modifiedBlocks[pos]?.blockID ?: Block.GRASS_BLOCK.id
+            val block = Block.getBlockFromID(id) ?: Block.AIR
+            val isSolid = block != Block.AIR
+
+            if(isSolid) return y
+        }
+
+        return -1
     }
 }
