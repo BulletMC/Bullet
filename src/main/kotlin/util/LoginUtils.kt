@@ -20,6 +20,7 @@ import com.aznos.packets.play.out.ServerChangeGameStatePacket
 import com.aznos.packets.play.out.ServerChunkPacket
 import com.aznos.packets.play.out.ServerDeclareCommandsPacket
 import com.aznos.packets.play.out.ServerJoinGamePacket
+import com.aznos.packets.play.out.ServerPlayerAbilitiesPacket
 import com.aznos.packets.play.out.ServerPlayerPositionAndLookPacket
 import com.aznos.packets.play.out.ServerSpawnEntityPacket
 import com.aznos.packets.play.out.ServerSpawnLivingEntityPacket

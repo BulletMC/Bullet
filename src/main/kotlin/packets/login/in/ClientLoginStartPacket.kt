@@ -94,12 +94,12 @@ class ClientLoginStartPacket(data: ByteArray) : Packet(data) {
     }
 
     private fun initializePlayer(client: ClientSession, username: String, uuid: UUID): Player {
-        val player = Player(client)
-        player.username = username
-        player.uuid = uuid
-
-        player.location = LocationType.Location(8.5, 2.0, 8.5)
-        player.onGround = false
+        val player = Player(client).apply {
+            this.username = username
+            this.uuid = uuid
+            location = LocationType.Location(8.5, 2.0, 8.5)
+            onGround = false
+        }
 
         if (player.gameMode != GameMode.SURVIVAL && player.gameMode != GameMode.ADVENTURE) {
             player.canFly = true
