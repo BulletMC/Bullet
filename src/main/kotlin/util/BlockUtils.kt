@@ -2,6 +2,8 @@ package com.aznos.util
 
 import com.aznos.Bullet
 import com.aznos.ClientSession
+import com.aznos.datatypes.BlockPositionType
+import com.aznos.world.World
 import com.aznos.world.blocks.Block
 import com.aznos.world.blocks.BlockTags
 import com.aznos.world.data.Axis
@@ -188,4 +190,31 @@ object BlockUtils {
             BlockTags.SWORD.contains(blockObj) && BlockTags.SWORDS.contains(heldItem) -> true
             else -> false
         }
+
+    /**
+     * Checks if a block at the given position is solid (not air)
+     *
+     * @param blockPos The position of the block to check
+     * @param world The world in which the block is located
+     * @return True if the block is solid, false if it is air
+     */
+    fun isSolid(blockPos: BlockPositionType.BlockPosition, world: World): Boolean {
+        val id = world.modifiedBlocks[blockPos]?.blockID ?: if(blockPos.y.toInt() == 0) Block.GRASS_BLOCK.id else Block.AIR.id
+        return id != Block.AIR.id
+    }
+
+    /**
+     * Checks if there is a 2-block high air column at the given position
+     *
+     * @param blockPos The position of the block to check
+     * @param world The world in which the block is located
+     * @return True if the block is passable (2 blocks of air above it), false otherwise
+     */
+    fun isPassable(blockPos: BlockPositionType.BlockPosition, world: World): Boolean {
+        return (
+            !isSolid(blockPos, world) &&
+            !isSolid(blockPos.add(0.0, 1.0, 0.0), world) &&
+            isSolid(blockPos.add(0.0, -1.0, 0.0), world)
+        )
+    }
 }
