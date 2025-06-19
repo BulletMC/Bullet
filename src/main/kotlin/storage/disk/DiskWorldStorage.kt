@@ -46,12 +46,9 @@ class DiskWorldStorage(
         return writeFileData(file, modifiedBlocks)
     }
 
-    override fun writeEntity(entityData: EntityData): Boolean {
+    override fun writeEntities(entities: List<EntityData>): Boolean {
         val file = File(folder, WORLD_ENTITIES_FILE_NAME)
-        val entities = readEntities()?.toMutableList() ?: mutableListOf()
-        entities.add(entityData)
-
-        return writeFileData(file, entities)
+        return writeFileData(file, entities.distinctBy { it.uuid })
     }
 
     override fun readEntities(): List<EntityData>? {

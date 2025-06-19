@@ -66,7 +66,7 @@ class EmptyStorage : AbstractServerStorage {
             return true
         }
 
-        override fun writeEntity(entityData: EntityData): Boolean {
+        override fun writeEntities(entities: List<EntityData>): Boolean {
             return true
         }
 

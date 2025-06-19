@@ -81,6 +81,8 @@ class World(
     }
 
     private fun loadWorldsData() {
+        livingEntities.clear()
+        entities.clear()
         this.modifiedBlocks = storage.readBlockData()
 
         val data = storage.readWorldData() ?: return
@@ -119,13 +121,9 @@ class World(
         storage.writeWorldData(this)
         storage.writeBlockData(modifiedBlocks)
 
-        for(entity in entities) {
-            storage.writeEntity(entity.second)
-        }
-
-        for(livingEntity in livingEntities) {
-            storage.writeEntity(livingEntity.second)
-        }
+        val living = livingEntities.map { it.second }
+        val nonLiving = entities.map { it.second }
+        storage.writeEntities(living + nonLiving)
     }
 
     /**
@@ -225,7 +223,7 @@ class World(
      */
     fun broadcastEntityUpdate(entity: Entity) {
         val newLoc = entity.location
-        val prevLoc = lastLocations[entity.entityID] ?: newLoc
+        val prevLoc = lastLocations.getOrPut(entity.entityID) { newLoc }
 
         fun d(a: Double, b: Double) =
             ((a - b) * 4096).toInt().coerceIn(-32768, 32767).toShort()
@@ -249,6 +247,8 @@ class World(
 
             player.sendPacket(ServerEntityHeadLook(entity.entityID, newLoc.yaw))
         }
+
+        lastLocations[entity.entityID] = newLoc
     }
 
     fun getHighestSolidBlockY(x: Double, z: Double, maxY: Int = 255): Int {
@@ -261,6 +261,6 @@ class World(
             if(isSolid) return y
         }
 
-        return -1
+        return 0
     }
 }

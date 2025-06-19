@@ -65,7 +65,7 @@ interface AbstractWorldStorage {
         modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>
     ): Boolean
 
-    fun writeEntity(entityData: EntityData): Boolean
+    fun writeEntities(entities: List<EntityData>): Boolean
 
     fun readEntities(): List<EntityData>?
 }

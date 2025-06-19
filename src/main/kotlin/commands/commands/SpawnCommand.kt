@@ -64,6 +64,8 @@ class SpawnCommand {
     private fun spawnEntity(player: Player, livingEntityType: LivingEntities?, nonLivingEntityType: Entities?) {
         if(livingEntityType != null) {
             val entity = LivingEntity()
+            entity.location = player.location
+
             val entityData = EntityData(
                 entity.uuid,
                 player.location,
@@ -87,6 +89,7 @@ class SpawnCommand {
             player.world!!.livingEntities.add(Pair(entity, entityData))
         } else if(nonLivingEntityType != null) {
             val entity = Entity()
+            entity.location = player.location
             val entityData = EntityData(
                 entity.uuid,
                 player.location,

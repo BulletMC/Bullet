@@ -4,7 +4,6 @@ import com.aznos.entity.livingentity.LivingEntity
 import com.aznos.util.Vec3D
 import com.aznos.world.World
 import kotlin.random.Random
-import kotlin.random.nextInt
 
 class RandomStrollGoal(
     private val cooldownTicks: Int = 120,
@@ -21,6 +20,8 @@ class RandomStrollGoal(
         val dz = rnd.nextInt(-radius, radius + 1)
         val groundY = world.getHighestSolidBlockY(mob.location.x + dx, mob.location.z + dz)
         val dest = Vec3D(Triple(mob.location.x + dx, groundY + 1.0, mob.location.z + dz))
+
+        if(groundY < 0) return
 
         mob.navigator.moveTo(dest)
     }
