@@ -18,17 +18,16 @@ class RandomStrollGoal(
         if(nextMove-- > 0) return
         nextMove = cooldownTicks + rnd.nextInt(cooldownTicks)
 
-        val dx = rnd.nextInt(-radius, radius + 1)
-        val dz = rnd.nextInt(-radius, radius + 1)
-        val groundY = world.getHighestSolidBlockY(mob.location.x + dx, mob.location.z + dz)
-        val dest = Vec3D(Triple(mob.location.x + dx, groundY + 1.0, mob.location.z + dz))
-
+        val targetX = mob.location.x + rnd.nextInt(-radius, radius + 1)
+        val targetZ = mob.location.z + rnd.nextInt(-radius, radius + 1)
+        val groundY = world.getHighestSolidBlockY(targetX, targetZ)
         if(groundY < 0) return
+
         if(!BlockUtils.isPassable(
-            BlockPositionType.BlockPosition(dx.toDouble(), groundY + 1.toDouble(), dz.toDouble()),
+            BlockPositionType.BlockPosition(targetX, groundY + 1.0, targetZ),
             world
         )) return
 
-        mob.navigator.moveTo(dest)
+        mob.navigator.moveTo(Vec3D(Triple(targetX, groundY + 1.0, targetZ)))
     }
 }

@@ -40,6 +40,8 @@ class Navigator(private val mob: LivingEntity) {
             return
         }
 
+        mob.location = mob.location.set(nx, ny.toDouble(), nz)
+
         val yawRad = atan2(-step.x, step.z)
         mob.location = mob.location.set(
             yaw = quantiseYaw(Math.toDegrees(yawRad).toFloat()),
