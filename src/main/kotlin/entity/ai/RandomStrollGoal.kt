@@ -1,6 +1,8 @@
 package com.aznos.entity.ai
 
+import com.aznos.datatypes.BlockPositionType
 import com.aznos.entity.livingentity.LivingEntity
+import com.aznos.util.BlockUtils
 import com.aznos.util.Vec3D
 import com.aznos.world.World
 import kotlin.random.Random
@@ -22,6 +24,10 @@ class RandomStrollGoal(
         val dest = Vec3D(Triple(mob.location.x + dx, groundY + 1.0, mob.location.z + dz))
 
         if(groundY < 0) return
+        if(!BlockUtils.isPassable(
+            BlockPositionType.BlockPosition(dx.toDouble(), groundY + 1.toDouble(), dz.toDouble()),
+            world
+        )) return
 
         mob.navigator.moveTo(dest)
     }

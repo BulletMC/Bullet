@@ -11,6 +11,7 @@ import com.aznos.world.items.Item
 import kotlin.math.abs
 import kotlin.math.ceil
 
+@Suppress("TooManyFunctions")
 object BlockUtils {
     /**
      * Returns the cardinal direction based on the yaw angle.
@@ -198,8 +199,11 @@ object BlockUtils {
      * @param world The world in which the block is located
      * @return True if the block is solid, false if it is air
      */
-    fun isSolid(blockPos: BlockPositionType.BlockPosition, world: World): Boolean {
-        val id = world.modifiedBlocks[blockPos]?.blockID ?: if(blockPos.y.toInt() == 0) Block.GRASS_BLOCK.id else Block.AIR.id
+    fun isSolid(
+        blockPos: BlockPositionType.BlockPosition, world: World
+    ): Boolean {
+        val id = world.modifiedBlocks[blockPos]?.blockID ?:
+            if(blockPos.y.toInt() == 0) Block.GRASS_BLOCK.id else Block.AIR.id
         return id != Block.AIR.id
     }
 
