@@ -254,13 +254,11 @@ class World(
     fun getHighestSolidBlockY(x: Double, z: Double, maxY: Int = 255): Int {
         for(y in maxY downTo 0) {
             val pos = BlockPositionType.BlockPosition(x, y.toDouble(), z)
-            val id = modifiedBlocks[pos]?.blockID ?: Block.GRASS_BLOCK.id
-            val block = Block.getBlockFromID(id) ?: Block.AIR
-            val isSolid = block != Block.AIR
+            val id = modifiedBlocks[pos]?.blockID ?: if(y == 0) Block.GRASS_BLOCK.id else Block.AIR.id
 
-            if(isSolid) return y
+            if(id != Block.AIR.id) return y
         }
 
-        return 0
+        return -1
     }
 }
