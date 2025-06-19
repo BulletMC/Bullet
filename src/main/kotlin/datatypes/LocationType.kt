@@ -15,8 +15,8 @@ object LocationType {
         val x: Double,
         val y: Double,
         val z: Double,
-        val yaw: Float,
-        val pitch: Float
+        var yaw: Float,
+        var pitch: Float
     ) {
 
         constructor(x: Double, y: Double, z: Double) : this(x, y, z, 0f, 0f)
