@@ -1,6 +1,5 @@
 package com.aznos.util
 
-import com.aznos.Bullet
 import com.aznos.ClientSession
 import com.aznos.datatypes.BlockPositionType
 import com.aznos.world.World

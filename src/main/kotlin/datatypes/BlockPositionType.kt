@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException
+import kotlin.math.floor
 
 object BlockPositionType {
     /**
@@ -28,6 +29,14 @@ object BlockPositionType {
             this.z += z
 
             return this
+        }
+
+        fun toBlockPosI(): BlockPosI {
+            return BlockPosI(
+                floor(x).toInt(),
+                floor(y).toInt(),
+                floor(z).toInt()
+            )
         }
     }
 
@@ -86,5 +95,14 @@ object BlockPositionType {
         writeDouble(blockPos.x)
         writeDouble(blockPos.y)
         writeDouble(blockPos.z)
+    }
+
+    /**
+     * An integer version of a block position
+     */
+    data class BlockPosI(val x: Int, val y: Int, val z: Int) {
+        fun toBlockPos(): BlockPosition {
+            return BlockPosition(x.toDouble(), y.toDouble(), z.toDouble())
+        }
     }
 }
