@@ -35,7 +35,8 @@ class Navigator(private val mob: LivingEntity) {
         val nz = mob.location.z + step.z
         val ny = world.getHighestSolidBlockY(nx, nz) + 1
 
-        if(!BlockUtils.isPassable(BlockPositionType.BlockPosition(nx, ny.toDouble(), nz), world)) {
+        val check = BlockPositionType.BlockPosition(nx, ny.toDouble(), nz)
+        if(!BlockUtils.isPassable(check, world)) {
             target = null
             return
         }

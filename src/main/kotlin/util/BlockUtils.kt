@@ -201,8 +201,9 @@ object BlockUtils {
     fun isSolid(
         blockPos: BlockPositionType.BlockPosition, world: World
     ): Boolean {
-        val id = world.modifiedBlocks[blockPos]?.blockID ?:
-            if(blockPos.y.toInt() == 0) Block.GRASS_BLOCK.id else Block.AIR.id
+        val bp = blockPos.toBlockPosI()
+        val id = world.modifiedBlocks[bp.toBlockPos()]?.blockID ?:
+            if(bp.y == 0) Block.GRASS_BLOCK.id else Block.AIR.id
         return id != Block.AIR.id
     }
 
@@ -214,10 +215,11 @@ object BlockUtils {
      * @return True if the block is passable (2 blocks of air above it), false otherwise
      */
     fun isPassable(blockPos: BlockPositionType.BlockPosition, world: World): Boolean {
-        return (
-            !isSolid(blockPos, world) &&
-            !isSolid(blockPos.add(0.0, 1.0, 0.0), world) &&
-            isSolid(blockPos.add(0.0, -1.0, 0.0), world)
-        )
+        val pos = blockPos.toBlockPosI()
+        val air = { p: BlockPositionType.BlockPosI -> !isSolid(p.toBlockPos(), world) }
+
+        return  air(pos) &&
+                air(BlockPositionType.BlockPosI(pos.x, pos.y + 1, pos.z)) &&
+                !air(BlockPositionType.BlockPosI(pos.x, pos.y - 1, pos.z))
     }
 }

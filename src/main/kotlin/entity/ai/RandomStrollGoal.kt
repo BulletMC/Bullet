@@ -23,10 +23,8 @@ class RandomStrollGoal(
         val groundY = world.getHighestSolidBlockY(targetX, targetZ)
         if(groundY < 0) return
 
-        if(!BlockUtils.isPassable(
-            BlockPositionType.BlockPosition(targetX, groundY + 1.0, targetZ),
-            world
-        )) return
+        val checkPos = BlockPositionType.BlockPosition(targetX, groundY + 1.0, targetZ).toBlockPosI()
+        if(!BlockUtils.isPassable(checkPos.toBlockPos(), world)) return
 
         mob.navigator.moveTo(Vec3D(Triple(targetX, groundY + 1.0, targetZ)))
     }
