@@ -20,7 +20,7 @@ class Navigator(private val mob: LivingEntity) {
         val dest = target ?: return
 
         val from = mob.location.toVec3D()
-        val delta = dest-from
+        val delta = dest - from
         val dist = delta.length()
 
         if(dist < 0.05) {
@@ -33,12 +33,19 @@ class Navigator(private val mob: LivingEntity) {
         val step = delta.normalize() * WALK_SPEED
         val nx = mob.location.x + step.x
         val nz = mob.location.z + step.z
-        val ny = world.getHighestSolidBlockY(nx, nz) + 1
+        var ny = world.getHighestSolidBlockY(nx, nz) + 1
 
-        val check = BlockPositionType.BlockPosition(nx, ny.toDouble(), nz)
-        if(!BlockUtils.isPassable(check, world)) {
-            target = null
-            return
+        val ahead = BlockPositionType.BlockPosition(nx, ny.toDouble(), nz)
+        if(!BlockUtils.isPassable(ahead, world)) {
+            val headClear = BlockUtils.isClearHeadroom(BlockPositionType.BlockPosition(nx, ny.toDouble(), nz), world)
+            val floorBelow = BlockUtils.isSolid(BlockPositionType.BlockPosition(nx, (ny - 1).toDouble(), nz), world)
+
+            if(headClear && floorBelow) {
+                ny += 1
+            } else {
+                target = null
+                return
+            }
         }
 
         mob.location = mob.location.set(nx, ny.toDouble(), nz)
