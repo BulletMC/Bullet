@@ -7,6 +7,7 @@ import com.aznos.world.blocks.Block
 import com.aznos.world.blocks.BlockTags
 import com.aznos.world.data.Axis
 import com.aznos.world.items.Item
+import kotlinx.coroutines.yield
 import kotlin.math.abs
 import kotlin.math.ceil
 
@@ -222,4 +223,30 @@ object BlockUtils {
                 air(BlockPositionType.BlockPosI(pos.x, pos.y + 1, pos.z)) &&
                 !air(BlockPositionType.BlockPosI(pos.x, pos.y - 1, pos.z))
     }
+
+    /**
+     * Finds the first solid block below the given position
+     *
+     * @param blockPos The position to start searching from
+     * @param world The world in which the block is located
+     * @return The y-coordinate of the first solid block below the given position, or -1 if none found
+     */
+    fun firstSolidBelow(blockPos: BlockPositionType.BlockPosition, world: World): Int {
+        var y0 = blockPos.y.toInt()
+        while(y0 >= 0 && !isSolid(BlockPositionType.BlockPosition(blockPos.x, y0.toDouble(), blockPos.z), world)) {
+            y0--
+        }
+
+        return y0
+    }
+
+    /**
+     * Checks if there is clear headroom above the given block position
+     *
+     * @param blockPos The position of the block to check
+     * @param world The world in which the block is located
+     * @return True if there is no solid block directly above, false otherwise
+     */
+    fun isClearHeadroom(blockPos: BlockPositionType.BlockPosition, world: World) =
+        !isSolid(BlockPositionType.BlockPosition(blockPos.x, (blockPos.y + 1).toDouble(), blockPos.z), world)
 }
