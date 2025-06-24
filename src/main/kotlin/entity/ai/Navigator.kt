@@ -32,9 +32,17 @@ class Navigator(private val mob: LivingEntity) {
         }
 
         val step = delta.normalize() * WALK_SPEED
+        val nextDist = dist - WALK_SPEED
         val nx = mob.location.x + step.x
         val nz = mob.location.z + step.z
         var ny = world.getHighestSolidBlockY(nx, nz) + 1
+
+        if(nextDist <= 0.0) {
+            snapToGround(world, dest)
+            target = null
+            world.broadcastEntityUpdate(mob)
+            return
+        }
 
         val ahead = BlockPositionType.BlockPosition(nx, ny.toDouble(), nz)
         if(!BlockUtils.isPassable(ahead, world)) {
