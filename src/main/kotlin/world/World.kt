@@ -97,12 +97,15 @@ class World(
             for(entity in storage.readEntities()!!) {
                 when(entity.isLiving) {
                     true -> {
+                        val living = LivingEntity()
                         livingEntities.add(
                             Pair(
-                                LivingEntity(),
+                                living,
                                 entity
                             )
                         )
+
+                        living.navigator.moveTo(entity.location.toVec3D(), this)
                     }
                     false -> {
                         entities.add(
