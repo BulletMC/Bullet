@@ -11,6 +11,7 @@ import com.aznos.packets.PacketRegistry
 import com.aznos.packets.login.out.ServerLoginDisconnectPacket
 import com.aznos.packets.play.out.*
 import com.aznos.packets.status.LegacyPingRequest
+import com.aznos.util.schedule
 import com.aznos.world.data.Difficulty
 import kotlinx.coroutines.*
 import net.kyori.adventure.text.Component
@@ -25,6 +26,7 @@ import javax.crypto.CipherInputStream
 import javax.crypto.CipherOutputStream
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -132,20 +134,16 @@ class ClientSession(
      * if the player is still connected
      */
     fun scheduleKeepAlive() {
-        coroutineScope.launch {
-            while(isActive) {
-                delay(10.seconds)
-
-                if(isClosed()) return@launch
-                if(!respondedToKeepAlive) {
-                    disconnect(Component.text("Timed out"))
-                    return@launch
-                }
-
-                lastKeepAliveTimestamp = System.currentTimeMillis()
-                sendPacket(ServerKeepAlivePacket(lastKeepAliveTimestamp))
-                respondedToKeepAlive = false
+        coroutineScope.schedule(10.seconds) {
+            if(isClosed()) return@schedule
+            if(!respondedToKeepAlive) {
+                disconnect(Component.text("Timed out"))
+                return@schedule
             }
+
+            lastKeepAliveTimestamp = System.currentTimeMillis()
+            sendPacket(ServerKeepAlivePacket(lastKeepAliveTimestamp))
+            respondedToKeepAlive = false
         }
     }
 
@@ -153,21 +151,17 @@ class ClientSession(
      * Called every half second to update player information, like health, food, etc
      */
     fun scheduleHalfSecondUpdate() {
-        coroutineScope.launch {
-            var timeSinceHealthUpdate = 0
-            var timeSinceHealthDecrease = 0
+        var timeSinceHealthUpdate = 0
+        var timeSinceHealthDecrease = 0
 
-            while(isActive) {
-                if(isClosed()) break
+        coroutineScope.schedule(500.milliseconds) {
+            if(isClosed()) return@schedule
 
-                updatePlayerStatus()
-                val (newUpdate, newDecrease) = updatePlayerHealth(timeSinceHealthUpdate, timeSinceHealthDecrease)
+            updatePlayerStatus()
+            val (newUpdate, newDecrease) = updatePlayerHealth(timeSinceHealthUpdate, timeSinceHealthDecrease)
 
-                timeSinceHealthUpdate = newUpdate
-                timeSinceHealthDecrease = newDecrease
-
-                delay(500)
-            }
+            timeSinceHealthUpdate = newUpdate
+            timeSinceHealthDecrease = newDecrease
         }
     }
 
@@ -177,12 +171,8 @@ class ClientSession(
      */
     fun scheduleSaving() {
         if(Bullet.shouldPersist) {
-            coroutineScope.launch {
-                while(isActive) {
-                    delay(5.seconds)
-
-                    Bullet.storage.storage.writePlayerData(player)
-                }
+            coroutineScope.schedule(5.seconds) {
+                Bullet.storage.storage.writePlayerData(player)
             }
         }
     }

@@ -11,6 +11,7 @@ import com.aznos.packets.play.out.ServerParticlePacket
 import com.aznos.storage.EmptyStorage
 import com.aznos.storage.StorageManager
 import com.aznos.storage.disk.DiskServerStorage
+import com.aznos.util.schedule
 import com.aznos.world.data.Particles
 import com.google.gson.Gson
 import com.google.gson.JsonParser
@@ -202,14 +203,10 @@ object Bullet : AutoCloseable {
      * Schedules a coroutine to update the time of day every second
      */
     private fun scheduleTimeUpdate() {
-        scope.launch {
-            while(isActive) {
-                delay(1.seconds)
-
-                for (world in storage.getWorlds()) {
-                    world.timeOfDay = (world.timeOfDay + 20) % 24000
-                    world.worldAge += 20
-                }
+        scope.schedule(1.seconds) {
+            for(world in storage.getWorlds()) {
+                world.timeOfDay = (world.timeOfDay + 20) % 24000
+                world.worldAge += 20
             }
         }
     }
@@ -219,12 +216,9 @@ object Bullet : AutoCloseable {
      */
     private fun scheduleSaveUpdate() {
         if(shouldPersist) {
-            scope.launch {
-                while(isActive) {
-                    delay(5.seconds)
-                    for (world in storage.getWorlds()) {
-                        world.save()
-                    }
+            scope.schedule(5.seconds) {
+                for(world in storage.getWorlds()) {
+                    world.save()
                 }
             }
         }
@@ -234,32 +228,28 @@ object Bullet : AutoCloseable {
      * Schedules a coroutine to send particles to players who are sprinting so that other players can see them
      */
     private fun scheduleSprintingParticles() {
-        scope.launch {
-            while(isActive) {
-                for(entityID in sprinting) {
-                    val player = players.find { it.entityID == entityID } ?: continue
+        scope.schedule(200.milliseconds) {
+            for(entityID in sprinting) {
+                val player = players.find { it.entityID == entityID } ?: continue
 
-                    val x = player.location.x
-                    val y = player.location.y + 0.1f
-                    val z = player.location.z
+                val x = player.location.x
+                val y = player.location.y + 0.1f
+                val z = player.location.z
 
-                    for(otherPlayer in players) {
-                        if(otherPlayer != player) {
-                            otherPlayer.clientSession.sendPacket(ServerParticlePacket(
-                                Particles.Block(1),
-                                false,
-                                BlockPositionType.BlockPosition(x, y, z),
-                                0.001f,
-                                0.0005f,
-                                0.001f,
-                                0.0f,
-                                5
-                            ))
-                        }
+                for(otherPlayer in players) {
+                    if(otherPlayer != player) {
+                        otherPlayer.clientSession.sendPacket(ServerParticlePacket(
+                            Particles.Block(1),
+                            false,
+                            BlockPositionType.BlockPosition(x, y, z),
+                            0.001f,
+                            0.0005f,
+                            0.001f,
+                            0.0f,
+                            5
+                        ))
                     }
                 }
-
-                delay(200.milliseconds)
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.aznos.datatypes
 
+import com.aznos.util.Vec3D
 import kotlinx.serialization.Serializable
 import java.io.DataInputStream
 import java.io.DataOutputStream
@@ -14,8 +15,8 @@ object LocationType {
         val x: Double,
         val y: Double,
         val z: Double,
-        val yaw: Float,
-        val pitch: Float
+        var yaw: Float,
+        var pitch: Float
     ) {
 
         constructor(x: Double, y: Double, z: Double) : this(x, y, z, 0f, 0f)
@@ -65,6 +66,8 @@ object LocationType {
                 x, y, z
             )
         }
+
+        fun toVec3D() = Vec3D(Triple(x, y, z))
     }
 
 

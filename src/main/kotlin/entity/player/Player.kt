@@ -4,7 +4,6 @@ import com.aznos.Bullet
 import com.aznos.ClientSession
 import com.aznos.commands.CommandSource
 import com.aznos.datatypes.LocationType
-import com.aznos.datatypes.Slot
 import com.aznos.entity.Entity
 import com.aznos.entity.player.data.ChatPosition
 import com.aznos.entity.player.data.GameMode
@@ -19,9 +18,6 @@ import com.aznos.world.sounds.Sounds
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
 import java.util.UUID
-import kotlin.collections.get
-import kotlin.collections.minusAssign
-import kotlin.text.set
 
 /**
  * Represents a player in the game
@@ -120,6 +116,15 @@ class Player(
      */
     fun setGameMode(mode: GameMode) {
         gameMode = mode
+        canFly = mode == GameMode.CREATIVE || mode == GameMode.SPECTATOR
+
+        val canFlyFlag = if(canFly) 0x04 else 0
+        val creativeFlag = if (mode == GameMode.CREATIVE) 0x08 else 0
+        val invincibleFlag = if(mode == GameMode.CREATIVE || mode == GameMode.SPECTATOR) 0x01 else 0
+
+        val flags = canFlyFlag or creativeFlag or invincibleFlag
+
+        sendPacket(ServerPlayerAbilitiesPacket(flags.toByte()))
         sendPacket(ServerChangeGameStatePacket(3, mode.id.toFloat()))
 
         for(player in Bullet.players) {

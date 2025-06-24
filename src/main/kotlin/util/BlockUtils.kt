@@ -1,14 +1,17 @@
 package com.aznos.util
 
-import com.aznos.Bullet
 import com.aznos.ClientSession
+import com.aznos.datatypes.BlockPositionType
+import com.aznos.world.World
 import com.aznos.world.blocks.Block
 import com.aznos.world.blocks.BlockTags
 import com.aznos.world.data.Axis
 import com.aznos.world.items.Item
+import kotlinx.coroutines.yield
 import kotlin.math.abs
 import kotlin.math.ceil
 
+@Suppress("TooManyFunctions")
 object BlockUtils {
     /**
      * Returns the cardinal direction based on the yaw angle.
@@ -188,4 +191,62 @@ object BlockUtils {
             BlockTags.SWORD.contains(blockObj) && BlockTags.SWORDS.contains(heldItem) -> true
             else -> false
         }
+
+    /**
+     * Checks if a block at the given position is solid (not air)
+     *
+     * @param blockPos The position of the block to check
+     * @param world The world in which the block is located
+     * @return True if the block is solid, false if it is air
+     */
+    fun isSolid(
+        blockPos: BlockPositionType.BlockPosition, world: World
+    ): Boolean {
+        val bp = blockPos.toBlockPosI()
+        val id = world.modifiedBlocks[bp.toBlockPos()]?.blockID ?:
+            if(bp.y == 0) Block.GRASS_BLOCK.id else Block.AIR.id
+        return id != Block.AIR.id
+    }
+
+    /**
+     * Checks if there is a 2-block high air column at the given position
+     *
+     * @param blockPos The position of the block to check
+     * @param world The world in which the block is located
+     * @return True if the block is passable (2 blocks of air above it), false otherwise
+     */
+    fun isPassable(blockPos: BlockPositionType.BlockPosition, world: World): Boolean {
+        val pos = blockPos.toBlockPosI()
+        val air = { p: BlockPositionType.BlockPosI -> !isSolid(p.toBlockPos(), world) }
+
+        return  air(pos) &&
+                air(BlockPositionType.BlockPosI(pos.x, pos.y + 1, pos.z)) &&
+                !air(BlockPositionType.BlockPosI(pos.x, pos.y - 1, pos.z))
+    }
+
+    /**
+     * Finds the first solid block below the given position
+     *
+     * @param blockPos The position to start searching from
+     * @param world The world in which the block is located
+     * @return The y-coordinate of the first solid block below the given position, or -1 if none found
+     */
+    fun firstSolidBelow(blockPos: BlockPositionType.BlockPosition, world: World): Int {
+        var y0 = blockPos.y.toInt()
+        while(y0 >= 0 && !isSolid(BlockPositionType.BlockPosition(blockPos.x, y0.toDouble(), blockPos.z), world)) {
+            y0--
+        }
+
+        return y0
+    }
+
+    /**
+     * Checks if there is clear headroom above the given block position
+     *
+     * @param blockPos The position of the block to check
+     * @param world The world in which the block is located
+     * @return True if there is no solid block directly above, false otherwise
+     */
+    fun isClearHeadroom(blockPos: BlockPositionType.BlockPosition, world: World) =
+        !isSolid(BlockPositionType.BlockPosition(blockPos.x, (blockPos.y + 1).toDouble(), blockPos.z), world)
 }

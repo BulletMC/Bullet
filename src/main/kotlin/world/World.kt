@@ -15,7 +15,11 @@ import com.aznos.packets.play.out.ServerDestroyEntitiesPacket
 import com.aznos.packets.play.out.ServerPlayerInfoPacket
 import com.aznos.packets.play.out.ServerSoundEffectPacket
 import com.aznos.packets.play.out.ServerSpawnPlayerPacket
+import com.aznos.packets.play.out.movement.ServerEntityHeadLook
+import com.aznos.packets.play.out.movement.ServerEntityPositionAndRotationPacket
 import com.aznos.storage.world.AbstractWorldStorage
+import com.aznos.util.schedule
+import com.aznos.world.blocks.Block
 import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.Difficulty
 import com.aznos.world.data.EntityData
@@ -65,13 +69,20 @@ class World(
     val items = mutableListOf<Pair<DroppedItem, ItemStack>>()
 
     lateinit var modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>
+    private val lastLocations = mutableMapOf<Int, LocationType.Location>()
 
     init {
         loadWorldsData()
         cleanItems()
+
+        Bullet.scope.schedule(50.milliseconds) {
+            livingEntities.forEach { it.first.tickAI(this@World) }
+        }
     }
 
     private fun loadWorldsData() {
+        livingEntities.clear()
+        entities.clear()
         this.modifiedBlocks = storage.readBlockData()
 
         val data = storage.readWorldData() ?: return
@@ -86,12 +97,15 @@ class World(
             for(entity in storage.readEntities()!!) {
                 when(entity.isLiving) {
                     true -> {
+                        val living = LivingEntity()
                         livingEntities.add(
                             Pair(
-                                LivingEntity(),
+                                living,
                                 entity
                             )
                         )
+
+                        living.navigator.moveTo(entity.location.toVec3D(), this)
                     }
                     false -> {
                         entities.add(
@@ -110,13 +124,9 @@ class World(
         storage.writeWorldData(this)
         storage.writeBlockData(modifiedBlocks)
 
-        for(entity in entities) {
-            storage.writeEntity(entity.second)
-        }
-
-        for(livingEntity in livingEntities) {
-            storage.writeEntity(livingEntity.second)
-        }
+        val living = livingEntities.map { it.second }
+        val nonLiving = entities.map { it.second }
+        storage.writeEntities(living + nonLiving)
     }
 
     /**
@@ -207,5 +217,51 @@ class World(
                 }
             }
         }
+    }
+
+    /**
+     * Broadcasts an entity update to all players in the world
+     *
+     * @param entity The entity to broadcast
+     */
+    fun broadcastEntityUpdate(entity: Entity) {
+        val newLoc = entity.location
+        val prevLoc = lastLocations.getOrPut(entity.entityID) { newLoc }
+
+        fun d(a: Double, b: Double) =
+            ((a - b) * 4096).toInt().coerceIn(-32768, 32767).toShort()
+
+        val dx = d(newLoc.x, prevLoc.x)
+        val dy = d(newLoc.y, prevLoc.y)
+        val dz = d(newLoc.z, prevLoc.z)
+
+        val noPositionChange = dx == (0).toShort() && dy == (0).toShort() && dz == (0).toShort()
+        val noRotationChange = newLoc.yaw == prevLoc.yaw && newLoc.pitch == prevLoc.pitch
+        if(noPositionChange && noRotationChange) return
+
+        for(player in Bullet.players) {
+            if(player.entityID == entity.entityID) continue
+            player.sendPacket(ServerEntityPositionAndRotationPacket(
+                entity.entityID,
+                dx, dy, dz,
+                newLoc.yaw, newLoc.pitch,
+                true
+            ))
+
+            player.sendPacket(ServerEntityHeadLook(entity.entityID, newLoc.yaw))
+        }
+
+        lastLocations[entity.entityID] = newLoc
+    }
+
+    fun getHighestSolidBlockY(x: Double, z: Double, maxY: Int = 255): Int {
+        for(y in maxY downTo 0) {
+            val pos = BlockPositionType.BlockPosition(x, y.toDouble(), z)
+            val id = modifiedBlocks[pos]?.blockID ?: if(y == 0) Block.GRASS_BLOCK.id else Block.AIR.id
+
+            if(id != Block.AIR.id) return y
+        }
+
+        return -1
     }
 }
