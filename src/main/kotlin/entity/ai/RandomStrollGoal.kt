@@ -26,6 +26,6 @@ class RandomStrollGoal(
         val checkPos = BlockPositionType.BlockPosition(targetX, groundY + 1.0, targetZ).toBlockPosI()
         if(!BlockUtils.isPassable(checkPos.toBlockPos(), world)) return
 
-        mob.navigator.moveTo(Vec3D(Triple(targetX, groundY + 1.0, targetZ)))
+        mob.navigator.moveTo(Vec3D(Triple(targetX, groundY + 1.0, targetZ)), world)
     }
 }

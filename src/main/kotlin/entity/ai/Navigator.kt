@@ -15,7 +15,10 @@ private const val YAW_STEP = 360f / 256f
 class Navigator(private val mob: LivingEntity) {
     private var target: Vec3D? = null
 
-    fun moveTo(target: Vec3D) { this.target = target }
+    fun moveTo(dest: Vec3D, world: World) {
+        target = quantiseVec(dest, world)
+    }
+
     fun tick(world: World) {
         val dest = target ?: return
 
@@ -24,9 +27,7 @@ class Navigator(private val mob: LivingEntity) {
         val dist = delta.length()
 
         if(dist < 0.05) {
-            snapToGround(world, dest)
             target = null
-            world.broadcastEntityUpdate(mob)
             return
         }
 
@@ -61,6 +62,8 @@ class Navigator(private val mob: LivingEntity) {
     }
 
     private fun pushOutOfBlock(world: World) {
+        if(target == null) return
+
         val y = mob.location.y.toInt()
         val box = mob.feetBox()
 
@@ -93,4 +96,15 @@ class Navigator(private val mob: LivingEntity) {
 
     private fun quantise(v: Double) = round(v * 32.0) / 32.0
     private fun quantiseYaw(yaw: Float) = ((yaw / YAW_STEP).roundToInt() * YAW_STEP) % 360f
+
+    private fun quantiseVec(dest: Vec3D, world: World): Vec3D {
+        val y = world.getHighestSolidBlockY(dest.x, dest.z) + 1
+        return Vec3D(
+            Triple(
+                quantise(dest.x),
+                quantise(y.toDouble()),
+                quantise(dest.z)
+            )
+        )
+    }
 }
