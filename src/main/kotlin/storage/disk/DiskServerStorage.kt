@@ -6,6 +6,7 @@ import com.aznos.storage.AbstractServerStorage
 import com.aznos.storage.disk.DiskStorageUtil.readFileData
 import com.aznos.storage.disk.DiskStorageUtil.writeFileData
 import com.aznos.storage.world.AbstractWorldStorage
+import com.aznos.util.WorldFormatDetector
 import com.aznos.world.data.EntityData
 import com.aznos.world.data.PlayerData
 import java.io.File
@@ -23,7 +24,12 @@ class DiskServerStorage : AbstractServerStorage {
     }
 
     override fun prepareWorldStorage(name: String): AbstractWorldStorage {
-        return DiskWorldStorage(name, File(WORLDS_STORAGE_ROOT, name))
+        val root = File(WORLDS_STORAGE_ROOT, name)
+        return if(WorldFormatDetector.isAnvilRoot(root)) {
+            AnvilWorldStorage(name, root)
+        } else {
+            DiskWorldStorage(name, root)
+        }
     }
 
     override fun readPlayerData(uuid: UUID): PlayerData? {
