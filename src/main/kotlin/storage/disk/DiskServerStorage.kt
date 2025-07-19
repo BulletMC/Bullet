@@ -13,6 +13,7 @@ import java.io.File
 import java.util.*
 
 class DiskServerStorage : AbstractServerStorage {
+    private val customFiles = arrayOf("world.json", "blocks.json", "entities.json")
 
     companion object {
         private val STORAGE_ROOT = File("./data")
@@ -25,11 +26,15 @@ class DiskServerStorage : AbstractServerStorage {
 
     override fun prepareWorldStorage(name: String): AbstractWorldStorage {
         val root = File(WORLDS_STORAGE_ROOT, name)
-        return if(WorldFormatDetector.isAnvilRoot(root)) {
-            AnvilWorldStorage(name, root)
-        } else {
-            DiskWorldStorage(name, root)
+        val isAnvil = WorldFormatDetector.isAnvilRoot(root)
+        val hasCustom = customFiles.any { File(root, it).exists() }
+
+        if(isAnvil && hasCustom) {
+            Bullet.logger.error("World '$name' has BOTH Anvil files (level.dat/region) and custom Bullet JSON files. Please remove the conflicting set, startup aborted.")
+            throw IllegalStateException("Conflicting world formats for '$name'")
         }
+
+        return if(isAnvil) AnvilWorldStorage(name, root) else DiskWorldStorage(name, root)
     }
 
     override fun readPlayerData(uuid: UUID): PlayerData? {
