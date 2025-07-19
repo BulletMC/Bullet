@@ -1,14 +1,22 @@
 package com.aznos.world.anvil
 
 import com.aznos.world.data.anvil.AnvilChunk
+import net.querz.nbt.io.NBTInputStream
+import net.querz.nbt.io.NBTOutputStream
+import net.querz.nbt.io.NamedTag
 import net.querz.nbt.tag.CompoundTag
+import net.querz.nbt.tag.ListTag
 import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.Closeable
 import java.io.File
 import java.io.InputStream
 import java.io.RandomAccessFile
+import java.nio.ByteBuffer
+import java.util.zip.DeflaterOutputStream
 import java.util.zip.GZIPInputStream
 import java.util.zip.InflaterInputStream
+import javax.xml.namespace.QName
 
 class RegionFile(private val file: File) : Closeable {
     private val raf: RandomAccessFile
@@ -51,19 +59,73 @@ class RegionFile(private val file: File) : Closeable {
             else -> return null
         }
 
-        //return nbt data
-        return null
+        NBTInputStream(input).use { nbtIn ->
+            val named: NamedTag = nbtIn.readTag(512)
+            return named.tag as CompoundTag
+        }
     }
 
     fun writeChunk(chunk: AnvilChunk) {
         val idx = index(chunk.cz, chunk.cx)
         val nbtRoot = buildChunkNBT(chunk)
-        //write nbt data
+        val baos = ByteArrayOutputStream()
+        val deflated = DeflaterOutputStream(baos)
+
+        NBTOutputStream(deflated).use { out ->
+            out.writeTag(NamedTag("", nbtRoot), 512)
+        }
+
+        deflated.close()
+        val compressed = baos.toByteArray()
+        val length = compressed.size + 1
+        val neededSectors = ((length + 4) + 4095) / 4096
+        val fileSectors = (raf.length() / 4096).toInt()
+        val offsetSectors = fileSectors
+        raf.seek(raf.length())
+        val full = ByteBuffer.allocate(neededSectors * 4096)
+        full.putInt(length)
+        full.put(2)
+        full.put(compressed)
+
+        while(full.position() % 4096 != 0) full.put(0)
+        raf.write(full.array())
+
+        locations[idx] = (offsetSectors shl 8) or neededSectors
+        timestamps[idx] = (System.currentTimeMillis() / 1000).toInt()
+
+        raf.seek(0)
+        for(i in 0 until 1024) raf.writeInt(locations[i])
+        for(i in 0 until 1024) raf.writeInt(timestamps[i])
     }
 
     private fun buildChunkNBT(chunk: AnvilChunk): CompoundTag? {
-        //build nbt data
-        return null
+        val root = CompoundTag()
+        val level = CompoundTag()
+        level.putInt("xPos", chunk.cx)
+        level.putInt("zPos", chunk.cz)
+        level.putString("Status", "full")
+        level.putLong("InhabitedTime", 0)
+        level.putLong("LastUpdate", System.currentTimeMillis())
+
+        val sectionsList = ListTag(CompoundTag::class.java)
+        for((_, sec) in chunk.sections) {
+            val s = CompoundTag()
+            s.putByte("Y", sec.y.toByte())
+            val paletteList = ListTag(CompoundTag::class.java)
+            sec.palette.forEach { name ->
+                val pe = CompoundTag()
+                pe.putString("Name", name)
+                paletteList.add(pe)
+            }
+
+            s.put("Palette", paletteList)
+            s.putLongArray("BlockStates", sec.blockStates)
+            sectionsList.add(s)
+        }
+
+        level.put("Sections", sectionsList)
+        root.put("Level", level)
+        return root
     }
 
     override fun close() = raf.close()
