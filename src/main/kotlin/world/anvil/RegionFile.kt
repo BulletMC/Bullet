@@ -112,11 +112,19 @@ class RegionFile(private val file: File) : Closeable {
         for((_, sec) in chunk.sections) {
             val s = CompoundTag()
             s.putByte("Y", sec.y.toByte())
+
             val paletteList = ListTag(CompoundTag::class.java)
-            sec.palette.forEach { name ->
-                val pe = CompoundTag()
-                pe.putString("Name", name)
-                paletteList.add(pe)
+            sec.palette.forEach { pe ->
+                val peTag = CompoundTag()
+                peTag.putString("Name", pe.name)
+                pe.props?.let { mp ->
+                    if(mp.isNotEmpty()) {
+                        val propTag = CompoundTag()
+                        for((k, v) in mp) propTag.putString(k, v)
+                        peTag.put("Properties", propTag)
+                    }
+                }
+                paletteList.add(peTag)
             }
 
             s.put("Palette", paletteList)

@@ -4,6 +4,7 @@ import com.google.gson.JsonParser
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import java.io.InputStreamReader
+import java.util.concurrent.ConcurrentHashMap
 
 private const val DEFAULT_HARDNESS = 1.5
 
@@ -557,6 +558,11 @@ enum class Block(val id: Int, val hardness: Double = DEFAULT_HARDNESS) {
 
     companion object {
         private val idMap = Int2ObjectOpenHashMap<Block>(Block.entries.size)
+        private val cache = ConcurrentHashMap<String, MutableMap<String, Int>>()
+        private val json by lazy {
+            JsonParser.parseReader(InputStreamReader(Block::class.java.getResourceAsStream("/blocks.json") ?: error("blocks.json missing"))).asJsonObject
+        }
+
         private val defaultStateIds by lazy {
             val map = Int2IntOpenHashMap()
             val json = JsonParser.parseReader(InputStreamReader(Block::class.java.getResourceAsStream("/blocks.json") ?: error("blocks.json missing"))).asJsonObject
@@ -643,6 +649,31 @@ enum class Block(val id: Int, val hardness: Double = DEFAULT_HARDNESS) {
             }
 
             throw IllegalArgumentException("No matching or default state found for $blockKey")
+        }
+
+        fun idFor(name: String, props: Map<String, String>?): Int {
+            val propKey = props?.entries?.sortedBy { it.key }?.joinToString(";") { "${it.key}=${it.value}" } ?: ""
+            val inner = cache.computeIfAbsent(name) { ConcurrentHashMap<String, Int>().toMutableMap() }
+            return inner.getOrPut(propKey) {
+                val blockObj = json[name]?.asJsonObject ?: error("Unknown block name $name")
+                val states = blockObj["states"].asJsonArray
+                if(props != null) {
+                    for(st in states) {
+                        val so = st.asJsonObject
+                        val soProps = so["properties"]?.asJsonObject
+                        if(soProps != null && props.all { (k, v) -> soProps.has(k) && soProps[k].asString == v } && soProps.entrySet().size == props.size) {
+                            return@getOrPut so["id"].asInt
+                        }
+                    }
+                }
+
+                for(st in states) {
+                    val so = st.asJsonObject
+                    if(so["default"]?.asBoolean == true) return@getOrPut so["id"].asInt
+                }
+
+                error("No matching/default state for $name")
+            }
         }
     }
 }

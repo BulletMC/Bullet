@@ -7,6 +7,7 @@ import com.aznos.world.blocks.BlockAccess
 import com.aznos.world.blocks.VanillaBlockRegistry
 import com.aznos.world.data.anvil.AnvilChunk
 import com.aznos.world.data.anvil.AnvilSection
+import com.aznos.world.data.anvil.PaletteEntry
 import kotlin.collections.get
 
 class AnvilBlockAccess(private val storage: AnvilWorldStorage) : BlockAccess {
@@ -27,7 +28,7 @@ class AnvilBlockAccess(private val storage: AnvilWorldStorage) : BlockAccess {
         val section = chunk.sections[y shr 4] ?: return if(y == 0) Block.GRASS_BLOCK.id else Block.AIR.id
         val idx = ((y and 15) * 16 + (z and 15)) * 16 + (x and 15)
         val pi = PaletteIndex.getPaletteIndex(section.blockStates, section.bitsPerBlock, idx)
-        val vanilla = section.palette.getOrNull(pi) ?: "minecraft:air"
+        val vanilla = (section.palette.getOrNull(pi) as? PaletteEntry)?.name ?: "minecraft:air"
         return VanillaBlockRegistry.toInternal(vanilla)
     }
 
@@ -38,9 +39,9 @@ class AnvilBlockAccess(private val storage: AnvilWorldStorage) : BlockAccess {
         val section = chunk.sections.getOrPut(sectionY) { provider.createEmptySection(sectionY) }
         val vanillaName = VanillaBlockRegistry.toVanilla(blockID)
 
-        var paletteIndex = section.palette.indexOf(vanillaName)
+        var paletteIndex = section.palette.indexOfFirst { it.name == vanillaName && (it.props == null || it.props.isEmpty()) }
         if(paletteIndex == -1) {
-            section.palette.add(vanillaName)
+            section.palette.add(PaletteEntry(vanillaName, null))
             val neededBits = maxOf(4, (32 - Integer.numberOfLeadingZeros(section.palette.size - 1)))
             if(neededBits != section.bitsPerBlock) {
                 val oldBits = section.bitsPerBlock

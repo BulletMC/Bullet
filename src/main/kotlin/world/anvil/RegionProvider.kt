@@ -2,6 +2,7 @@ package com.aznos.world.anvil
 
 import com.aznos.world.data.anvil.AnvilChunk
 import com.aznos.world.data.anvil.AnvilSection
+import com.aznos.world.data.anvil.PaletteEntry
 import net.querz.nbt.tag.CompoundTag
 import net.querz.nbt.tag.ListTag
 import net.querz.nbt.tag.Tag
@@ -29,44 +30,42 @@ class RegionProvider(private val worldRoot: File) {
     }
 
     fun createEmptySection(y: Int): AnvilSection {
-        val palette = mutableListOf("minecraft:air")
+        val palette = mutableListOf(PaletteEntry("minecraft:air"))
         val bits = 4
         val longs = LongArray((4096 * bits + 63) / 64)
         return AnvilSection(y, palette, bits, longs)
     }
 
+
     private fun loadChunk(cx: Int, cz: Int): AnvilChunk? {
         val regionFile = regionFile(cx, cz)
-        if (!regionFile.exists()) return null
+        if(!regionFile.exists()) return null
 
         RegionFile(regionFile).use { rf ->
             val root = rf.readChunkNBT(cx, cz) ?: return null
             val level = root.comp("Level") ?: return null
-
             val sectionsList = level.list("Sections") ?: return null
             val sections = mutableMapOf<Int, AnvilSection>()
 
             for (i in 0 until sectionsList.size()) {
-                val anyTag = sectionsList[i]
-                if (anyTag !is CompoundTag) continue
-                val secTag = anyTag
-
+                val secTag = sectionsList[i] as? CompoundTag ?: continue
                 val y = secTag.getByte("Y").toInt()
-                if (y !in 0..15) continue
+                if(y !in 0..15) continue
 
-                val paletteList = secTag.list("Palette") ?: continue
-                val palette = ArrayList<String>(paletteList.size())
-                for (p in 0 until paletteList.size()) {
-                    val pe = paletteList[p]
-                    if (pe is CompoundTag) {
-                        palette += pe.getString("Name")
-                    }
+                val paletteListTag = secTag.list("Palette") ?: continue
+                val palette = ArrayList<PaletteEntry>(paletteListTag.size())
+                for(p in 0 until paletteListTag.size()) {
+                    val entryTag = paletteListTag[p] as? CompoundTag ?: continue
+                    val name = entryTag.getString("Name")
+                    val propTag = entryTag.get("Properties") as? CompoundTag
+                    val props: Map<String, String>? = propTag?.keySet()?.associateWith { k -> propTag.getString(k) }
+                    palette += PaletteEntry(name, props)
                 }
+                if(palette.isEmpty()) palette += PaletteEntry("minecraft:air")
+                val blockStatesArray: LongArray =
+                    secTag.longArray("BlockStates") ?: LongArray((4096 * 4 + 63) / 64)
 
-                if (palette.isEmpty()) palette += "minecraft:air"
-                val blockStatesArray: LongArray = secTag.longArray("BlockStates") ?: LongArray((4096 * 4 + 63) / 64)
-                val bits = if (palette.size <= 1) 4 else maxOf(4, 32 - Integer.numberOfLeadingZeros(palette.size - 1))
-
+                val bits = bitsForPaletteSize(palette.size)
                 sections[y] = AnvilSection(y, palette.toMutableList(), bits, blockStatesArray)
             }
 
@@ -74,6 +73,11 @@ class RegionProvider(private val worldRoot: File) {
             cache[key(cx, cz)] = chunk
             return chunk
         }
+    }
+
+    private fun bitsForPaletteSize(paletteSize: Int): Int {
+        return if(paletteSize <= 1) 4
+        else maxOf(4, 32 - Integer.numberOfLeadingZeros(paletteSize - 1))
     }
 
     private fun regionFile(cx: Int, cz: Int): File {

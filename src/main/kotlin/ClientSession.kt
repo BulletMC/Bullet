@@ -422,6 +422,8 @@ class ClientSession(
             sendPacket(ServerUnloadChunkPacket(chunk.first, chunk.second))
         }
 
+        sendPacket(ServerUpdateViewPositionPacket(player.chunkX, player.chunkZ))
+
         player.loadedChunks.clear()
         player.loadedChunks.addAll(newChunks)
     }

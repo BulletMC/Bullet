@@ -39,8 +39,7 @@ class ServerChunkPacket(
         var mask = 0
         val topHeights = IntArray(16 * 16) { -1 }
 
-        // Iterate lowest -> highest (0..15)
-        for (sy in 0..MAX_SECTION) {
+        for(sy in 0..MAX_SECTION) {
             val anvilSec = sections[sy] ?: continue
             val built = buildNetworkSection(anvilSec, sy, topHeights) ?: continue
             mask = mask or (1 shl sy)
@@ -50,8 +49,8 @@ class ServerChunkPacket(
         wrapper.writeVarInt(mask)
         wrapper.write(serializeHeightmap(topHeights))
 
-        if (fullChunk) {
-            val biomes = biomesProvider?.invoke() ?: IntArray(1024) { 1 } // plains
+        if(fullChunk) {
+            val biomes = biomesProvider?.invoke() ?: IntArray(1024) { 1 }
             wrapper.writeVarInt(1024)
             for (b in biomes) wrapper.writeVarInt(b)
         }
@@ -64,11 +63,6 @@ class ServerChunkPacket(
         wrapper.write(sectionData)
 
         wrapper.writeVarInt(0) // block entity count
-
-        Bullet.logger.info(
-            "Chunk ($cx,$cz) full=$fullChunk mask=0x${mask.toString(16)} " +
-                    "sec=${sectionBytesList.size} bytes=${sectionData.size}"
-        )
     }
 
     private fun buildNetworkSection(
@@ -76,71 +70,61 @@ class ServerChunkPacket(
         sectionY: Int,
         topHeights: IntArray
     ): ByteArray? {
-        val bitsStored = sec.bitsPerBlock
-        val blockStates = sec.blockStates
-        val paletteNames = sec.palette
+        if(sec.palette.size == 1 && sec.palette[0].name == "minecraft:air") return null
+        val paletteGlobal = IntArray(sec.palette.size) { i ->
+            val pe = sec.palette[i]
+            Block.idFor(pe.name, pe.props)
+        }
 
-        // Fast skip if palette only air
-        if (paletteNames.size == 1 && paletteNames[0] == "minecraft:air") return null
-
-        // Decode all 4096 entries → global state IDs
-        val states = IntArray(4096)
+        val indices = IntArray(4096)
         var nonAir = 0
-        var idx = 0
-        for (y in 0 until 16) {
-            val wy = sectionY * 16 + y
-            for (z in 0 until 16) {
-                val colBase = z shl 4
-                for (x in 0 until 16) {
-                    val localIndex = idx
-                    val pi = PaletteIndex.getPaletteIndex(blockStates, bitsStored, localIndex)
-                    val vanillaName = paletteNames.getOrNull(pi) ?: "minecraft:air"
-                    val internal = VanillaBlockRegistry.toInternal(vanillaName)
-                    val stateId = if (internal == Block.AIR.id) AIR_STATE
-                    else Block.defaultStateIdForInternal(internal)
-                    states[localIndex] = stateId
-                    if (internal != Block.AIR.id) {
-                        nonAir++
-                        val columnIndex = colBase + x
-                        val prevTop = topHeights[columnIndex]
-                        if (wy > prevTop) topHeights[columnIndex] = wy
-                    }
-                    idx++
+        for(i in 0 until 4096) {
+            val pi = PaletteIndex.getPaletteIndex(sec.blockStates, sec.bitsPerBlock, i)
+            indices[i] = pi
+            if(pi < paletteGlobal.size) {
+                val stateId = paletteGlobal[pi]
+                if(stateId != AIR_STATE) {
+                    nonAir++
+                    val localY = i / 256
+                    val rem = i % 256
+                    val localZ = rem / 16
+                    val localX = rem % 16
+                    val wy = sectionY * 16 + localY
+                    val columnIndex = (localZ shl 4) or localX
+                    if(wy > topHeights[columnIndex]) topHeights[columnIndex] = wy
                 }
             }
         }
 
-        if (nonAir == 0) return null
-
-        val (bits, palette, remap, direct) = buildLocalPalette(states)
-        val dataArray = packValues(remap, bits)
+        if(nonAir == 0) return null
+        val distinctStates = IntArray(paletteGlobal.size) { paletteGlobal[it] }
+        val paletteSize = distinctStates.size
+        val paletteBits = max(4, ceilLog2(paletteSize))
+        val direct = paletteBits > 8
 
         val baos = ByteArrayOutputStream()
-        // blockCount
         baos.write((nonAir ushr 8) and 0xFF)
         baos.write(nonAir and 0xFF)
-        // bits per block
-        baos.write(bits)
 
-        if (!direct) {
-            baos.writeVarInt(palette.size)
-            palette.forEach { baos.writeVarInt(it) }
+        if(!direct) {
+            baos.write(paletteBits)
+            baos.writeVarInt(paletteSize)
+            for (gid in distinctStates) baos.writeVarInt(gid)
+
+            val packed = packIndices(indices, paletteBits)
+            baos.writeVarInt(packed.size)
+            packed.forEach { l -> writeLongBE(baos, l) }
+        } else {
+            val bits = 14
+            baos.write(bits)
+            val globals = IntArray(4096) { paletteGlobal[indices[it]] }
+            val packed = packIndices(globals, bits)
+            baos.writeVarInt(packed.size)
+            packed.forEach { l -> writeLongBE(baos, l) }
         }
 
-        baos.writeVarInt(dataArray.size)
-        dataArray.forEach { l ->
-            for (shift in 56 downTo 0 step 8) {
-                baos.write(((l ushr shift) and 0xFF).toInt())
-            }
-        }
-
-        // Embedded light arrays
         baos.write(BLOCK_LIGHT_BYTES)
         baos.write(SKY_LIGHT_BYTES)
-
-        Bullet.logger.debug(
-            "SecY=$sectionY nonAir=$nonAir bits=$bits palette=${palette.size} longs=${dataArray.size} direct=$direct"
-        )
         return baos.toByteArray()
     }
 
@@ -174,7 +158,7 @@ class ServerChunkPacket(
         val direct = bits > 8
         if (direct) {
             bits = 14
-            for (i in remap.indices) remap[i] = states[i] // direct = global IDs
+            for (i in remap.indices) remap[i] = states[i]
             return PaletteBuild(bits, IntArray(0), remap, true)
         }
 
@@ -220,5 +204,30 @@ class ServerChunkPacket(
         val baos = ByteArrayOutputStream()
         NBTOutputStream(baos).use { out -> out.writeTag(NamedTag("", root), 512) }
         return baos.toByteArray()
+    }
+
+    private fun packIndices(values: IntArray, bits: Int): LongArray {
+        val perLong = 64 / bits
+        val longs = (values.size + perLong - 1) / perLong
+        val arr = LongArray(longs)
+        val mask = (1L shl bits) - 1
+        for(i in values.indices) {
+            val li = i / perLong
+            val shift = (i % perLong) * bits
+            arr[li] = arr[li] or ((values[i].toLong() and mask) shl shift)
+        }
+
+        return arr
+    }
+
+    private fun writeLongBE(out: ByteArrayOutputStream, v: Long) {
+        out.write(((v ushr 56) and 0xFF).toInt())
+        out.write(((v ushr 48) and 0xFF).toInt())
+        out.write(((v ushr 40) and 0xFF).toInt())
+        out.write(((v ushr 32) and 0xFF).toInt())
+        out.write(((v ushr 24) and 0xFF).toInt())
+        out.write(((v ushr 16) and 0xFF).toInt())
+        out.write(((v ushr 8) and 0xFF).toInt())
+        out.write((v and 0xFF).toInt())
     }
 }

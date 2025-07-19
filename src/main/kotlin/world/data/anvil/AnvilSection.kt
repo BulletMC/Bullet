@@ -1,6 +1,6 @@
 package com.aznos.world.data.anvil
 
-data class AnvilSection(val y: Int, val palette: MutableList<String>, var bitsPerBlock: Int, var blockStates: LongArray) {
+data class AnvilSection(val y: Int, val palette: MutableList<PaletteEntry>, var bitsPerBlock: Int, var blockStates: LongArray) {
     override fun equals(other: Any?): Boolean {
         if(this === other) return true
         if(javaClass != other?.javaClass) return false
