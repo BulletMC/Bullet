@@ -2,7 +2,9 @@ package com.aznos.storage
 
 import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.BanData
+import com.aznos.storage.disk.AnvilWorldStorage
 import com.aznos.world.World
+import com.aznos.world.blocks.MapBlockAccess
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantReadWriteLock
@@ -63,11 +65,19 @@ class StorageManager(val storage: AbstractServerStorage) {
 
         // Now instanciate/create the world
         val worldStorage = storage.prepareWorldStorage(name)
+        world = when(worldStorage) {
+            is AnvilWorldStorage -> {
+                val anvilAccess = AnvilBlockAccess(worldStorage)
+                World(name, worldStorage, anvilAccess)
+            } else -> {
+                val map = worldStorage.readBlockData()
+                val access = MapBlockAccess(map)
+                World(name, worldStorage, access).also {
+                    it.modifiedBlocks = map
+                }
+            }
+        }
 
-        world = World(name, worldStorage)
-        worlds[name] = world
-
-        worldsLock.writeLock().unlock()
         return world
     }
 

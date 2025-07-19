@@ -20,6 +20,7 @@ import com.aznos.packets.play.out.movement.ServerEntityPositionAndRotationPacket
 import com.aznos.storage.world.AbstractWorldStorage
 import com.aznos.util.schedule
 import com.aznos.world.blocks.Block
+import com.aznos.world.blocks.BlockAccess
 import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.Difficulty
 import com.aznos.world.data.EntityData
@@ -54,7 +55,8 @@ import kotlin.time.Duration.Companion.seconds
 @Suppress("TooManyFunctions")
 class World(
     val name: String,
-    private val storage: AbstractWorldStorage
+    private val storage: AbstractWorldStorage,
+    private val blocks: BlockAccess
 ) {
     var weather = 0
     var worldAge = 0L
@@ -254,11 +256,12 @@ class World(
         lastLocations[entity.entityID] = newLoc
     }
 
+    fun getBlockId(x: Int, y: Int, z: Int) = blocks.getBlockID(x, y, z)
+    fun setBlockId(x: Int, y: Int, z: Int, id: Int) = blocks.setBlockID(x, y, z, id)
+
     fun getHighestSolidBlockY(x: Double, z: Double, maxY: Int = 255): Int {
         for(y in maxY downTo 0) {
-            val pos = BlockPositionType.BlockPosition(x, y.toDouble(), z)
-            val id = modifiedBlocks[pos]?.blockID ?: if(y == 0) Block.GRASS_BLOCK.id else Block.AIR.id
-
+            val id = getBlockId(x.toInt(), y, z.toInt())
             if(id != Block.AIR.id) return y
         }
 

@@ -2,32 +2,38 @@ package com.aznos.storage.disk
 
 import com.aznos.datatypes.BlockPositionType
 import com.aznos.storage.world.AbstractWorldStorage
+import com.aznos.world.World
 import com.aznos.world.data.BlockWithMetadata
 import com.aznos.world.data.EntityData
 import com.aznos.world.data.WorldData
+import dev.dewy.nbt.Nbt
+import dev.dewy.nbt.tags.collection.CompoundTag
 import java.io.File
 
 class AnvilWorldStorage(private val name: String, val root: File) : AbstractWorldStorage {
-    private val bulletDir = File(root, "bullet").apply { mkdirs() }
+    private val nbt = Nbt()
+    private val levelDat = File(root, "level.dat")
+    private var cachedData: WorldData? = null
 
     override fun getName() = name
-    override fun readWorldData(): WorldData? = null // TODO: Implement this
-    override fun writeWorldData(data: WorldData): Boolean = true // TODO: Implement this
+    override fun readBlockData(): MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata> = mutableMapOf()
+    override fun writeBlockData(modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>) = true
 
-    override fun readBlockData(): MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata> {
-        val f = File(bulletDir, "blocks_overlay.json")
-        return DiskStorageUtil.readFileData(f, HashMap())
+    override fun readWorldData(): WorldData? {
+        //fill in
+        return null
     }
 
-    override fun writeBlockData(modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>): Boolean {
-        val f = File(bulletDir, "blocks_overlay.json")
-        return DiskStorageUtil.writeFileData(f, modifiedBlocks)
-    }
-
-    override fun writeEntities(entities: List<EntityData>): Boolean {
-        //TODO: Implement this
+    override fun writeWorldData(data: WorldData): Boolean {
+        //f.ill in
         return true
     }
 
-    override fun readEntities(): List<EntityData>? = null // TODO: Implement this
+    override fun writeWorldData(world: World): Boolean {
+        return writeWorldData(WorldData(world.difficulty.id, world.weather == 1, world.timeOfDay))
+    }
+
+    //TODO: Implement entity reading and writing
+    override fun writeEntities(entities: List<EntityData>) = true
+    override fun readEntities(): List<EntityData>? = null
 }
