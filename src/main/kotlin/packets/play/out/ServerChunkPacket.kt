@@ -73,10 +73,9 @@ class ServerChunkPacket(
                 for(x in 0 until 16) {
                     val wx = (cx shl 4) + x
                     val internal = world.getBlockId(wx, wy, wz)
-                    val blockEnum = Block.getBlockFromID(internal) ?: Block.AIR
-                    if (blockEnum != Block.AIR) nonAir++
-                    val stateId = Block.getStateID(Block.getBlockFromID(internal))
-                    tmpStates[i++] = stateId
+                    val stateID = Block.defaultStateIdForInternal(internal)
+                    if(internal != Block.AIR.id) nonAir++
+                    tmpStates[i++] = stateID
                 }
             }
         }

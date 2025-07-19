@@ -1,6 +1,7 @@
 package com.aznos.world.blocks
 
 import com.google.gson.JsonParser
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import java.io.InputStreamReader
 
@@ -556,10 +557,32 @@ enum class Block(val id: Int, val hardness: Double = DEFAULT_HARDNESS) {
 
     companion object {
         private val idMap = Int2ObjectOpenHashMap<Block>(Block.entries.size)
+        private val defaultStateIds by lazy {
+            val map = Int2IntOpenHashMap()
+            val json = JsonParser.parseReader(InputStreamReader(Block::class.java.getResourceAsStream("/blocks.json") ?: error("blocks.json missing"))).asJsonObject
+            for(b in entries) {
+                val key = "minecraft:${b.name.lowercase()}"
+                val states = json[key]?.asJsonObject?.get("states")?.asJsonArray ?: continue
+                var def: Int? = null
+                for(st in states) {
+                    val so = st.asJsonObject
+                    if(so["default"]?.asBoolean == true) {
+                        def = so["id"].asInt
+                        break
+                    }
+                }
+
+                if(def != null) map.put(b.id, def)
+            }
+
+            map
+        }
 
         init {
             entries.associateByTo(idMap) { it.id }
         }
+
+        fun defaultStateIdForInternal(internalID: Int): Int = defaultStateIds.getOrDefault(internalID, defaultStateIds.get(AIR.id))
 
         /**
          * Gets a block from its ID
