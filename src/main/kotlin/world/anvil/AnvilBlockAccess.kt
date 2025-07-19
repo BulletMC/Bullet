@@ -1,0 +1,46 @@
+package com.aznos.world.anvil
+
+import com.aznos.storage.disk.AnvilWorldStorage
+import com.aznos.world.blocks.BlockAccess
+import com.aznos.world.blocks.VanillaBlockRegistry
+import kotlin.collections.get
+
+class AnvilBlockAccess(private val storage: AnvilWorldStorage) : BlockAccess {
+    private val provider = RegionProvider(storage.root)
+
+    override fun getBlockID(x: Int, y: Int, z: Int): Int {
+        if(y !in 0..255) return 0
+        val chunk = provider.getChunk(x shr 4, z shr 4) ?: return 0
+        val section = chunk.sections[y shr 4] ?: return 0
+        val idx = ((y and 15) * 16 + (z and 15)) * 16 + (x and 15)
+        val pi = PaletteIndex.getPaletteIndex(section.blockStates, section.bitsPerBlock, idx)
+        val vanilla = section.palette[pi]
+        return VanillaBlockRegistry.toInternal(vanilla)
+    }
+
+    override fun setBlockID(x: Int, y: Int, z: Int, blockID: Int) {
+        if(y !in 0..255) return
+        val chunk = provider.getOrLoadChunk(x shr 4, z shr 4)
+        val sectionY = y shr 4
+        val section = chunk.sections.getOrPut(sectionY) { provider.createEmptySection(sectionY) }
+        val vanillaName = VanillaBlockRegistry.toVanilla(blockID)
+
+        var paletteIndex = section.palette.indexOf(vanillaName)
+        if(paletteIndex == -1) {
+            section.palette.add(vanillaName)
+            val neededBits = maxOf(4, (32 - Integer.numberOfLeadingZeros(section.palette.size - 1)))
+            if(neededBits != section.bitsPerBlock) {
+                section.bitsPerBlock = neededBits
+                provider.repackSection(section)
+            }
+
+            paletteIndex = section.palette.lastIndex
+        }
+
+        val idx = ((y and 15) * 16 + (z and 15)) * 16 + (x and 15)
+        PaletteIndex.setPaletteIndex(section.blockStates, section.bitsPerBlock, idx, paletteIndex)
+        chunk.dirty = true
+    }
+
+    fun flushDirty() = provider.flushDirty()
+}

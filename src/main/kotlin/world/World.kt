@@ -17,6 +17,8 @@ import com.aznos.packets.play.out.ServerSoundEffectPacket
 import com.aznos.packets.play.out.ServerSpawnPlayerPacket
 import com.aznos.packets.play.out.movement.ServerEntityHeadLook
 import com.aznos.packets.play.out.movement.ServerEntityPositionAndRotationPacket
+import com.aznos.world.anvil.AnvilBlockAccess
+import com.aznos.storage.disk.AnvilWorldStorage
 import com.aznos.storage.world.AbstractWorldStorage
 import com.aznos.util.schedule
 import com.aznos.world.blocks.Block
@@ -124,11 +126,15 @@ class World(
 
     fun save() {
         storage.writeWorldData(this)
-        storage.writeBlockData(modifiedBlocks)
 
-        val living = livingEntities.map { it.second }
-        val nonLiving = entities.map { it.second }
-        storage.writeEntities(living + nonLiving)
+        if(storage !is AnvilWorldStorage) {
+            storage.writeBlockData(modifiedBlocks)
+            val living = livingEntities.map { it.second }
+            val nonLiving = entities.map { it.second }
+            storage.writeEntities(living + nonLiving)
+        } else {
+            (blocks as? AnvilBlockAccess)?.flushDirty()
+        }
     }
 
     /**
