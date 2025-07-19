@@ -28,7 +28,7 @@ class ServerJoinGamePacket(
     world: String,
     codec: CompoundTag,
     maxPlayers: Int,
-    viewDistance: Int,
+    viewDistance: Int = 8,
     reducedDebugInfo: Boolean,
     enableRespawnScreen: Boolean,
     isDebug: Boolean,

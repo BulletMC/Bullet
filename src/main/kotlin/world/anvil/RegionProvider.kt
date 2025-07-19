@@ -37,35 +37,35 @@ class RegionProvider(private val worldRoot: File) {
 
     private fun loadChunk(cx: Int, cz: Int): AnvilChunk? {
         val regionFile = regionFile(cx, cz)
-        if(!regionFile.exists()) return null
+        if (!regionFile.exists()) return null
 
         RegionFile(regionFile).use { rf ->
             val root = rf.readChunkNBT(cx, cz) ?: return null
-            val level = root.getCompoundTag("Level")
+            val level = root.comp("Level") ?: return null
 
             val sectionsList = level.list("Sections") ?: return null
             val sections = mutableMapOf<Int, AnvilSection>()
 
-            for(i in 0 until sectionsList.size()) {
+            for (i in 0 until sectionsList.size()) {
                 val anyTag = sectionsList[i]
-                if(anyTag !is CompoundTag) continue
+                if (anyTag !is CompoundTag) continue
                 val secTag = anyTag
 
                 val y = secTag.getByte("Y").toInt()
-                if(y !in 0..5) continue
+                if (y !in 0..15) continue
 
                 val paletteList = secTag.list("Palette") ?: continue
                 val palette = ArrayList<String>(paletteList.size())
-                for(p in 0 until paletteList.size()) {
+                for (p in 0 until paletteList.size()) {
                     val pe = paletteList[p]
-                    if(pe is CompoundTag) {
+                    if (pe is CompoundTag) {
                         palette += pe.getString("Name")
                     }
                 }
 
-                if(palette.isEmpty()) palette += "minecraft:air"
+                if (palette.isEmpty()) palette += "minecraft:air"
                 val blockStatesArray: LongArray = secTag.longArray("BlockStates") ?: LongArray((4096 * 4 + 63) / 64)
-                val bits = if(palette.size <= 1) 4 else maxOf(4, 32 - Integer.numberOfLeadingZeros(palette.size - 1))
+                val bits = if (palette.size <= 1) 4 else maxOf(4, 32 - Integer.numberOfLeadingZeros(palette.size - 1))
 
                 sections[y] = AnvilSection(y, palette.toMutableList(), bits, blockStatesArray)
             }
@@ -84,11 +84,11 @@ class RegionProvider(private val worldRoot: File) {
 
     fun repackSection(section: AnvilSection, oldBits: Int) {
         val newBits = section.bitsPerBlock
-        if(oldBits == newBits) return
+        if (oldBits == newBits) return
 
         val oldArr = section.blockStates
         val newArr = LongArray((4096 * newBits + 63) / 64)
-        for(i in 0 until 4096) {
+        for (i in 0 until 4096) {
             val pi = PaletteIndex.getPaletteIndex(oldArr, oldBits, i)
             PaletteIndex.setPaletteIndex(newArr, newBits, i, pi)
         }
@@ -97,12 +97,12 @@ class RegionProvider(private val worldRoot: File) {
     }
 
     fun flushDirty() {
-        if(dirty.isEmpty()) return
-        val byRegion = dirty.groupBy { Pair(floorDiv(it.cx,32), floorDiv(it.cz,32)) }
-        for((regPair, chunks) in byRegion) {
+        if (dirty.isEmpty()) return
+        val byRegion = dirty.groupBy { Pair(floorDiv(it.cx, 32), floorDiv(it.cz, 32)) }
+        for ((regPair, chunks) in byRegion) {
             val (rx, rz) = regPair
             val rf = RegionFile(regionFile(rx * 32, rz * 32))
-            for(chunk in chunks) {
+            for (chunk in chunks) {
                 rf.writeChunk(chunk)
                 chunk.dirty = false
             }

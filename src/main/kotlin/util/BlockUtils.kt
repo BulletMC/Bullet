@@ -7,7 +7,6 @@ import com.aznos.world.blocks.Block
 import com.aznos.world.blocks.BlockTags
 import com.aznos.world.data.Axis
 import com.aznos.world.items.Item
-import kotlinx.coroutines.yield
 import kotlin.math.abs
 import kotlin.math.ceil
 

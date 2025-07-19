@@ -57,7 +57,7 @@ object LoginUtils {
         readPlayerPersistentData(client)
         scheduleTimers(client)
 
-        client.sendPacket(ServerChunkPacket(0, 0))
+        client.sendPacket(ServerChunkPacket(player.world!!, player.chunkX, player.chunkZ, true))
         sendSpawnPlayerPackets(client)
 
         client.sendPacket(ServerUpdateViewPositionPacket(player.chunkX, player.chunkZ))
@@ -160,7 +160,7 @@ object LoginUtils {
                 "minecraft:overworld",
                 Bullet.dimensionCodec!!,
                 Bullet.max_players,
-                32,
+                8,
                 reducedDebugInfo = false,
                 enableRespawnScreen = true,
                 isDebug = false,

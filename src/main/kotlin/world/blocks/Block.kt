@@ -580,13 +580,13 @@ enum class Block(val id: Int, val hardness: Double = DEFAULT_HARDNESS) {
          *
          * @return The state ID of the state palette related to the block
          */
-        fun getStateID(block: Block, properties: Map<String, String>? = null): Int {
+        fun getStateID(block: Block?, properties: Map<String, String>? = null): Int {
             val jsonStream = Block::class.java.getResourceAsStream("/blocks.json")
                 ?: throw IllegalArgumentException("blocks.json not found")
 
             val reader = InputStreamReader(jsonStream)
             val json = JsonParser.parseReader(reader).asJsonObject
-            val blockKey = "minecraft:${block.name.lowercase()}"
+            val blockKey = "minecraft:${block?.name?.lowercase()}"
 
             val blockData = json[blockKey]?.asJsonObject ?: throw IllegalArgumentException("Block $blockKey not found")
             val states = blockData["states"]?.asJsonArray ?: throw IllegalArgumentException("Block $blockKey has no states")

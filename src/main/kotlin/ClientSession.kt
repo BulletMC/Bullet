@@ -408,7 +408,7 @@ class ClientSession(
         val chunksToUnload = player.loadedChunks - newChunks
 
         for(chunk in chunksToLoad) {
-            sendPacket(ServerChunkPacket(chunk.first, chunk.second))
+            sendPacket(ServerChunkPacket(player.world!!, chunk.first, chunk.second, true))
         }
 
         for(chunk in chunksToUnload) {
