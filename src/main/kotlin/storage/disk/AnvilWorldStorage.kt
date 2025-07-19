@@ -11,6 +11,7 @@ import net.querz.nbt.tag.CompoundTag
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.read
 import kotlin.concurrent.write
 
 class AnvilWorldStorage(private val name: String, val root: File) : AbstractWorldStorage {
@@ -22,24 +23,28 @@ class AnvilWorldStorage(private val name: String, val root: File) : AbstractWorl
     override fun writeBlockData(modifiedBlocks: MutableMap<BlockPositionType.BlockPosition, BlockWithMetadata>) = true
 
     private fun readLevelRoot(): CompoundTag? {
-        if(!levelDat.exists()) return null
-        return try {
-            val named = NBTUtil.read(levelDat)
-            named.tag as? CompoundTag
-        } catch(e: IOException) {
-            e.printStackTrace()
-            null
+        lock.read {
+            if(!levelDat.exists()) return null
+            return try {
+                val named = NBTUtil.read(levelDat)
+                named.tag as? CompoundTag
+            } catch(e: IOException) {
+                e.printStackTrace()
+                null
+            }
         }
     }
 
     override fun readWorldData(): WorldData? {
-        val root = readLevelRoot() ?: return null
-        val data = root.getCompoundTag("Data")
-        val difficulty = data.getByte("Difficulty").toInt()
-        val dayTime = data.getLong("DayTime")
-        val raining = (data.getByte("raining").toInt() == 1) || (data.getInt("rainTime") > 0 && data.getByte("raining").toInt() != 0)
+        lock.read {
+            val root = readLevelRoot() ?: return null
+            val data = root.getCompoundTag("Data")
+            val difficulty = data.getByte("Difficulty").toInt()
+            val dayTime = data.getLong("DayTime")
+            val raining = (data.getByte("raining").toInt() == 1) || (data.getInt("rainTime") > 0 && data.getByte("raining").toInt() != 0)
 
-        return WorldData(difficulty, raining, (dayTime % 24000 + 24000) % 24000)
+            return WorldData(difficulty, raining, (dayTime % 24000 + 24000) % 24000)
+        }
     }
 
     override fun writeWorldData(data: WorldData): Boolean = lock.write {

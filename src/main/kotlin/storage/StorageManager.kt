@@ -4,6 +4,7 @@ import com.aznos.entity.player.Player
 import com.aznos.entity.player.data.BanData
 import com.aznos.storage.disk.AnvilWorldStorage
 import com.aznos.world.World
+import com.aznos.world.anvil.AnvilBlockAccess
 import com.aznos.world.blocks.MapBlockAccess
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -78,6 +79,8 @@ class StorageManager(val storage: AbstractServerStorage) {
             }
         }
 
+        worlds[name] = world
+        worldsLock.writeLock().unlock()
         return world
     }
 

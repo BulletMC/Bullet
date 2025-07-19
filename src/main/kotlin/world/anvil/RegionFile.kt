@@ -50,6 +50,7 @@ class RegionFile(private val file: File) : Closeable {
         val sectors = loc and 0xFF
         raf.seek(offset)
         val length = raf.readInt()
+        if(length <= 0 || length > sectors * 4096) return null
         val compression = raf.readUnsignedByte()
         val data = ByteArray(length - 1)
         raf.readFully(data)
@@ -66,7 +67,7 @@ class RegionFile(private val file: File) : Closeable {
     }
 
     fun writeChunk(chunk: AnvilChunk) {
-        val idx = index(chunk.cz, chunk.cx)
+        val idx = index(chunk.cx, chunk.cz)
         val nbtRoot = buildChunkNBT(chunk)
         val baos = ByteArrayOutputStream()
         val deflated = DeflaterOutputStream(baos)

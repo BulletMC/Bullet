@@ -30,8 +30,9 @@ class AnvilBlockAccess(private val storage: AnvilWorldStorage) : BlockAccess {
             section.palette.add(vanillaName)
             val neededBits = maxOf(4, (32 - Integer.numberOfLeadingZeros(section.palette.size - 1)))
             if(neededBits != section.bitsPerBlock) {
+                val oldBits = section.bitsPerBlock
                 section.bitsPerBlock = neededBits
-                provider.repackSection(section)
+                provider.repackSection(section, oldBits)
             }
 
             paletteIndex = section.palette.lastIndex
