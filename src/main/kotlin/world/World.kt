@@ -58,7 +58,7 @@ import kotlin.time.Duration.Companion.seconds
 class World(
     val name: String,
     private val storage: AbstractWorldStorage,
-    private val blocks: BlockAccess
+    val blocks: BlockAccess
 ) {
     var weather = 0
     var worldAge = 0L

@@ -1,5 +1,6 @@
 package com.aznos
 
+import com.aznos.packets.play.out.ServerChunkPacket
 import com.aznos.datatypes.VarInt
 import com.aznos.datatypes.VarInt.readVarInt
 import com.aznos.entity.player.Player
@@ -12,7 +13,9 @@ import com.aznos.packets.login.out.ServerLoginDisconnectPacket
 import com.aznos.packets.play.out.*
 import com.aznos.packets.status.LegacyPingRequest
 import com.aznos.util.schedule
+import com.aznos.world.anvil.AnvilBlockAccess
 import com.aznos.world.data.Difficulty
+import com.aznos.world.data.anvil.AnvilSection
 import kotlinx.coroutines.*
 import net.kyori.adventure.text.Component
 import java.io.BufferedInputStream
@@ -407,8 +410,12 @@ class ClientSession(
         val chunksToLoad = newChunks - player.loadedChunks
         val chunksToUnload = player.loadedChunks - newChunks
 
-        for(chunk in chunksToLoad) {
-            sendPacket(ServerChunkPacket(player.world!!, chunk.first, chunk.second, true))
+        val world = player.world ?: return
+        val anvilAccess = world.blocks as? AnvilBlockAccess
+
+        for((loadCX, loadCZ) in chunksToLoad) {
+            val sections: Map<Int, AnvilSection> = anvilAccess?.getSections(loadCX, loadCZ) ?: emptyMap()
+            sendPacket(ServerChunkPacket(world, loadCX, loadCZ, true, sections))
         }
 
         for(chunk in chunksToUnload) {

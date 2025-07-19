@@ -1,8 +1,12 @@
 package com.aznos.world.anvil
 
+import com.aznos.Bullet
 import com.aznos.storage.disk.AnvilWorldStorage
+import com.aznos.world.blocks.Block
 import com.aznos.world.blocks.BlockAccess
 import com.aznos.world.blocks.VanillaBlockRegistry
+import com.aznos.world.data.anvil.AnvilChunk
+import com.aznos.world.data.anvil.AnvilSection
 import kotlin.collections.get
 
 class AnvilBlockAccess(private val storage: AnvilWorldStorage) : BlockAccess {
@@ -10,11 +14,20 @@ class AnvilBlockAccess(private val storage: AnvilWorldStorage) : BlockAccess {
 
     override fun getBlockID(x: Int, y: Int, z: Int): Int {
         if(y !in 0..255) return 0
-        val chunk = provider.getChunk(x shr 4, z shr 4) ?: return 0
-        val section = chunk.sections[y shr 4] ?: return 0
+        val chunk = provider.getChunk(x shr 4, z shr 4)
+
+        if(chunk == null && y == 0 && x == 0 && z == 0) {
+            Bullet.logger.info("Fallback grass at global (0,0,0)")
+        }
+
+        if(chunk == null) {
+            return if(y == 0) Block.GRASS_BLOCK.id else Block.AIR.id
+        }
+
+        val section = chunk.sections[y shr 4] ?: return if(y == 0) Block.GRASS_BLOCK.id else Block.AIR.id
         val idx = ((y and 15) * 16 + (z and 15)) * 16 + (x and 15)
         val pi = PaletteIndex.getPaletteIndex(section.blockStates, section.bitsPerBlock, idx)
-        val vanilla = section.palette[pi]
+        val vanilla = section.palette.getOrNull(pi) ?: "minecraft:air"
         return VanillaBlockRegistry.toInternal(vanilla)
     }
 
@@ -44,4 +57,8 @@ class AnvilBlockAccess(private val storage: AnvilWorldStorage) : BlockAccess {
     }
 
     fun flushDirty() = provider.flushDirty()
+
+    fun getLoadedOrDiskChunk(cx: Int, cz: Int): AnvilChunk? = provider.getChunk(cx, cz)
+    fun getOrCreateChunk(cx: Int, cz: Int): AnvilChunk = provider.getOrLoadChunk(cx, cz)
+    fun getSections(cx: Int, cz: Int): Map<Int, AnvilSection> = provider.getChunk(cx, cz)?.sections ?: emptyMap()
 }

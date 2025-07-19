@@ -28,6 +28,8 @@ import com.aznos.packets.play.out.ServerSpawnPlayerPacket
 import com.aznos.packets.play.out.ServerUpdateHealthPacket
 import com.aznos.packets.play.out.ServerUpdateViewPositionPacket
 import com.aznos.packets.play.out.ServerWindowItemsPacket
+import com.aznos.world.anvil.AnvilBlockAccess
+import com.aznos.world.data.anvil.AnvilSection
 import com.aznos.world.items.ItemStack
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -57,7 +59,9 @@ object LoginUtils {
         readPlayerPersistentData(client)
         scheduleTimers(client)
 
-        client.sendPacket(ServerChunkPacket(player.world!!, player.chunkX, player.chunkZ, true))
+        val anvilAccess = player.world!!.blocks as? AnvilBlockAccess
+        val sections: Map<Int, AnvilSection> = anvilAccess?.getSections(player.chunkX, player.chunkZ) ?: emptyMap()
+        client.sendPacket(ServerChunkPacket(player.world!!, player.chunkX, player.chunkZ, true, sections))
         sendSpawnPlayerPackets(client)
 
         client.sendPacket(ServerUpdateViewPositionPacket(player.chunkX, player.chunkZ))
