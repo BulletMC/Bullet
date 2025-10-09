@@ -1,7 +1,10 @@
+> [!IMPORTANT]
+Bullet is currently on haitus, and was made for version 1.16.5. A planned rewrite is scheduled soon, supporting the latest versions of minecraft.
+
 # About
 
 **Bullet** is a minecraft server built from the ground up with the goal of being lightweight, fast, and easy to use.
-> [!IMPORTANT]
+> [!NOTE]
 > Bullet is currently in development and is not ready for production use
 
 # Why Bullet?
