@@ -1,5 +1,5 @@
 > [!IMPORTANT]
-Bullet is currently on haitus, and was made for version 1.16.5. A planned rewrite is scheduled soon, supporting the latest versions of minecraft.
+Bullet is currently being rewritten for the latest versions of minecraft, you can find the old 1.16.5 version [here](https://github.com/BulletMC/Bullet/tree/legacy/1.16.5)
 
 # About
 
@@ -26,8 +26,6 @@ The vanilla minecraft server that is written by Mojang, comes with a host of lim
     <li>NMS - Bullet doesn't rely on outdated mojang code, and instead does everything from scratch.</li>
 </ol>
 
-<img src="./img/comparision.png" alt="Comparison chart">
-
 ### Why not use minestom or another pre existing server?
 <ol>
     <li>Steep learning curve - Switching to an entirely new framework requires rewriting api and understanding a new complicated API. Developers first coming from spigot or paper, shouldn't have to implement world generation or chunk loading from scratch.</li>
@@ -38,6 +36,8 @@ The vanilla minecraft server that is written by Mojang, comes with a host of lim
 # How to get started
 
 Read the <a href="https://bulletmc.gitbook.io/bullet/getting-started">getting started</a> on the wiki! You can also find much more information about things like custom events, commands, packets, and more.
+> [!NOTE]
+The wiki has not been updated for v2 of bullet
 
 # License
 
