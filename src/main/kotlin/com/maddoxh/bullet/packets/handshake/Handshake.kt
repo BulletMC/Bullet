@@ -1,6 +1,7 @@
 package com.maddoxh.bullet.packets.handshake
 
-import com.maddoxh.bullet.TypeHelpers
+import com.maddoxh.bullet.types.String.readString
+import com.maddoxh.bullet.types.VarInt.readVarInt
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.core.ByteReadPacket
 import io.ktor.utils.io.core.readShort
@@ -15,10 +16,10 @@ data class Handshake(
         const val PACKET_ID = 0x00
 
         suspend fun readFrom(input: ByteReadPacket): Handshake {
-            val protocolVersion = TypeHelpers.readVarInt(input)
-            val address = TypeHelpers.readString(input)
+            val protocolVersion = input.readVarInt()
+            val address = input.readString()
             val port = input.readShort().toInt() and 0xFFFF
-            val nextState = TypeHelpers.readVarInt(input)
+            val nextState = input.readVarInt()
             return Handshake(protocolVersion, address, port, nextState)
         }
     }

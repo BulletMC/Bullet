@@ -1,9 +1,9 @@
 package com.maddoxh.bullet.net
 
 import com.maddoxh.bullet.Bullet
-import com.maddoxh.bullet.TypeHelpers
 import com.maddoxh.bullet.net.state.HandshakeState
 import com.maddoxh.bullet.net.state.SessionState
+import com.maddoxh.bullet.types.VarInt.readVarInt
 import io.ktor.network.sockets.Socket
 import io.ktor.network.sockets.openReadChannel
 import io.ktor.network.sockets.openWriteChannel
@@ -21,12 +21,12 @@ class ClientSession(private val socket: Socket) {
 
         try {
             while(true) {
-                val frameLength = TypeHelpers.readVarInt(input)
+                val frameLength = input.readVarInt()
                 val frameBytes = ByteArray(frameLength)
                 input.readFully(frameBytes)
 
                 val frame = ByteReadPacket(frameBytes)
-                val packetId = TypeHelpers.readVarInt(frame)
+                val packetId = frame.readVarInt()
 
                 Bullet.logger.info(
                     "Received packet with ID $packetId and length $frameLength from ${socket.remoteAddress}"
