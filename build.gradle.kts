@@ -26,7 +26,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.8.1")
     implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.6")
     implementation("io.ktor:ktor-network:2.3.7")
-    implementation("io.ktor:ktor-io:3.1.1")
+    implementation("io.ktor:ktor-utils:2.3.7")
+    implementation("io.ktor:ktor-io:2.3.7")
     implementation("com.google.code.gson:gson:2.12.1")
     implementation("org.apache.logging.log4j:log4j-core:2.24.3")
 }

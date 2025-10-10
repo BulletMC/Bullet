@@ -1,5 +1,6 @@
 package com.maddoxh.bullet
 
+import com.maddoxh.bullet.net.ClientSession
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.ServerSocket
 import io.ktor.network.sockets.Socket
@@ -11,8 +12,6 @@ import org.apache.logging.log4j.Logger
 
 data class Address(val host: String, val port: Int)
 class Bullet(val address: Address = Address("0.0.0.0", 25565)) {
-    val logger: Logger = LogManager.getLogger(Bullet::class.java)
-
     var server: ServerSocket? = null
     var client: Socket? = null
 
@@ -23,12 +22,16 @@ class Bullet(val address: Address = Address("0.0.0.0", 25565)) {
 
         while(true) {
             client = server!!.accept()
-            logger.info("Client connected: ${client!!.remoteAddress}")
+            ClientSession(client!!).run()
         }
     }
 
     fun stopServer() {
         client?.close()
         server?.close()
+    }
+
+    companion object {
+        val logger: Logger = LogManager.getLogger(Bullet::class.java)
     }
 }
