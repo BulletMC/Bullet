@@ -1,6 +1,6 @@
 package com.maddoxh.bullet.packets.handshake
 
-import com.maddoxh.bullet.types.String.readString
+import com.maddoxh.bullet.types.StringUtils.readString
 import com.maddoxh.bullet.types.VarInt.readVarInt
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.core.ByteReadPacket

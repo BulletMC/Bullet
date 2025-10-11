@@ -40,4 +40,8 @@ class ClientSession(private val socket: Socket) {
             socket.close()
         }
     }
+
+    fun switchState(newState: SessionState) {
+        state = newState
+    }
 }
