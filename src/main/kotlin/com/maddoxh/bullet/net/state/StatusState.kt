@@ -11,6 +11,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class StatusState(private val clientProtocol: Int): SessionState {
+    private var statusRequested = false
     private val statusProvider = {
         StatusResponse(
             Version("BulletMC 1.21.8", clientProtocol),
@@ -24,17 +25,17 @@ class StatusState(private val clientProtocol: Int): SessionState {
     override suspend fun handleIncoming(packetId: Int, input: ByteReadPacket, output: ByteWriteChannel) {
         when(packetId) {
             0x00 -> {
+                if(statusRequested) return
+                statusRequested = true
+
                 val json = Json.encodeToString(statusProvider())
-                sendPacket(output, 0x00) {
-                    writeString(json)
-                }
+                sendPacket(output, 0x00) { writeString(json) }
             }
 
             0x01 -> {
-                val payload = input.readLong()
-                sendPacket(output, 0x01) {
-                    writeLong(payload)
-                }
+                if(!statusRequested) return
+                val ts = input.readLong()
+                sendPacket(output, 0x01) { writeLong(ts) }
             }
 
             else -> error("Unknown packet ID $packetId in status state")
