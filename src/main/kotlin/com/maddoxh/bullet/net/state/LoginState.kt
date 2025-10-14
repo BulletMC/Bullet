@@ -26,6 +26,10 @@ class LoginState(private val client: ClientSession): SessionState {
 
             0x03 -> {
                 Bullet.logger.info("Login successful for ${client.profile?.username}")
+
+                val config = ConfigState(client)
+                client.switchState(config)
+                config.sendSelectKnownPacks(output)
             }
 
             else -> error("Unknown packet ID $packetId in login state")
