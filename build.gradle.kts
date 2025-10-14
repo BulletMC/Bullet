@@ -1,7 +1,6 @@
 plugins {
     kotlin("jvm") version "2.1.0"
     kotlin("plugin.serialization") version "2.1.10"
-    id("io.gitlab.arturbosch.detekt") version "1.23.8"
     application
 }
 
@@ -32,18 +31,8 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-core:2.24.3")
 }
 
-detekt {
-    buildUponDefaultConfig = true
-    config.setFrom("$projectDir/config/detekt/detekt.yml")
-}
-
 application {
     mainClass = "com.maddoxh.bullet.MainKt"
-}
-
-tasks.register("runServer") {
-    dependsOn("detekt", "run")
-    group = "bullet"
 }
 
 tasks.jar {

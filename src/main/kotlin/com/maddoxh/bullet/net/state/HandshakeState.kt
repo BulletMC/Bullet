@@ -15,7 +15,7 @@ class HandshakeState(private val session: ClientSession): SessionState {
         val handshake = Handshake.readFrom(input)
         when(handshake.nextState) {
             Handshake.State.STATUS -> session.switchState(StatusState(handshake.protocolVersion))
-            Handshake.State.LOGIN -> error("Login state not implemented yet")
+            Handshake.State.LOGIN -> session.switchState(LoginState(session))
             else -> Bullet.logger.error("Unknown next state ${handshake.nextState} in Handshake packet")
         }
     }
