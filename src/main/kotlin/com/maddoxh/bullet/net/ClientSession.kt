@@ -3,6 +3,7 @@ package com.maddoxh.bullet.net
 import com.maddoxh.bullet.Bullet
 import com.maddoxh.bullet.net.state.HandshakeState
 import com.maddoxh.bullet.net.state.SessionState
+import com.maddoxh.bullet.types.GameProfile
 import com.maddoxh.bullet.types.VarInt.readVarInt
 import io.ktor.network.sockets.Socket
 import io.ktor.network.sockets.openReadChannel
@@ -15,6 +16,8 @@ class ClientSession(private val socket: Socket) {
     private val input = socket.openReadChannel()
     private val output = socket.openWriteChannel(true)
     private var state: SessionState = HandshakeState(this)
+
+    var profile: GameProfile.Profile? = null
 
     suspend fun run() {
         Bullet.logger.info("Session started with ${socket.remoteAddress}")
