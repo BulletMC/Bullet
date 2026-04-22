@@ -1,5 +1,7 @@
 package com.maddoxh.bullet
 
-fun main() {
-    println("yo")
+import kotlinx.coroutines.runBlocking
+
+fun main() = runBlocking {
+    Bullet().start()
 }
