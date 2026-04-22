@@ -8,7 +8,14 @@ import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import java.net.ServerSocket
 
-class Bullet(private val port: Int = 25565) {
+class Bullet(val port: Int = 25565) {
+    var motd: String = "A Bullet Server"
+    var maxPlayers: Int = 100
+    var onlinePlayers: Int = 0
+    var versionName: String = "BulletMC 26.1.2"
+    var protocolVersion: Int = 775
+    var enforcesSecureChat: Boolean = false
+
     suspend fun start() = coroutineScope {
         val serverSocket = ServerSocket(port)
         logger.info("Listening on port $port")
@@ -16,7 +23,7 @@ class Bullet(private val port: Int = 25565) {
         while(true) {
             val socket = withContext(Dispatchers.IO) { serverSocket.accept() }
             launch {
-                ClientConnection(socket).handle()
+                ClientConnection(socket, this@Bullet).handle()
             }
         }
     }

@@ -1,6 +1,10 @@
 package com.maddoxh.bullet.network.packet
 
 import com.maddoxh.bullet.io.MinecraftInputStream
+import com.maddoxh.bullet.network.packet.impl.`in`.HandshakeIntention
+import com.maddoxh.bullet.network.packet.impl.`in`.InboundPacket
+import com.maddoxh.bullet.network.packet.impl.`in`.PingRequest
+import com.maddoxh.bullet.network.packet.impl.`in`.StatusRequest
 import com.maddoxh.bullet.state.ConnectionState
 
 object PacketReader {
@@ -9,7 +13,7 @@ object PacketReader {
         packetID: Int,
         payloadLength: Int,
         input: MinecraftInputStream
-    ): Packet? = when(state) {
+    ): InboundPacket? = when(state) {
         ConnectionState.HANDSHAKE -> readHandshake(packetID, input)
         ConnectionState.STATUS -> readStatus(packetID, payloadLength, input)
         else -> {
@@ -18,8 +22,8 @@ object PacketReader {
         }
     }
 
-    private fun readHandshake(packetID: Int, input: MinecraftInputStream): Packet? = when(packetID) {
-        0x00 -> Packet.Handshake.Intention(
+    private fun readHandshake(packetID: Int, input: MinecraftInputStream): InboundPacket? = when(packetID) {
+        0x00 -> HandshakeIntention(
             protocolVersion = input.readVarInt(),
             serverAddress = input.readMCString(),
             serverPort = input.readUnsignedShort(),
@@ -29,9 +33,9 @@ object PacketReader {
         else -> null
     }
 
-    private fun readStatus(packetID: Int, payloadLength: Int, input: MinecraftInputStream): Packet? = when(packetID) {
-        0x00 -> Packet.Status.StatusRequest
-        0x01 -> Packet.Status.PingRequest(payload = input.readLong())
+    private fun readStatus(packetID: Int, payloadLength: Int, input: MinecraftInputStream): InboundPacket? = when(packetID) {
+        0x00 -> StatusRequest
+        0x01 -> PingRequest(payload = input.readLong())
 
         else -> {
             input.skipNBytes(payloadLength.toLong())

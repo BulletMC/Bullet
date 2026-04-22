@@ -3,20 +3,19 @@ package com.maddoxh.bullet
 import com.maddoxh.bullet.Bullet.Companion.logger
 import com.maddoxh.bullet.io.MinecraftInputStream
 import com.maddoxh.bullet.io.MinecraftOutputStream
-import com.maddoxh.bullet.io.VarInt
 import com.maddoxh.bullet.io.VarInt.varIntSize
 import com.maddoxh.bullet.network.handler.HandshakeHandler
 import com.maddoxh.bullet.network.handler.PacketHandler
 import com.maddoxh.bullet.network.handler.StatusHandler
-import com.maddoxh.bullet.network.packet.Packet
 import com.maddoxh.bullet.network.packet.PacketReader
 import com.maddoxh.bullet.network.packet.PacketWriter
+import com.maddoxh.bullet.network.packet.impl.out.OutboundPacket
 import com.maddoxh.bullet.state.ConnectionState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.Socket
 
-class ClientConnection(private val socket: Socket) {
+class ClientConnection(private val socket: Socket, private val bullet: Bullet) {
     var state = ConnectionState.HANDSHAKE
 
     private val input = MinecraftInputStream(socket.getInputStream().buffered())
@@ -24,7 +23,7 @@ class ClientConnection(private val socket: Socket) {
 
     private val handlers: Map<ConnectionState, PacketHandler> = mapOf(
         ConnectionState.HANDSHAKE to HandshakeHandler(),
-        ConnectionState.STATUS    to StatusHandler(),
+        ConnectionState.STATUS    to StatusHandler(bullet),
     )
 
     suspend fun handle() = withContext(Dispatchers.IO) {
@@ -52,7 +51,7 @@ class ClientConnection(private val socket: Socket) {
         handlers[state]?.handle(packet, this)
     }
 
-    fun send(packet: Packet) {
+    fun send(packet: OutboundPacket) {
         val (packetID, payload) = PacketWriter.serialize(packet)
         synchronized(output) {
             output.writePacket(packetID, payload)
