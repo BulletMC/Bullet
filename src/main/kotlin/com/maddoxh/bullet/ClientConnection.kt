@@ -5,6 +5,7 @@ import com.maddoxh.bullet.entity.player.Player
 import com.maddoxh.bullet.io.MinecraftInputStream
 import com.maddoxh.bullet.io.MinecraftOutputStream
 import com.maddoxh.bullet.io.VarInt.varIntSize
+import com.maddoxh.bullet.network.handler.ConfigurationHandler
 import com.maddoxh.bullet.network.handler.HandshakeHandler
 import com.maddoxh.bullet.network.handler.LoginHandler
 import com.maddoxh.bullet.network.handler.PacketHandler
@@ -28,9 +29,10 @@ class ClientConnection(private val socket: Socket, private val bullet: Bullet) {
     private val output = MinecraftOutputStream(socket.getOutputStream())
 
     private val handlers: Map<ConnectionState, PacketHandler> = mapOf(
-        ConnectionState.HANDSHAKE to HandshakeHandler(),
-        ConnectionState.STATUS    to StatusHandler(bullet),
-        ConnectionState.LOGIN     to LoginHandler()
+        ConnectionState.HANDSHAKE     to HandshakeHandler(),
+        ConnectionState.STATUS        to StatusHandler(bullet),
+        ConnectionState.LOGIN         to LoginHandler(),
+        ConnectionState.CONFIGURATION to ConfigurationHandler()
     )
 
     suspend fun handle() = withContext(Dispatchers.IO) {

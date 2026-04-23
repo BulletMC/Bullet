@@ -17,9 +17,10 @@ object PacketReader {
         payloadLength: Int,
         input: MinecraftInputStream
     ): InboundPacket? = when(state) {
-        ConnectionState.HANDSHAKE -> readHandshake(packetID, input)
-        ConnectionState.STATUS    -> readStatus(packetID, payloadLength, input)
-        ConnectionState.LOGIN     -> readLogin(packetID, payloadLength, input)
+        ConnectionState.HANDSHAKE     -> readHandshake(packetID, input)
+        ConnectionState.STATUS        -> readStatus(packetID, payloadLength, input)
+        ConnectionState.LOGIN         -> readLogin(packetID, payloadLength, input)
+        ConnectionState.CONFIGURATION -> readConfiguration(packetID, payloadLength, input)
 
         else -> {
             input.skipNBytes(payloadLength.toLong())
@@ -58,5 +59,10 @@ object PacketReader {
             input.skipNBytes(payloadLength.toLong())
             null
         }
+    }
+
+    private fun readConfiguration(packetID: Int, payloadLength: Int, input: MinecraftInputStream): InboundPacket? {
+        input.skipNBytes(payloadLength.toLong())
+        return null
     }
 }
