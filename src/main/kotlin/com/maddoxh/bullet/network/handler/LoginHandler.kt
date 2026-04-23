@@ -27,6 +27,8 @@ class LoginHandler : PacketHandler {
                     connection = connection
                 )
 
+                connection.player?.disconnect("You've been kicked!")
+
                 connection.send(LoginSuccess(offlineUUID, packet.name))
                 logger.info("[*] Sent LoginSuccess for ${packet.name}")
             }

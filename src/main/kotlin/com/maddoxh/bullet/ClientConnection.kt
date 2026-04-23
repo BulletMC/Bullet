@@ -68,6 +68,8 @@ class ClientConnection(private val socket: Socket, private val bullet: Bullet) {
         }
     }
 
+    fun close() { socket.close() }
+
     companion object {
         private val entityIDCounter = AtomicInteger(1)
         fun nextEntityID(): Int = entityIDCounter.getAndIncrement()

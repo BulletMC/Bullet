@@ -4,3 +4,4 @@ sealed interface OutboundPacket
 
 interface StatusOutboundPacket : OutboundPacket
 interface LoginOutboundPacket : OutboundPacket
+interface PlayOutboundPacket : OutboundPacket
