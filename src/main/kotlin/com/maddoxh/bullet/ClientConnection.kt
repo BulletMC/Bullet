@@ -1,6 +1,7 @@
 package com.maddoxh.bullet
 
 import com.maddoxh.bullet.Bullet.Companion.logger
+import com.maddoxh.bullet.entity.player.Player
 import com.maddoxh.bullet.io.MinecraftInputStream
 import com.maddoxh.bullet.io.MinecraftOutputStream
 import com.maddoxh.bullet.io.VarInt.varIntSize
@@ -15,9 +16,13 @@ import com.maddoxh.bullet.state.ConnectionState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.Socket
+import java.util.concurrent.atomic.AtomicInteger
 
 class ClientConnection(private val socket: Socket, private val bullet: Bullet) {
     var state = ConnectionState.HANDSHAKE
+    var player: Player? = null
+
+    val isClosed: Boolean get() = socket.isClosed
 
     private val input = MinecraftInputStream(socket.getInputStream().buffered())
     private val output = MinecraftOutputStream(socket.getOutputStream())
@@ -59,5 +64,10 @@ class ClientConnection(private val socket: Socket, private val bullet: Bullet) {
             output.writePacket(packetID, payload)
             output.flush()
         }
+    }
+
+    companion object {
+        private val entityIDCounter = AtomicInteger(1)
+        fun nextEntityID(): Int = entityIDCounter.getAndIncrement()
     }
 }
