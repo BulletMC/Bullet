@@ -12,8 +12,8 @@ class Bullet(val port: Int = 25565) {
     var motd: String = "A Bullet Server"
     var maxPlayers: Int = 100
     var onlinePlayers: Int = 0
-    var versionName: String = "BulletMC 26.1.2"
-    var protocolVersion: Int = 775
+    var versionName: String = "BulletMC 1.21.11"
+    var protocolVersion: Int = 774
     var enforcesSecureChat: Boolean = false
 
     suspend fun start() = coroutineScope {
