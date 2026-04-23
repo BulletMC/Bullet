@@ -1,10 +1,10 @@
 package com.maddoxh.bullet.network.packet
 
 import com.maddoxh.bullet.io.MinecraftInputStream
-import com.maddoxh.bullet.network.packet.impl.`in`.HandshakeIntention
+import com.maddoxh.bullet.network.packet.impl.`in`.handshake.HandshakeIntention
 import com.maddoxh.bullet.network.packet.impl.`in`.InboundPacket
-import com.maddoxh.bullet.network.packet.impl.`in`.PingRequest
-import com.maddoxh.bullet.network.packet.impl.`in`.StatusRequest
+import com.maddoxh.bullet.network.packet.impl.`in`.status.PingRequest
+import com.maddoxh.bullet.network.packet.impl.`in`.status.StatusRequest
 import com.maddoxh.bullet.state.ConnectionState
 
 object PacketReader {

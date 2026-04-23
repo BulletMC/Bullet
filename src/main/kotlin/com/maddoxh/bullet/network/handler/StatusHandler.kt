@@ -4,10 +4,10 @@ import com.maddoxh.bullet.Bullet
 import com.maddoxh.bullet.Bullet.Companion.logger
 import com.maddoxh.bullet.ClientConnection
 import com.maddoxh.bullet.network.packet.impl.`in`.InboundPacket
-import com.maddoxh.bullet.network.packet.impl.`in`.PingRequest
-import com.maddoxh.bullet.network.packet.impl.`in`.StatusRequest
-import com.maddoxh.bullet.network.packet.impl.out.PongResponse
-import com.maddoxh.bullet.network.packet.impl.out.StatusResponse
+import com.maddoxh.bullet.network.packet.impl.`in`.status.PingRequest
+import com.maddoxh.bullet.network.packet.impl.`in`.status.StatusRequest
+import com.maddoxh.bullet.network.packet.impl.out.status.PongResponse
+import com.maddoxh.bullet.network.packet.impl.out.status.StatusResponse
 
 class StatusHandler(private val bullet: Bullet) : PacketHandler {
     override fun handle(packet: InboundPacket, connection: ClientConnection) {
