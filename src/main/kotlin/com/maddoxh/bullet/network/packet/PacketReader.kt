@@ -1,9 +1,14 @@
 package com.maddoxh.bullet.network.packet
 
-import com.google.gson.internal.bind.TypeAdapters.UUID
 import com.maddoxh.bullet.io.MinecraftInputStream
+import com.maddoxh.bullet.io.VarInt
 import com.maddoxh.bullet.network.packet.impl.`in`.handshake.HandshakeIntention
 import com.maddoxh.bullet.network.packet.impl.`in`.InboundPacket
+import com.maddoxh.bullet.network.packet.impl.`in`.config.AcknowledgeFinishConfiguration
+import com.maddoxh.bullet.network.packet.impl.`in`.config.ClientInformation
+import com.maddoxh.bullet.network.packet.impl.`in`.config.KnownPack
+import com.maddoxh.bullet.network.packet.impl.`in`.config.ServerboundKnownPacks
+import com.maddoxh.bullet.network.packet.impl.`in`.config.ServerboundPluginMessage
 import com.maddoxh.bullet.network.packet.impl.`in`.login.LoginStart
 import com.maddoxh.bullet.network.packet.impl.`in`.status.PingRequest
 import com.maddoxh.bullet.network.packet.impl.`in`.status.StatusRequest
@@ -61,8 +66,45 @@ object PacketReader {
         }
     }
 
-    private fun readConfiguration(packetID: Int, payloadLength: Int, input: MinecraftInputStream): InboundPacket? {
-        input.skipNBytes(payloadLength.toLong())
-        return null
+    private fun readConfiguration(packetID: Int, payloadLength: Int, input: MinecraftInputStream): InboundPacket? = when(packetID) {
+        0x00 -> ClientInformation(
+            locale              = input.readMCString(),
+            viewDistance        = input.readByte(),
+            chatMode            = input.readVarInt(),
+            chatColors          = input.readBoolean(),
+            displayedSkinParts  = input.readUnsignedByte(),
+            mainHand            = input.readVarInt(),
+            enableTextFiltering = input.readBoolean(),
+            allowServerListings = input.readBoolean(),
+            particleStatus      = input.readVarInt(),
+        )
+
+        0x02 -> {
+            val channel = input.readMCString()
+            val dataLen = payloadLength - channel.toByteArray().size - VarInt.varIntSize(channel.toByteArray().size)
+            val data = ByteArray(dataLen.coerceAtLeast(0))
+            if(data.isNotEmpty()) input.readFully(data)
+
+            ServerboundPluginMessage(channel, data)
+        }
+
+        0x03 -> AcknowledgeFinishConfiguration
+        0x07 -> {
+            val count = input.readVarInt()
+            val packs = (0 until count).map {
+                KnownPack(
+                    namespace = input.readMCString(),
+                    id        = input.readMCString(),
+                    version   = input.readMCString()
+                )
+            }
+
+            ServerboundKnownPacks(packs)
+        }
+
+        else -> {
+            input.skipNBytes(payloadLength.toLong())
+            null
+        }
     }
 }
