@@ -3,6 +3,7 @@ package com.maddoxh.bullet.entity.player
 import com.maddoxh.bullet.ClientConnection
 import com.maddoxh.bullet.entity.LivingEntity
 import com.maddoxh.bullet.network.chat.ChatComponent
+import com.maddoxh.bullet.network.packet.impl.out.config.ConfigDisconnect
 import com.maddoxh.bullet.network.packet.impl.out.login.LoginDisconnect
 import com.maddoxh.bullet.network.packet.impl.out.play.PlayDisconnect
 import com.maddoxh.bullet.state.ConnectionState
@@ -24,9 +25,12 @@ class Player(
         val reason = ChatComponent.literal(message)
 
         when(connection.state) {
-            ConnectionState.LOGIN,
-            ConnectionState.CONFIGURATION -> {
+            ConnectionState.LOGIN -> {
                 connection.send(LoginDisconnect(reason))
+            }
+
+            ConnectionState.CONFIGURATION -> {
+                connection.send(ConfigDisconnect(reason))
             }
 
             ConnectionState.PLAY -> {
