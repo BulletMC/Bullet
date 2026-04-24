@@ -2,22 +2,34 @@ package com.maddoxh.bullet.network.packet
 
 import com.maddoxh.bullet.io.MinecraftOutputStream
 import com.maddoxh.bullet.network.packet.impl.out.OutboundPacket
+import com.maddoxh.bullet.network.packet.impl.out.config.ClientboundKnownPacks
+import com.maddoxh.bullet.network.packet.impl.out.config.ClientboundPluginMessage
 import com.maddoxh.bullet.network.packet.impl.out.config.ConfigDisconnect
+import com.maddoxh.bullet.network.packet.impl.out.config.FeatureFlags
+import com.maddoxh.bullet.network.packet.impl.out.config.FinishConfiguration
+import com.maddoxh.bullet.network.packet.impl.out.config.RegistryData
 import com.maddoxh.bullet.network.packet.impl.out.login.LoginDisconnect
 import com.maddoxh.bullet.network.packet.impl.out.login.LoginSuccess
 import com.maddoxh.bullet.network.packet.impl.out.play.PlayDisconnect
 import com.maddoxh.bullet.network.packet.impl.out.status.PongResponse
 import com.maddoxh.bullet.network.packet.impl.out.status.StatusResponse
+import net.kyori.adventure.nbt.BinaryTag
+import net.kyori.adventure.nbt.BinaryTagIO
 import java.io.ByteArrayOutputStream
 
 object PacketWriter {
     fun serialize(packet: OutboundPacket): Pair<Int, ByteArray> = when(packet) {
-        is StatusResponse   -> 0x00 to encodeStatusResponse(packet)
-        is PongResponse     -> 0x01 to encodePong(packet)
-        is LoginSuccess     -> 0x02 to encodeLoginSuccess(packet)
-        is LoginDisconnect  -> 0x00 to encodeDisconnectReason(packet.reason)
-        is ConfigDisconnect -> 0x02 to encodeDisconnectReason(packet.reason)
-        is PlayDisconnect   -> 0x1B to encodeDisconnectReason(packet.reason)
+        is StatusResponse           -> 0x00 to encodeStatusResponse(packet)
+        is PongResponse             -> 0x01 to encodePong(packet)
+        is LoginSuccess             -> 0x02 to encodeLoginSuccess(packet)
+        is LoginDisconnect          -> 0x00 to encodeDisconnectReason(packet.reason)
+        is ConfigDisconnect         -> 0x02 to encodeDisconnectReason(packet.reason)
+        is PlayDisconnect           -> 0x1B to encodeDisconnectReason(packet.reason)
+        is ClientboundPluginMessage -> 0x01 to encodePluginMessage(packet)
+        is FeatureFlags             -> 0x09 to encodeFeatureFlags()
+        is ClientboundKnownPacks    -> 0x0E to encodeKnownPacks()
+        is RegistryData             -> 0x07 to encodeRegistryData(packet)
+        is FinishConfiguration      -> 0x03 to ByteArray(0)
 
         else -> throw IllegalArgumentException("Unknown packet: $packet")
     }
@@ -48,6 +60,54 @@ object PacketWriter {
     private fun encodeDisconnectReason(reason: String): ByteArray {
         val buf = ByteArrayOutputStream()
         MinecraftOutputStream(buf).writeMCString(reason)
+        return buf.toByteArray()
+    }
+
+    private fun encodePluginMessage(packet: ClientboundPluginMessage): ByteArray {
+        val buf = ByteArrayOutputStream()
+        val out = MinecraftOutputStream(buf)
+
+        out.writeMCString(packet.channel)
+        out.write(packet.data)
+        return buf.toByteArray()
+    }
+
+    private fun encodeFeatureFlags(): ByteArray {
+        val buf = ByteArrayOutputStream()
+        val out = MinecraftOutputStream(buf)
+
+        out.writeVarInt(1)
+        out.writeMCString("minecraft:vanilla")
+        return buf.toByteArray()
+    }
+
+    private fun encodeKnownPacks(): ByteArray {
+        val buf = ByteArrayOutputStream()
+        val out = MinecraftOutputStream(buf)
+
+        out.writeVarInt(1)
+        out.writeMCString("minecraft")
+        out.writeMCString("core")
+        out.writeMCString("1.21.4")
+        return buf.toByteArray()
+    }
+
+    private fun encodeRegistryData(packet: RegistryData): ByteArray {
+        val buf = ByteArrayOutputStream()
+        val out = MinecraftOutputStream(buf)
+
+        out.writeMCString(packet.registryID)
+        out.writeVarInt(packet.entries.size)
+        for(entry in packet.entries) {
+            out.writeMCString(entry.id)
+            if(entry.data != null) {
+                out.writeBoolean(true)
+                BinaryTagIO.writer().write(entry.data, buf)
+            } else {
+                out.writeBoolean(false)
+            }
+        }
+
         return buf.toByteArray()
     }
 }
