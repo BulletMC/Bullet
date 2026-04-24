@@ -1,5 +1,6 @@
 package com.maddoxh.bullet
 
+import com.maddoxh.bullet.registry.RegistryManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -17,6 +18,8 @@ class Bullet(val port: Int = 25565) {
     var enforcesSecureChat: Boolean = false
 
     suspend fun start() = coroutineScope {
+        RegistryManager.load()
+
         val serverSocket = ServerSocket(port)
         logger.info("Listening on port $port")
 
