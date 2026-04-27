@@ -9,6 +9,7 @@ import com.maddoxh.bullet.network.packet.impl.`in`.config.ClientInformation
 import com.maddoxh.bullet.network.packet.impl.`in`.config.KnownPack
 import com.maddoxh.bullet.network.packet.impl.`in`.config.ServerboundKnownPacks
 import com.maddoxh.bullet.network.packet.impl.`in`.config.ServerboundPluginMessage
+import com.maddoxh.bullet.network.packet.impl.`in`.login.LoginAcknowledged
 import com.maddoxh.bullet.network.packet.impl.`in`.login.LoginStart
 import com.maddoxh.bullet.network.packet.impl.`in`.status.PingRequest
 import com.maddoxh.bullet.network.packet.impl.`in`.status.StatusRequest
@@ -59,6 +60,8 @@ object PacketReader {
             name = input.readMCString(),
             uuid = UUID(input.readLong(), input.readLong())
         )
+
+        0x03 -> LoginAcknowledged
 
         else -> {
             input.skipNBytes(payloadLength.toLong())
