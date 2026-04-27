@@ -12,9 +12,7 @@ import com.maddoxh.bullet.network.packet.impl.out.config.ClientboundKnownPacks
 import com.maddoxh.bullet.network.packet.impl.out.config.ClientboundPluginMessage
 import com.maddoxh.bullet.network.packet.impl.out.config.FeatureFlags
 import com.maddoxh.bullet.network.packet.impl.out.config.FinishConfiguration
-import com.maddoxh.bullet.network.packet.impl.out.config.RegistryData
-import com.maddoxh.bullet.network.packet.impl.out.config.RegistryEntry
-import com.maddoxh.bullet.registry.RegistryManager
+import com.maddoxh.bullet.network.packet.impl.out.config.UpdateTags
 import com.maddoxh.bullet.state.ConnectionState
 import java.io.ByteArrayOutputStream
 
@@ -29,6 +27,7 @@ class ConfigurationHandler : PacketHandler {
 
                 sendServerBrand(connection)
                 connection.send(FeatureFlags)
+                connection.send(ClientboundKnownPacks)
             }
 
             is ClientInformation -> {
@@ -37,8 +36,7 @@ class ConfigurationHandler : PacketHandler {
 
             is ServerboundKnownPacks -> {
                 logger.info("[*] Client knows: ${packet.packs.size} packs")
-                connection.send(ClientboundKnownPacks)
-                sendAllRegistries(connection)
+                connection.send(UpdateTags)
                 connection.send(FinishConfiguration)
                 logger.info("[*] Sent FinishConfiguration, waiting for acknowledgement..")
             }
@@ -66,20 +64,5 @@ class ConfigurationHandler : PacketHandler {
         logger.info("[*] Sent server brand: $brand")
     }
 
-    private fun sendAllRegistries(connection: ClientConnection) {
-        for(registryID in RegistryManager.REGISTRY_SEND_ORDER) {
-            val entries = RegistryManager.getRegistry(registryID)
-            if(entries.isEmpty()) {
-                logger.warn("[!] Registry $registryID is empty (skipping)")
-                continue
-            }
 
-            val registryEntries = entries.map { (id, nbt) ->
-                RegistryEntry(id, nbt)
-            }
-
-            connection.send(RegistryData(registryID, registryEntries))
-            logger.info("[*] Sent registry $registryID (${entries.size} entries)")
-        }
-    }
 }

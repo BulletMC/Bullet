@@ -8,6 +8,7 @@ import com.maddoxh.bullet.network.packet.impl.out.config.ConfigDisconnect
 import com.maddoxh.bullet.network.packet.impl.out.config.FeatureFlags
 import com.maddoxh.bullet.network.packet.impl.out.config.FinishConfiguration
 import com.maddoxh.bullet.network.packet.impl.out.config.RegistryData
+import com.maddoxh.bullet.network.packet.impl.out.config.UpdateTags
 import com.maddoxh.bullet.network.packet.impl.out.login.LoginDisconnect
 import com.maddoxh.bullet.network.packet.impl.out.login.LoginSuccess
 import com.maddoxh.bullet.network.packet.impl.out.play.PlayDisconnect
@@ -26,9 +27,10 @@ object PacketWriter {
         is ConfigDisconnect         -> 0x02 to encodeDisconnectReason(packet.reason)
         is PlayDisconnect           -> 0x1B to encodeDisconnectReason(packet.reason)
         is ClientboundPluginMessage -> 0x01 to encodePluginMessage(packet)
-        is FeatureFlags             -> 0x09 to encodeFeatureFlags()
+        is FeatureFlags             -> 0x0C to encodeFeatureFlags()
         is ClientboundKnownPacks    -> 0x0E to encodeKnownPacks()
         is RegistryData             -> 0x07 to encodeRegistryData(packet)
+        is UpdateTags               -> 0x0D to encodeUpdateTags()
         is FinishConfiguration      -> 0x03 to ByteArray(0)
 
         else -> throw IllegalArgumentException("Unknown packet: $packet")
@@ -81,6 +83,12 @@ object PacketWriter {
         return buf.toByteArray()
     }
 
+    private fun encodeUpdateTags(): ByteArray {
+        val buf = ByteArrayOutputStream()
+        MinecraftOutputStream(buf).writeVarInt(0)
+        return buf.toByteArray()
+    }
+
     private fun encodeKnownPacks(): ByteArray {
         val buf = ByteArrayOutputStream()
         val out = MinecraftOutputStream(buf)
@@ -102,7 +110,11 @@ object PacketWriter {
             out.writeMCString(entry.id)
             if(entry.data != null) {
                 out.writeBoolean(true)
-                BinaryTagIO.writer().write(entry.data, buf)
+                val nbtBuf = ByteArrayOutputStream()
+                BinaryTagIO.writer().write(entry.data, nbtBuf)
+                val nbtBytes = nbtBuf.toByteArray()
+                out.writeByte(nbtBytes[0].toInt())
+                out.write(nbtBytes, 3, nbtBytes.size - 3)
             } else {
                 out.writeBoolean(false)
             }
