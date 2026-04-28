@@ -9,6 +9,7 @@ import com.maddoxh.bullet.network.packet.impl.`in`.config.ServerboundPluginMessa
 import com.maddoxh.bullet.network.packet.impl.`in`.handshake.HandshakeIntention
 import com.maddoxh.bullet.network.packet.impl.`in`.login.LoginAcknowledged
 import com.maddoxh.bullet.network.packet.impl.`in`.login.LoginStart
+import com.maddoxh.bullet.network.packet.impl.`in`.play.ConfirmTeleportation
 import com.maddoxh.bullet.network.packet.impl.`in`.status.PingRequest
 import com.maddoxh.bullet.network.packet.impl.`in`.status.StatusRequest
 import com.maddoxh.bullet.state.ConnectionState
@@ -41,6 +42,12 @@ object PacketReader {
             0x07 -> ServerboundKnownPacks.decode(input)
             else -> skip(input, payloadLength)
         }
+
+        ConnectionState.PLAY -> when(packetID) {
+            0x00 -> ConfirmTeleportation.decode(input)
+            else -> skip(input, payloadLength)
+        }
+
         else -> skip(input, payloadLength)
     }
 

@@ -13,6 +13,7 @@ import com.maddoxh.bullet.network.packet.impl.out.config.ClientboundPluginMessag
 import com.maddoxh.bullet.network.packet.impl.out.config.FeatureFlags
 import com.maddoxh.bullet.network.packet.impl.out.config.FinishConfiguration
 import com.maddoxh.bullet.network.packet.impl.out.config.UpdateTags
+import com.maddoxh.bullet.network.play.PlaySequence
 import com.maddoxh.bullet.state.ConnectionState
 import java.io.ByteArrayOutputStream
 
@@ -44,6 +45,7 @@ class ConfigurationHandler : PacketHandler {
             is AcknowledgeFinishConfiguration -> {
                 logger.info("[*] Configuration acknowledged, transitioning to PLAY")
                 connection.state = ConnectionState.PLAY
+                PlaySequence.begin(connection)
             }
 
             else -> logger.warn("[!] ConfigurationHandler received unexpected packet: $packet")

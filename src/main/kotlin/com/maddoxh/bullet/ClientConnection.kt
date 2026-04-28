@@ -9,6 +9,7 @@ import com.maddoxh.bullet.network.handler.ConfigurationHandler
 import com.maddoxh.bullet.network.handler.HandshakeHandler
 import com.maddoxh.bullet.network.handler.LoginHandler
 import com.maddoxh.bullet.network.handler.PacketHandler
+import com.maddoxh.bullet.network.handler.PlayHandler
 import com.maddoxh.bullet.network.handler.StatusHandler
 import com.maddoxh.bullet.network.packet.PacketReader
 import com.maddoxh.bullet.network.packet.impl.out.OutboundPacket
@@ -31,7 +32,8 @@ class ClientConnection(private val socket: Socket, private val bullet: Bullet) {
         ConnectionState.HANDSHAKE     to HandshakeHandler(),
         ConnectionState.STATUS        to StatusHandler(bullet),
         ConnectionState.LOGIN         to LoginHandler(),
-        ConnectionState.CONFIGURATION to ConfigurationHandler()
+        ConnectionState.CONFIGURATION to ConfigurationHandler(),
+        ConnectionState.PLAY          to PlayHandler(),
     )
 
     suspend fun handle() = withContext(Dispatchers.IO) {
