@@ -46,4 +46,12 @@ class MinecraftOutputStream(stream: OutputStream) : DataOutputStream(stream) {
         write(idBytes)
         write(payload)
     }
+
+    companion object {
+        fun build(block: MinecraftOutputStream.() -> Unit): ByteArray {
+            val buf = ByteArrayOutputStream()
+            MinecraftOutputStream(buf).apply(block)
+            return buf.toByteArray()
+        }
+    }
 }

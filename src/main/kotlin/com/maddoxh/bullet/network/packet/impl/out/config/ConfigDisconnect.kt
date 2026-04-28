@@ -1,7 +1,9 @@
 package com.maddoxh.bullet.network.packet.impl.out.config
 
-import com.maddoxh.bullet.network.packet.impl.out.LoginOutboundPacket
+import com.maddoxh.bullet.io.MinecraftOutputStream
+import com.maddoxh.bullet.network.packet.impl.out.ConfigOutboundPacket
 
-data class ConfigDisconnect( // 0x02 S->C
-    val reason: String
-) : LoginOutboundPacket
+data class ConfigDisconnect(val reason: String) : ConfigOutboundPacket { // 0x02 S->C
+    override val packetId = 0x02
+    override fun encode() = MinecraftOutputStream.build { writeMCString(reason) }
+}

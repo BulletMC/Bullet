@@ -11,7 +11,6 @@ import com.maddoxh.bullet.network.handler.LoginHandler
 import com.maddoxh.bullet.network.handler.PacketHandler
 import com.maddoxh.bullet.network.handler.StatusHandler
 import com.maddoxh.bullet.network.packet.PacketReader
-import com.maddoxh.bullet.network.packet.PacketWriter
 import com.maddoxh.bullet.network.packet.impl.out.OutboundPacket
 import com.maddoxh.bullet.state.ConnectionState
 import kotlinx.coroutines.Dispatchers
@@ -61,9 +60,8 @@ class ClientConnection(private val socket: Socket, private val bullet: Bullet) {
     }
 
     fun send(packet: OutboundPacket) {
-        val (packetID, payload) = PacketWriter.serialize(packet)
         synchronized(output) {
-            output.writePacket(packetID, payload)
+            output.writePacket(packet.packetId, packet.encode())
             output.flush()
         }
     }
