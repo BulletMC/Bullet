@@ -31,7 +31,8 @@ object PlaySequence {
         connection.send(SetHeldItem(0))
         connection.send(SyncPlayerPosition(x = 0.0, y = 64.0, z = 0.0))
         connection.send(GameEvent(event = GameEvent.START_WAITING_FOR_CHUNKS))
+        ChunkSender.sendInitialChunks(connection)
 
-        logger.info("[*] Play sequence sent, waiting for ConfirmTeleportation..")
+        logger.info("[*] Chunks sent to player")
     }
 }
