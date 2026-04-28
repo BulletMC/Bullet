@@ -6,3 +6,4 @@ interface HandshakeInboundPacket : InboundPacket
 interface StatusInboundPacket : InboundPacket
 interface LoginInboundPacket : InboundPacket
 interface ConfigInboundPacket : InboundPacket
+interface PlayInboundPacket : InboundPacket
